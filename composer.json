@@ -1,0 +1,55 @@
+{
+  "name": "milos-stankovic/fast-corporation-php-task",
+  "description": "Vanilla PHP technical task with user activity tracking.",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3",
+    "ext-pdo": "*",
+    "ext-pdo_sqlite": "*",
+    "ext-session": "*"
+  },
+  "require-dev": {
+    "deptrac/deptrac": "^4.7",
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "phpstan/phpstan": "^2.3",
+    "phpunit/phpunit": "^12.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "InterviewTask\\Accounts\\": "src/Accounts/",
+      "InterviewTask\\Activity\\": "src/Activity/",
+      "InterviewTask\\Runtime\\": "runtime/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "InterviewTask\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "check:composer": "composer validate --strict",
+    "security:audit": "composer audit --locked --no-interaction",
+    "test": "phpunit",
+    "stan": "phpstan analyse --no-progress",
+    "cs": "php-cs-fixer check --diff",
+    "cs:fix": "php-cs-fixer fix",
+    "architecture": "deptrac analyse --config-file=tools/deptrac.yaml",
+    "quality": [
+      "@check:composer",
+      "@security:audit",
+      "@cs",
+      "@stan",
+      "@architecture",
+      "@test"
+    ]
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "8.3.0"
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

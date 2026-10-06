@@ -1,0 +1,11 @@
+parameters:
+  level: max
+  paths:
+    - src
+    - runtime
+    - bootstrap
+    - bin
+    - public
+    - tests
+  tmpDir: var/phpstan
+  treatPhpDocTypesAsCertain: false

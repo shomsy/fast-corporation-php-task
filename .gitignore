@@ -1,0 +1,12 @@
+/vendor/
+/.env
+/.deptrac.cache
+/.phpunit.cache/
+/.php-cs-fixer.cache
+/.phpstan.cache
+/var/phpstan/
+/var/database/*.sqlite
+/var/database/*.sqlite-*
+/var/log/*
+!/var/log/.gitkeep
+!/var/database/.gitkeep
