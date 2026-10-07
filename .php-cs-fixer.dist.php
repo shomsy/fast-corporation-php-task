@@ -6,6 +6,7 @@ $finder = PhpCsFixer\Finder::create()
     ->in([
         __DIR__ . '/src',
         __DIR__ . '/runtime',
+        __DIR__ . '/infrastructure',
         __DIR__ . '/bootstrap',
         __DIR__ . '/bin',
         __DIR__ . '/public',

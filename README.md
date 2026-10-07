@@ -2,9 +2,9 @@
 
 Vanilla PHP implementation of the supplied PHP Developer interview task.
 
-Current status: project bootstrap and quality tooling.
+Current status: Phase 0 and Phase 1 are complete. Architecture is aligned to Governance 1.7.1; Phase 2 is next.
 
-The full implementation sequence and architectural decisions are documented in [IMPLEMENTATION-PLAN.md](IMPLEMENTATION-PLAN.md).
+See `IMPLEMENTATION-PLAN.md` and `docs/architecture/ADR-0002-system-architecture.md`.
 
 ## Development requirements
 
@@ -21,4 +21,4 @@ composer architecture
 composer quality
 ```
 
-Application setup and reviewer instructions will be completed as the implementation progresses.
+Reviewer setup instructions will be completed with the implementation.

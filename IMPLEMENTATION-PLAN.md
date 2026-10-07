@@ -1,481 +1,149 @@
 # Implementation Plan
 
-Status: Active implementation plan  
-Project: Fast Corporation PHP Developer technical task  
-Architecture level: L3 greenfield, applied proportionally  
+Status: Active
+Project: Fast Corporation PHP Developer technical task
+Architecture level: L3 greenfield, applied proportionally
+Governance: Architecture Governance 1.7.1
 Repository language: English only
 
 ## Goal
 
-Deliver a small, secure, reviewer-friendly Vanilla PHP application that satisfies the task exactly, shows senior engineering judgment, and avoids speculative architecture.
+Deliver a small, secure, reviewer-friendly Vanilla PHP application that satisfies the task exactly and demonstrates senior engineering judgment without speculative architecture.
 
-The project follows Architecture Governance 1.3.2 and Compass Engineering guidance. Architecture decisions are driven by behavior, authoritative knowledge, invariants, ownership, security, data integrity and change pressure. Pattern names are never the justification.
+## Accepted ownership model
 
-## Selected architecture
-
-One deployable, two business owners, synchronous in-process communication.
+One deployable modular monolith with synchronous in-process collaboration.
 
 ### Accounts
+Owns account identity, credentials, roles, authenticated identity/session meaning and access policy. Behaviors: Register, Login, Logout, CreateAdmin.
 
-Owns:
+### ActivityTracking
+Owns activity vocabulary, append-only activity history, Statistics filtering semantics and Reports metrics. Behaviors: record activity, Statistics, Reports.
 
-- user identity;
-- email uniqueness;
-- credential hashing and verification;
-- roles;
-- authentication lifecycle;
-- current signed-in authority;
-- registration, login, logout and admin bootstrap behavior.
+### CowOffer
+Owns Page A and Buy Cow behavior. No durable purchase state is invented. Behaviors: ViewPageA, BuyCow.
 
-### Activity
+### Downloads
+Owns Page B and fixed downloadable-artifact delivery. Behaviors: ViewPageB, DownloadFile.
 
-Owns:
-
-- append-only user activity facts;
-- action and target vocabulary;
-- Page A and Page B tracked interactions;
-- Buy-a-cow click tracking;
-- download click tracking;
-- Statistics filtering;
-- Reports aggregation.
-
-Page A, Page B, Buy Cow and Download are behaviors, not independent business owners. Reports and Statistics are read behaviors over the same authoritative activity log; no CQRS split is justified.
-
-## Target project tree
+Dependency direction:
 
 ```text
-fast-corporation-php-task/
-├── README.md
-├── TASK.md
-├── IMPLEMENTATION-PLAN.md
-├── composer.json
-├── composer.lock
-├── phpunit.xml
-├── phpstan.neon
-├── .php-cs-fixer.dist.php
-├── .env.example
-├── .editorconfig
-├── .gitignore
-├── .github/
-│   └── workflows/
-│       └── ci.yml
-├── docs/
-│   ├── ARCHITECTURE-GOVERNANCE.md
-│   └── architecture/
-│       ├── ADR-0001-system-architecture.md
-│       ├── boundaries.md
-│       ├── constraints.md
-│       ├── complexity.md
-│       └── enforcement.md
-├── public/
-│   ├── index.php
-│   └── assets/
-│       ├── css/app.css
-│       └── js/
-│           ├── buy-cow.js
-│           └── report-chart.js
-├── bootstrap/
-│   ├── app.php
-│   └── routes.php
-├── src/
-│   ├── Accounts/
-│   │   ├── User.php
-│   │   ├── Role.php
-│   │   ├── Users.php
-│   │   ├── Passwords.php
-│   │   ├── Access.php
-│   │   ├── SignedInUser.php
-│   │   ├── Register/
-│   │   │   ├── Register.php
-│   │   │   └── register.phtml
-│   │   ├── Login/
-│   │   │   ├── Login.php
-│   │   │   └── login.phtml
-│   │   ├── Logout/
-│   │   │   └── Logout.php
-│   │   ├── CreateAdmin/
-│   │   │   └── CreateAdmin.php
-│   │   └── migrations/
-│   │       └── 001_create_accounts_users.sql
-│   └── Activity/
-│       ├── ActivityLog.php
-│       ├── ActivityEvent.php
-│       ├── Action.php
-│       ├── Target.php
-│       ├── Actor.php
-│       ├── DateRange.php
-│       ├── RecordActivity.php
-│       ├── CowPage/
-│       │   ├── CowPage.php
-│       │   └── cow-page.phtml
-│       ├── BuyCow/
-│       │   └── BuyCow.php
-│       ├── DownloadPage/
-│       │   ├── DownloadPage.php
-│       │   └── download-page.phtml
-│       ├── Download/
-│       │   ├── Download.php
-│       │   └── InstallerFile.php
-│       ├── Statistics/
-│       │   ├── Statistics.php
-│       │   ├── StatisticsFilter.php
-│       │   └── statistics.phtml
-│       ├── Reports/
-│       │   ├── Reports.php
-│       │   ├── EngagementReport.php
-│       │   ├── EngagementDay.php
-│       │   └── reports.phtml
-│       └── migrations/
-│           └── 001_create_activity_events.sql
-├── runtime/
-│   ├── Http/
-│   │   ├── Kernel.php
-│   │   ├── Router.php
-│   │   ├── Request.php
-│   │   ├── Response.php
-│   │   ├── FileResponse.php
-│   │   ├── PhpSession.php
-│   │   ├── Csrf.php
-│   │   └── View.php
-│   ├── Database/
-│   │   ├── Connection.php
-│   │   ├── Transaction.php
-│   │   └── Migrator.php
-│   └── Clock/
-│       ├── Clock.php
-│       └── SystemClock.php
-├── files/
-│   └── sample.exe
-├── bin/
-│   ├── migrate.php
-│   └── create-admin.php
-├── tests/
-│   ├── Support/
-│   │   ├── FixedClock.php
-│   │   ├── TestDatabase.php
-│   │   └── TestApp.php
-│   ├── Accounts/
-│   │   ├── RegisterTest.php
-│   │   ├── LoginTest.php
-│   │   ├── LogoutTest.php
-│   │   ├── AccessTest.php
-│   │   └── PasswordsTest.php
-│   ├── Activity/
-│   │   ├── ActivityLogTest.php
-│   │   ├── CowPageTest.php
-│   │   ├── BuyCowTest.php
-│   │   ├── DownloadPageTest.php
-│   │   ├── DownloadTest.php
-│   │   ├── StatisticsTest.php
-│   │   └── ReportsTest.php
-│   ├── Journeys/
-│   │   ├── UserJourneyTest.php
-│   │   └── AdminJourneyTest.php
-│   └── Architecture/
-│       ├── DependencyRulesTest.php
-│       └── TableOwnershipTest.php
-├── tools/
-│   └── deptrac.yaml
-└── var/
-    ├── database/.gitkeep
-    └── log/.gitkeep
+Accounts  ---------+
+CowOffer  ---------+--> ActivityTracking
+Downloads ---------+
+
+Runtime --------X--------> business owners
+Infrastructure -X--------> business owners
+Bootstrap ----------------> all (wiring only)
 ```
 
-The target tree is a direction, not a quota. Any file or abstraction that proves shallow during implementation will be removed rather than preserved for symmetry.
+A local dependency, public contract or transaction is a cost to evaluate, not evidence that distinct owners should be merged (Governance 1.7.1 P14/CMP-2).
+
+## Physical direction
+
+```text
+src/
+├── Accounts/
+├── ActivityTracking/
+├── CowOffer/
+└── Downloads/
+
+runtime/
+└── Http/
+
+infrastructure/
+├── Database/
+├── Session/
+├── Templating/
+└── Time/
+```
+
+Each business owner gains business-named behavior slices and one `module.php` public-surface manifest when code exists. No `Owner/`, `Domain/`, `Features/`, `Capabilities/` or `Implementations/` directory is created merely to mirror governance vocabulary.
 
 ## Data model
 
-### accounts_users
+`accounts`: id, username, password_hash, role, created_at. Username is unique; public registration always creates role `user`; plaintext passwords are never stored.
 
-Expected fields:
+`activity_events`: id, actor_id, actor_label, action, target, occurred_at. Actions: registration, login, logout, view-page, button-click. Targets: page-a, page-b, buy-cow, download, or null where no target is meaningful.
 
-- id
-- email — unique
-- password_hash
-- role — user or admin
-- created_at
-
-Structural invariants:
-
-- email is unique;
-- public registration always creates role user;
-- plaintext passwords are never persisted.
-
-### activity_events
-
-Expected fields:
-
-- id
-- actor_id
-- actor_label
-- action
-- target
-- occurred_at
-
-Canonical actions:
-
-- registration
-- login
-- logout
-- view-page
-- button-click
-
-Canonical targets:
-
-- page-a
-- page-b
-- buy-cow
-- download
-- nullable when the action has no meaningful target.
-
-actor_label is a historical display snapshot. actor_id is the stable identity reference. Activity must not read private Accounts tables directly.
-
-No cow_purchases table is planned because persistent purchase state is not a requirement.
+ActivityTracking stores a historical actor-label snapshot and does not read private Accounts storage. No `cow_purchases` table exists without a durable-purchase requirement.
 
 ## Security baseline
 
-The implementation must include:
-
-- password_hash() and password_verify();
-- session ID regeneration after successful authentication;
-- server-side session authority and logout invalidation;
-- HttpOnly cookies;
-- deliberate SameSite policy;
-- Secure cookies under HTTPS;
-- POST for state-changing browser actions;
-- CSRF protection for registration, login, logout, Buy Cow and Download;
-- server-side authorization for admin-only pages;
-- registration cannot self-assign admin;
-- prepared PDO statements;
-- centralized HTML escaping;
-- generic authentication failure messages;
-- fixed server-side download path;
-- no credentials or session identifiers in logs.
-
-UI visibility is never treated as authorization.
+Use password_hash/password_verify, session-id regeneration after login, server-side authorization, safe logout invalidation, HttpOnly/SameSite cookies, Secure under HTTPS, POST+CSRF for state-changing browser actions, prepared PDO statements, centralized HTML escaping, generic auth failures, a fixed server-side download path, and no credentials/session ids in logs.
 
 ## Tracking semantics
 
-Activity tracking is product behavior for this task, not best-effort telemetry.
+Activity tracking is product behavior, not best-effort telemetry. Record successful registration/login, Page A/B views, Buy Cow click and Download click. Use the smallest local transaction that keeps accepted actions consistent. A local transaction spanning owner tables does not merge ownership.
 
-Record only successful actions:
+Logout is security-sensitive: activity recording may fail, but session destruction must still complete.
 
-- successful registration -> registration
-- successful login -> login
-- logout -> logout before authority is destroyed
-- successful Page A render -> view-page/page-a
-- successful Page B render -> view-page/page-b
-- successful Buy Cow request -> button-click/buy-cow
-- accepted Download request -> button-click/download
+## Statistics and Reports
 
-Where multiple local database writes represent one accepted action, use the smallest local transaction that keeps observable state consistent.
+Statistics is admin-only with date/user/action filters. Reports is admin-only as a documented assumption. One aggregate dataset feeds graph and table with daily Page A views, Page B views, Buy Cow clicks and Download clicks. No projection table until measured evidence requires one.
 
-## Statistics and reports
+## Delivery phases
 
-Statistics is admin-only and supports date, user and action filters.
+- Phase 0 — Planning / architecture — DONE (`113e2d4`)
+- Phase 1 — Tooling / quality / CI — DONE (`59e327f`)
+- Architecture alignment — Governance 1.7.1 — CURRENT
+- Phase 2 — Runtime + persistence
+- Phase 3 — Accounts
+- Phase 4 — ActivityTracking
+- Phase 5 — CowOffer + Downloads
+- Phase 6 — Statistics
+- Phase 7 — Reports
+- Phase 8 — Security + failure hardening
+- Phase 9 — Acceptance + reviewer experience
 
-Reports is admin-only as a documented assumption until clarified otherwise.
+### Alignment exit
 
-One aggregate dataset feeds both the graph and the table. It exposes daily counts for:
+Governance snapshot, ADRs, owner skeleton, namespaces and architecture fitness config agree and `composer quality` is green.
 
-- Page A views;
-- Page B views;
-- Buy Cow clicks;
-- Download clicks.
+### Phase 2
 
-No pre-aggregated table or CQRS projection is planned. Aggregate directly from activity_events until measured evidence says otherwise.
+Neutral HTTP runtime; neutral driven database/session/template/time mechanisms; SQLite connection and transaction; migration runner; deterministic test database; owner-local initial migrations.
 
-## Implementation phases and planned commits
+### Phase 3
 
-### Phase 0 — Planning and governance
+Registration, login, logout, secure sessions, access policy, admin bootstrap and denied-path tests.
 
-Deliverables:
+### Phase 4
 
-- task brief;
-- this implementation plan;
-- Architecture Governance 1.3.2 copy/reference;
-- concise L3 ADR and architecture registers;
-- Git repository initialized on main.
+Activity vocabulary, append-only log, actor snapshot, recording surface, account-flow integration and transaction/failure tests.
 
-Exit: assumptions and boundaries are explicit; no application code yet.
+### Phase 5
 
-Commit: `docs: define technical task implementation plan`
+Page A/B view tracking, Buy Cow `thankYou` transition, fixed-file download and click tracking.
 
-### Phase 1 — Project bootstrap and quality gates
+### Phase 6
 
-Deliverables:
+Admin-only Statistics event table with date/user/action filters and deterministic ordering.
 
-- Composer/PSR-4;
-- PHPUnit;
-- PHPStan;
-- PHP-CS-Fixer;
-- Deptrac;
-- CI workflow;
-- configuration bootstrap;
-- migration runner.
+### Phase 7
 
-Exit: install, static checks and an empty test suite execute successfully.
+Daily aggregate query and one dataset for the graph/table four required metrics.
 
-Commit: `chore: bootstrap project and quality tooling`
+### Phase 8
 
-### Phase 2 — Runtime and persistence foundation
+CSRF, injection, escaping, authorization bypass, session lifecycle, missing/unreadable download and activity-write failure tests.
 
-Deliverables:
+### Phase 9
 
-- front controller, routing, request/response/view;
-- SQLite connection;
-- local transaction helper;
-- clock seam;
-- initial migrations;
-- deterministic test database.
-
-Commit: `feat: add runtime and persistence foundation`
-
-### Phase 3 — Accounts
-
-Deliverables:
-
-- user and role knowledge;
-- registration;
-- login;
-- logout;
-- secure session lifecycle;
-- server-side access policy;
-- admin bootstrap command;
-- positive and denied-path tests.
-
-Commit: `feat(accounts): add authentication and access control`
-
-### Phase 4 — Activity foundation
-
-Deliverables:
-
-- activity vocabulary;
-- append-only activity log;
-- actor snapshot;
-- recording surface;
-- registration/login/logout activity integration;
-- transaction/failure tests.
-
-Commit: `feat(activity): add append-only activity tracking`
-
-### Phase 5 — Page interactions
-
-Deliverables:
-
-- Page A view tracking;
-- Buy Cow UI transition to thankYou;
-- Page B view tracking;
-- fixed-file download;
-- button-click tracking.
-
-Commit: `feat(activity): add tracked page interactions`
-
-### Phase 6 — Statistics
-
-Deliverables:
-
-- admin-only Statistics page;
-- date/user/action filters;
-- deterministic event ordering;
-- combined-filter tests.
-
-Commit: `feat(activity): add statistics filters`
-
-### Phase 7 — Reports
-
-Deliverables:
-
-- daily aggregate query;
-- chart and table using one dataset;
-- all four required metrics;
-- aggregation tests.
-
-Commit: `feat(activity): add daily activity reports`
-
-### Phase 8 — Security and failure hardening
-
-Deliverables:
-
-- CSRF abuse-path tests;
-- SQL injection probes;
-- XSS escaping tests;
-- authorization bypass tests;
-- session lifecycle tests;
-- missing/unreadable download behavior;
-- activity-write failure semantics.
-
-Commit: `test: harden security and failure behavior`
-
-### Phase 9 — End-to-end acceptance and reviewer experience
-
-Deliverables:
-
-- complete user journey;
-- complete admin journey;
-- clean-install rehearsal;
-- README with setup, architecture, assumptions and commands;
-- final architecture/dependency checks;
-- complete quality run.
-
-Commit: `docs: finalize reviewer setup and acceptance evidence`
-
-## Git working discipline
-
-The repository should look like a genuine interview submission, not a generated code dump.
-
-- Work on main unless a risky experiment needs isolation.
-- Commit coherent, reviewable increments.
-- Keep implementation and tests for one behavior together where practical.
-- Do not mix unrelated formatting or refactors into feature commits.
-- Run scoped checks before each commit.
-- Push each green logical commit once a remote exists.
-- Run the complete suite before the final push.
-- Do not rewrite or squash away the implementation history unless explicitly requested.
-
-The planned commit sequence is guidance, not a quota. Do not manufacture commits when two changes are honestly one unit.
+Complete user/admin journeys, clean-install rehearsal, final README and full quality/architecture acceptance.
 
 ## Definition of done
 
-Functional:
-
-- every task requirement is implemented;
-- role behavior is correct;
-- requested activity events are visible in Statistics;
-- all report metrics are correct.
-
-Security:
-
-- authentication and authorization are separate and server-enforced;
-- session establishment and destruction are safe;
-- CSRF, SQL injection, XSS and path traversal are covered at the relevant boundaries.
-
-Architecture:
-
-- business navigation exposes Accounts and Activity behavior;
-- no Controller/Service/Repository ceremony in business code;
-- owner data is not accessed through another owner's private storage;
-- no owner dependency cycles;
-- no speculative mechanisms.
-
-Quality:
-
-- PHPUnit green;
-- PHPStan green;
-- code style check green;
-- Deptrac green;
-- table ownership check green;
-- clean setup rehearsal green;
-- README complete.
+Functional requirements pass; authorization is server-enforced; requested events appear in Statistics; report metrics are correct; architecture tests preserve accepted ownership; PHPUnit/PHPStan/style/architecture/security checks are green; clean reviewer setup works.
 
 ## REVISIT triggers
 
-Revisit the current design only when concrete evidence appears:
-
-- Page A/B gain independent business state and change pressure -> reconsider a separate product/content owner.
-- Report queries become materially expensive under measured workload -> consider indexes or derived daily aggregates.
-- Multiple independent consumers need Activity data -> define a deliberate public contract/read model.
-- Another provider/runtime must implement the same dependency -> reconsider a port at that exact boundary.
-- The HTTP edge becomes materially complex -> evaluate an established framework instead of growing a home-grown runtime.
+- CowOffer gains durable purchase/payment/inventory lifecycle -> re-evaluate its state and boundaries.
+- Downloads gains catalog/version/per-user authorization/lifecycle -> re-evaluate its state and boundaries.
+- Statistics/Reports miss an accepted latency target on representative measured data -> consider index/derived aggregate.
+- Activity correctness can no longer be maintained by local synchronous writes -> reconsider delivery mechanism.
+- Owner-local technical realizations become a coherent body whose grouping materially improves navigation/information hiding/enforcement -> consider `Implementations/`.
+- HTTP edge becomes materially complex -> evaluate an established framework.
 
 Until a trigger fires, do not build for it.

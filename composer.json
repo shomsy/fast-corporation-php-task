@@ -18,8 +18,11 @@
   "autoload": {
     "psr-4": {
       "InterviewTask\\Accounts\\": "src/Accounts/",
-      "InterviewTask\\Activity\\": "src/Activity/",
-      "InterviewTask\\Runtime\\": "runtime/"
+      "InterviewTask\\ActivityTracking\\": "src/ActivityTracking/",
+      "InterviewTask\\CowOffer\\": "src/CowOffer/",
+      "InterviewTask\\Downloads\\": "src/Downloads/",
+      "InterviewTask\\Runtime\\": "runtime/",
+      "InterviewTask\\Infrastructure\\": "infrastructure/"
     }
   },
   "autoload-dev": {
@@ -34,22 +37,10 @@
     "stan": "phpstan analyse --no-progress",
     "cs": "php-cs-fixer check --diff",
     "cs:fix": "php-cs-fixer fix",
-    "architecture": "deptrac analyse --config-file=tools/deptrac.yaml",
-    "quality": [
-      "@check:composer",
-      "@security:audit",
-      "@cs",
-      "@stan",
-      "@architecture",
-      "@test"
-    ]
+    "architecture": "deptrac analyse --config-file=tools/architecture.yaml",
+    "quality": ["@check:composer", "@security:audit", "@cs", "@stan", "@architecture", "@test"]
   },
-  "config": {
-    "sort-packages": true,
-    "platform": {
-      "php": "8.3.0"
-    }
-  },
+  "config": {"sort-packages": true, "platform": {"php": "8.3.0"}},
   "minimum-stability": "stable",
   "prefer-stable": true
 }

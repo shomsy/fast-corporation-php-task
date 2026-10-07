@@ -1,12 +1,11 @@
 # Governance Source
 
-Canonical architecture governance for this project:
+Canonical governance: `docs/ARCHITECTURE-GOVERNANCE.md`.
 
-- Document: `ARCHITECTURE-GOVERNANCE(6).md`
-- Version: 1.3.2
+- Version: **1.7.1**
+- Upstream source at adoption: `/home/shomsy/Desktop/ARCHITECTURE-GOVERNANCE.md`
+- SHA-256: `d3a12e7e9afead3ae261afb6d2ed89d86e0d9734ca7cf6d4e9fb7596d3e951a6`
 - Status: Normative, Approved
-- Supplied by the project owner on 2026-10-06
+- Adopted: 2026-10-07
 
-The exact supplied document is the authority. This reference file exists so the initial Git history records which governance version the implementation plan was based on.
-
-Before application implementation begins, the canonical document should be copied into this repository as `docs/ARCHITECTURE-GOVERNANCE.md` without modification.
+The repository snapshot is the project authority until a later governance amendment is explicitly adopted and recorded.

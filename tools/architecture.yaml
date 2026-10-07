@@ -1,0 +1,60 @@
+deptrac:
+  paths:
+    - ../src
+    - ../runtime
+    - ../infrastructure
+    - ../bootstrap
+  exclude_files:
+    - '#.*vendor.*#'
+
+  layers:
+    - name: Accounts
+      collectors:
+        - type: directory
+          value: ../src/Accounts/.*
+    - name: ActivityTracking
+      collectors:
+        - type: directory
+          value: ../src/ActivityTracking/.*
+    - name: CowOffer
+      collectors:
+        - type: directory
+          value: ../src/CowOffer/.*
+    - name: Downloads
+      collectors:
+        - type: directory
+          value: ../src/Downloads/.*
+    - name: Runtime
+      collectors:
+        - type: directory
+          value: ../runtime/.*
+    - name: Infrastructure
+      collectors:
+        - type: directory
+          value: ../infrastructure/.*
+    - name: Bootstrap
+      collectors:
+        - type: directory
+          value: ../bootstrap/.*
+
+  ruleset:
+    Accounts:
+      - ActivityTracking
+      - Infrastructure
+    ActivityTracking:
+      - Infrastructure
+    CowOffer:
+      - ActivityTracking
+      - Infrastructure
+    Downloads:
+      - ActivityTracking
+      - Infrastructure
+    Runtime: []
+    Infrastructure: []
+    Bootstrap:
+      - Accounts
+      - ActivityTracking
+      - CowOffer
+      - Downloads
+      - Runtime
+      - Infrastructure
