@@ -83,6 +83,35 @@ Logout is security-sensitive: activity recording may fail, but session destructi
 
 Statistics is admin-only with date/user/action filters. Reports is admin-only as a documented assumption. One aggregate dataset feeds graph and table with daily Page A views, Page B views, Buy Cow clicks and Download clicks. No projection table until measured evidence requires one.
 
+## Delivery loop
+
+The project is executed as a sequence of small, independently reviewable delivery units. Do not accumulate several phases into one large commit.
+
+For every phase or consequential fix:
+
+1. inspect the current clean `main` state and the latest accepted governance/ADR/plan;
+2. implement only the smallest coherent behavior or foundation required by the active phase;
+3. run targeted tests while developing;
+4. run `composer quality` before commit;
+5. run any phase-specific smoke check (for example migrations, HTTP flow, authorization or download behavior);
+6. update plan/evidence documentation only when project status materially changes;
+7. create one coherent human-style commit;
+8. push `main` to `origin/main`;
+9. verify the GitHub Actions push workflow for that exact commit;
+10. proceed only after the local gate and remote CI are green.
+
+If a local or remote gate fails, fix that failure before starting new scope. Do not hide failures with ignores, weakened static-analysis levels or removed tests unless an explicit evidence-backed governance decision justifies it.
+
+Commit cadence:
+
+- one finished phase may be one commit when it remains cohesive;
+- a phase may use several commits when a foundation/behavior/security fix is independently valuable;
+- avoid micro-commits for formatter-only churn unless they repair a pushed failure;
+- never leave an intentionally broken commit on `main`;
+- keep the working tree clean at every pushed checkpoint.
+
+Remote `main` is the delivery source of truth. Each loop iteration resumes from the latest synchronized clean checkpoint rather than relying on uncommitted local memory.
+
 ## Delivery phases
 
 - Phase 0 — Planning / architecture — DONE (`113e2d4`)
