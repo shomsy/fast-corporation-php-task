@@ -87,9 +87,9 @@ Statistics is admin-only with date/user/action filters. Reports is admin-only as
 
 - Phase 0 — Planning / architecture — DONE (`113e2d4`)
 - Phase 1 — Tooling / quality / CI — DONE (`59e327f`)
-- Architecture alignment — Governance 1.7.1 — CURRENT
-- Phase 2 — Runtime + persistence
-- Phase 3 — Accounts
+- Architecture alignment — Governance 1.7.1 — DONE (`2c3b2e5`)
+- Phase 2 — Runtime + persistence — DONE
+- Phase 3 — Accounts — NEXT
 - Phase 4 — ActivityTracking
 - Phase 5 — CowOffer + Downloads
 - Phase 6 — Statistics

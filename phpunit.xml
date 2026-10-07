@@ -17,6 +17,7 @@
         <include>
             <directory suffix=".php">src</directory>
             <directory suffix=".php">runtime</directory>
+            <directory suffix=".php">infrastructure</directory>
             <directory suffix=".php">bootstrap</directory>
         </include>
     </source>
