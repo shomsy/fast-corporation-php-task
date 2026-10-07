@@ -20,12 +20,15 @@ final readonly class PhpSession
         }
 
         session_name($this->name);
-        session_set_cookie_params([
-            'httponly' => true,
-            'secure' => $this->secureCookie,
-            'samesite' => 'Lax',
-            'path' => '/',
-        ]);
+
+        if ((bool) ini_get('session.use_cookies')) {
+            session_set_cookie_params([
+                'httponly' => true,
+                'secure' => $this->secureCookie,
+                'samesite' => 'Lax',
+                'path' => '/',
+            ]);
+        }
 
         if (!session_start()) {
             throw new RuntimeException('Unable to start session.');
@@ -73,5 +76,7 @@ final readonly class PhpSession
         if (!session_destroy()) {
             throw new RuntimeException('Unable to destroy session.');
         }
+
+        session_id('');
     }
 }
