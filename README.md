@@ -93,7 +93,9 @@ composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, P
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
 starts the same PHP version with explicit database environment and mapped temporary directory.
 
-For the prioritized remediation work, see **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 tracked items; review findings, not implemented fixes).
+**Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). The M00 baseline is verified; application fixes are not yet implemented.
+
+Original earlier worklist (archived input): **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 review findings).
 
 Independent review pending reconciliation: **[ClaudeCode original text](docs/reviews/CLAUDE-CODE-REVIEW-2026-10-08.txt)** and its **[62-finding index](docs/reviews/CLAUDE-CODE-REVIEW-INDEX.md)**. These are archived claims, not yet merged into the canonical remediation TODO.
 
