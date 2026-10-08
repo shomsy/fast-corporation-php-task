@@ -6,6 +6,7 @@ namespace InterviewTask\Tests\Accounts;
 
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\PasswordRejected;
+use InterviewTask\Accounts\UsernameRejected;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 
@@ -101,4 +102,75 @@ final class PasswordPolicyTest extends AccountsTestCase
         $this->expectException(PasswordRejected::class);
         (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: $password);
     }
+
+    /**
+     * Reject invalid usernames in both registration and trusted admin creation.
+     *
+     * @return void No return value.
+     */
+    public function testUsernamePolicyIsSharedAcrossUserAndAdminCreation(): void
+    {
+        $register = new Register(accounts: $this->accounts, clock: $this->clock);
+        $createAdmin = new CreateAdmin(accounts: $this->accounts, clock: $this->clock);
+
+        foreach (['with spaces', "admin\0name", 'аdmin', str_repeat(string: 'a', times: 65)] as $username) {
+            try {
+                $register->register(username: $username, password: 'valid-password');
+                self::fail('Invalid regular username was accepted.');
+            } catch (RegistrationRejected $exception) {
+                self::assertStringContainsString('Username', $exception->getMessage());
+            }
+
+            try {
+                $createAdmin->create(username: $username, password: 'valid-password');
+                self::fail('Invalid admin username was accepted.');
+            } catch (UsernameRejected $exception) {
+                self::assertStringContainsString('Username', $exception->getMessage());
+            }
+        }
+
+        $statement = $this->pdo->query(query: 'SELECT count(*) FROM accounts');
+        self::assertNotFalse($statement);
+        self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    /**
+     * The same minimum password length must apply to users and admins.
+     *
+     * @return void No return value.
+     */
+    public function testWeakShortPasswordRejectedAcrossBothCreationPaths(): void
+    {
+        try {
+            (new Register(accounts: $this->accounts, clock: $this->clock))
+                ->register(username: 'alice', password: 'safe-pass');
+            self::fail('Weak regular-user password accepted.');
+        } catch (RegistrationRejected $exception) {
+            self::assertStringContainsString('12', $exception->getMessage());
+        }
+
+        $this->expectException(PasswordRejected::class);
+        (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))
+            ->create(username: 'admin', password: 'safe-pass');
+    }
+
+    /**
+     * Existing account names from before the new creation policy stay able to sign in.
+     *
+     * @return void No return value.
+     */
+    public function testLegacyUsernameRemainsAuthenticatableWithoutNewCreationPolicy(): void
+    {
+        $username = 'legacy аccount';
+        $hash = password_hash(password: 'legacy-password', algo: PASSWORD_BCRYPT);
+        $statement = $this->pdo->prepare(query:
+            'INSERT INTO accounts (username, password_hash, role, created_at) VALUES (:name, :hash, :role, :created)');
+        $statement->execute(params: [
+            'name' => $username, 'hash' => $hash, 'role' => 'user',
+            'created' => '2026-10-08T00:00:00+00:00',
+        ]);
+
+        self::assertSame($username, $this->accounts->authenticate(username: $username, password: 'legacy-password')?->username);
+    }
+
 }

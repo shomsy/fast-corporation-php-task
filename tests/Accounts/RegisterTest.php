@@ -88,7 +88,7 @@ final class RegisterTest extends AccountsTestCase
         );
 
         try {
-            (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+            (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
             self::fail('Other SQLite constraints must not masquerade as duplicate usernames.');
         } catch (PDOException $exception) {
             self::assertStringContainsString('simulated CHECK constraint failure', $exception->getMessage());

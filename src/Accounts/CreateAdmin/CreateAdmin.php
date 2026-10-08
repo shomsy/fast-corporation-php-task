@@ -8,6 +8,7 @@ use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
+use InterviewTask\Accounts\UsernameRejected;
 use InvalidArgumentException;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
@@ -39,6 +40,7 @@ final readonly class CreateAdmin
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
+     * @throws UsernameRejected When a new username is outside the ASCII identifier policy.
      */
     public function create(string $username, #[SensitiveParameter] string $password): Account
     {

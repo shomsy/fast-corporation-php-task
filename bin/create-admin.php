@@ -14,6 +14,7 @@ use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
+use InterviewTask\Accounts\UsernameRejected;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Time\SystemClock;
 
@@ -86,7 +87,7 @@ try {
     fwrite(stream: STDERR, data: "Username is already taken.\n");
 
     exit(1);
-} catch (PasswordRejected $error) {
+} catch (PasswordRejected|UsernameRejected $error) {
     fwrite(stream: STDERR, data: $error->getMessage() . PHP_EOL);
 
     exit(2);

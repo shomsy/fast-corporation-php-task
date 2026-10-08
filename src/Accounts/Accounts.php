@@ -18,6 +18,20 @@ use SensitiveParameter;
 final readonly class Accounts
 {
     /**
+     * Frozen bcrypt work factor to avoid version-dependent defaults.
+     *
+     * @var int
+     */
+    private const int BCRYPT_COST = 12;
+
+    /**
+     * Fixed-cost dummy hash for unknown usernames. Never represents a real account.
+     *
+     * @var string
+     */
+    private const string UNKNOWN_USER_HASH = '$2y$12$m75UX8xqNpe8KeCsn9hILeogdQ76jM3GTqAxJmooNGoZvJ4MHo69q';
+
+    /**
      * Bind account persistence to a configured PDO connection.
      *
      * @param PDO $pdo SQLite PDO connection with configured driver settings.
@@ -33,6 +47,7 @@ final readonly class Accounts
      * @return Account The created user account with authoritative identifier and role.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
+     * @throws UsernameRejected When a new username is invalid.
      */
     public function createUser(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
@@ -49,6 +64,7 @@ final readonly class Accounts
      * @return Account The newly persisted account snapshot.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
+     * @throws UsernameRejected When a new username is invalid.
      * @throws PDOException When the underlying SQLite operation fails.
      */
     private function create(
@@ -58,8 +74,18 @@ final readonly class Accounts
         Role              $role,
         DateTimeImmutable $createdAt,
     ): Account {
-        if ($username === '' || $password === '') {
-            throw new RuntimeException(message: 'Account creation requires non-empty username and password.');
+        // SQLite NOCASE uniqueness is ASCII-based; restrict new identifiers to that same alphabet.
+        // Existing stored identifiers remain readable/authenticatable without forced migration.
+        if (preg_match(pattern: '/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/D', subject: $username) !== 1) {
+            throw new UsernameRejected(message: 'Username must be 1-64 ASCII letters, digits, dots, underscores or hyphens, starting with a letter or digit.');
+        }
+
+        if (str_contains(haystack: $password, needle: "\0")) {
+            throw new PasswordRejected(message: 'Password must not contain NUL bytes.');
+        }
+
+        if (strlen(string: $password) < 12) {
+            throw new PasswordRejected(message: 'Password must contain at least 12 bytes.');
         }
 
         // Bcrypt silently ignores bytes after 72. Reject rather than truncate credentials.
@@ -67,11 +93,7 @@ final readonly class Accounts
             throw new PasswordRejected(message: 'Password must not exceed 72 bytes.');
         }
 
-        if (str_contains(haystack: $password, needle: "\0")) {
-            throw new PasswordRejected(message: 'Password must not contain NUL bytes.');
-        }
-
-        $passwordHash = password_hash(password: $password, algo: PASSWORD_BCRYPT);
+        $passwordHash = password_hash(password: $password, algo: PASSWORD_BCRYPT, options: ['cost' => self::BCRYPT_COST]);
 
         try {
             $statement = $this->pdo->prepare(
@@ -116,6 +138,7 @@ final readonly class Accounts
      * @return Account The created administrator account with authoritative identifier and role.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
+     * @throws UsernameRejected When a new username is invalid.
      */
     public function createAdmin(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
@@ -144,6 +167,9 @@ final readonly class Accounts
         $row = $statement->fetch(mode: PDO::FETCH_ASSOC);
 
         if (! is_array(value: $row)) {
+            // The unknown-account path must pay the same configured bcrypt cost.
+            password_verify(password: $password, hash: self::UNKNOWN_USER_HASH);
+
             return null;
         }
 
@@ -155,10 +181,11 @@ final readonly class Accounts
 
         $account = $this->accountFromRow(row: $row);
 
-        if (password_needs_rehash(hash: $hash, algo: PASSWORD_BCRYPT)) {
-            $rehash = password_hash(password: $password, algo: PASSWORD_BCRYPT);
-            $update = $this->pdo->prepare(query: 'UPDATE accounts SET password_hash = :hash WHERE id = :id');
-            $update->execute(params: ['hash' => $rehash, 'id' => $account->id]);
+        if (password_needs_rehash(hash: $hash, algo: PASSWORD_BCRYPT, options: ['cost' => self::BCRYPT_COST])) {
+            $rehash = password_hash(password: $password, algo: PASSWORD_BCRYPT, options: ['cost' => self::BCRYPT_COST]);
+            // Compare-and-swap: never overwrite a password changed by another request.
+            $update = $this->pdo->prepare(query: 'UPDATE accounts SET password_hash = :hash WHERE id = :id AND password_hash = :previous');
+            $update->execute(params: ['hash' => $rehash, 'id' => $account->id, 'previous' => $hash]);
         }
 
         return $account;

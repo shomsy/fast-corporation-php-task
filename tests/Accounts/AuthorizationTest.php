@@ -36,7 +36,7 @@ final class AuthorizationTest extends AccountsTestCase
             self::assertNull($identity->current());
         }
 
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'password');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $identity->signIn(account: $account);
 
         self::assertSame($account->id, $guard->account()->id);
@@ -53,7 +53,7 @@ final class AuthorizationTest extends AccountsTestCase
         $identity = new SessionIdentity(session: $session, accounts: $this->accounts);
         $guard    = new RequireAdmin(identity: $identity);
 
-        $user = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'password');
+        $user = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $identity->signIn(account: $user);
 
         try {
@@ -65,7 +65,7 @@ final class AuthorizationTest extends AccountsTestCase
 
         $identity->signOut();
 
-        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'password');
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $identity->signIn(account: $admin);
 
         self::assertSame(Role::Admin, $guard->account()->role);
@@ -80,7 +80,7 @@ final class AuthorizationTest extends AccountsTestCase
     {
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
         $guard    = new RequireAdmin(identity: $identity);
-        $admin    = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'password');
+        $admin    = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $identity->signIn(account: $admin);
         self::assertSame(Role::Admin, $guard->account()->role);
 

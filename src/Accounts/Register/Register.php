@@ -8,6 +8,7 @@ use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
+use InterviewTask\Accounts\UsernameRejected;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
 
@@ -48,7 +49,7 @@ final readonly class Register
 
         try {
             return $this->accounts->createUser(username: $username, password: $password, createdAt: $this->clock->now());
-        } catch (PasswordRejected $e) {
+        } catch (PasswordRejected|UsernameRejected $e) {
             throw new RegistrationRejected(message: $e->getMessage(), previous: $e);
         }
     }

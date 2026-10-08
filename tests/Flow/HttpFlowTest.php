@@ -110,7 +110,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame(200, $this->accountPages->loginForm(request: new Request(method: 'GET', path: '/login'))->status());
 
         $registered = $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register', post: [
-            'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
+            'username' => 'alice', 'password' => 'strong-password', 'csrf_token' => $this->csrf->token(),
             'role'     => 'admin',
         ]));
         self::assertSame(303, $registered->status());
@@ -127,7 +127,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame(401, $bad->status());
 
         $loggedIn = $this->accountPages->loginSubmit(request: new Request(method: 'POST', path: '/login', post: [
-            'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
+            'username' => 'alice', 'password' => 'strong-password', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(303, $loggedIn->status());
         self::assertSame(200, $this->accountPages->home()->status());
@@ -170,7 +170,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists(): void
     {
-        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'safe-pass');
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $this->identity->signIn(account: $admin);
 
         $insert = $this->pdo->prepare(
@@ -209,7 +209,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame('/login', $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics'))->headers()['Location']);
         self::assertSame('/login', $this->activityPages->reportsPage()->headers()['Location']);
 
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         self::assertSame(403, $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics'))->status());
         self::assertSame(403, $this->activityPages->reportsPage()->status());
@@ -222,7 +222,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         foreach ([
             $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register')),
@@ -246,7 +246,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testAdminStatisticsAndReportsShowCorrectDataAndEscapeUntrustedLabels(): void
     {
-        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'root', password: 'safe-pass');
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'root', password: 'strong-password');
         $this->identity->signIn(account: $admin);
         $this->cowPages->pageA();
         $this->downloadPages->pageB();
@@ -285,7 +285,7 @@ final class HttpFlowTest extends TestCase
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(
             username: 'date-admin',
-            password: 'safe-pass',
+            password: 'strong-password',
         );
         $this->identity->signIn(account: $admin);
 
@@ -345,9 +345,9 @@ final class HttpFlowTest extends TestCase
     public function testRegistrationRejectsMalformedAndOversizedCredentialFields(): void
     {
         foreach ([
-            ['username' => ['invalid'], 'password' => 'safe-pass'],
+            ['username' => ['invalid'], 'password' => 'strong-password'],
             ['username' => 'alice', 'password' => ['invalid']],
-            ['username' => str_repeat(string: 'u', times: 17000), 'password' => 'safe-pass'],
+            ['username' => str_repeat(string: 'u', times: 17000), 'password' => 'strong-password'],
             ['username' => 'alice', 'password' => str_repeat(string: 'p', times: 17000)],
         ] as $values) {
             $response = $this->accountPages->registerSubmit(request: new Request(
@@ -372,7 +372,7 @@ final class HttpFlowTest extends TestCase
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(
             username: 'filter-admin',
-            password: 'safe-pass',
+            password: 'strong-password',
         );
         $this->identity->signIn(account: $admin);
         $oversized = str_repeat(string: 'u', times: 17000);
@@ -394,7 +394,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testMissingArtifactFailsWithoutDownloadActivity(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         $pages    = $this->downloadPages(artifact: dirname(path: __DIR__, levels: 2) . '/assets/does-not-exist.exe');
         $response = $pages->download(request: new Request(method: 'POST', path: '/download', post: ['csrf_token' => $this->csrf->token()]));
@@ -427,7 +427,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testDownloadAuditFailurePropagatesDatabaseException(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         $token = $this->csrf->token();
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
@@ -445,7 +445,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         $token = $this->csrf->token();
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
@@ -467,7 +467,7 @@ final class HttpFlowTest extends TestCase
         $this->expectException(PDOException::class);
         try {
             $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register', post: [
-                'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
+                'username' => 'alice', 'password' => 'strong-password', 'csrf_token' => $this->csrf->token(),
             ]));
         } finally {
             $statement = $this->pdo->query(query: 'SELECT COUNT(*) FROM accounts');
@@ -483,7 +483,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testLogoutRevokesSessionEvenWhenAccountLookupFails(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         $token = $this->csrf->token();
         $this->pdo->exec(statement: 'DROP TABLE accounts');
@@ -506,7 +506,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         $token = $this->csrf->token();
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
@@ -543,12 +543,12 @@ final class HttpFlowTest extends TestCase
     public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent(): void
     {
         $first = $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register', post: [
-            'username' => 'Alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
+            'username' => 'Alice', 'password' => 'strong-password', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(303, $first->status());
 
         $duplicate = $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register', post: [
-            'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
+            'username' => 'alice', 'password' => 'strong-password', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(409, $duplicate->status());
 
@@ -567,12 +567,12 @@ final class HttpFlowTest extends TestCase
      */
     public function testLoginTrackingFailureRevokesSessionAndPropagatesFailure(): void
     {
-        (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
 
         try {
             $this->accountPages->loginSubmit(request: new Request(method: 'POST', path: '/login', post: [
-                'username'   => 'alice', 'password' => 'safe-pass',
+                'username'   => 'alice', 'password' => 'strong-password',
                 'csrf_token' => $this->csrf->token(),
             ]));
             self::fail('Successful login cannot silently omit its required activity event.');
@@ -588,7 +588,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testDownloadNeverUsesUserSuppliedFilePath(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
 
         $response = $this->downloadPages->download(request: new Request(method: 'POST', path: '/download', post: [
@@ -629,7 +629,7 @@ final class HttpFlowTest extends TestCase
      */
     public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions(): void
     {
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         $csrf                         = $this->csrf->token();
         $_SESSION['last_activity_at'] = time() - 1801;

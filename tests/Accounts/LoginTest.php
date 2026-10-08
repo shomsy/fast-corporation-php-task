@@ -67,4 +67,47 @@ final class LoginTest extends AccountsTestCase
             }
         }
     }
+
+    /**
+     * Unknown accounts run the bcrypt verification path rather than returning immediately.
+     *
+     * @return void No return value.
+     */
+    public function testUnknownAccountUsesPasswordVerificationCost(): void
+    {
+        (new Register(accounts: $this->accounts, clock: $this->clock))
+            ->register(username: 'alice', password: 'valid-password');
+
+        $start = hrtime(as_number: true);
+        self::assertNull($this->accounts->authenticate(username: 'not-registered', password: 'valid-password'));
+        $elapsed = (hrtime(as_number: true) - $start) / 1e9;
+
+        self::assertGreaterThan(0.01, $elapsed, 'Unknown accounts must not bypass password verification cost.');
+        self::assertNull($this->accounts->authenticate(username: 'alice', password: 'incorrect-password'));
+    }
+
+    /**
+     * Successful authentication upgrades an older bcrypt cost and preserves a valid hash.
+     *
+     * @return void No return value.
+     */
+    public function testSuccessfulLoginRehashesLegacyBcryptCost(): void
+    {
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))
+            ->register(username: 'alice', password: 'valid-password');
+
+        $oldHash = password_hash(password: 'valid-password', algo: PASSWORD_BCRYPT, options: ['cost' => 4]);
+        $statement = $this->pdo->prepare(query: 'UPDATE accounts SET password_hash = :hash WHERE id = :id');
+        $statement->execute(params: ['hash' => $oldHash, 'id' => $account->id]);
+
+        self::assertNotNull($this->accounts->authenticate(username: 'alice', password: 'valid-password'));
+        $statement = $this->pdo->query(query: 'SELECT password_hash FROM accounts LIMIT 1');
+        self::assertNotFalse($statement);
+        $hash = $statement->fetchColumn();
+
+        self::assertIsString($hash);
+        self::assertTrue(password_verify(password: 'valid-password', hash: $hash));
+        self::assertSame(12, password_get_info(hash: $hash)['options']['cost']);
+    }
+
 }
