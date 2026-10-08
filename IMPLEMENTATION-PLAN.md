@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: COMPASS DEEP REVIEW HARDENING — latest candidate passes local quality; exact candidate SHA GitHub CI pending
+Status: SUBMISSION READY (interview scope) — Compass deep-review hardening and exact application-SHA GitHub CI PASS; public deployment separately gated
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
@@ -35,10 +35,15 @@ remains historical for that commit, not proof of the follow-up.
   .sql migrations detects static direct references to another owner's table;
   negative owner/table mutation probes added. Dynamically computed SQL/table
   identifiers remain REVIEW-ENFORCED and are explicitly not claimed covered.
-- **Local candidate quality:** composer validate/strict PSR-4, dependency audit,
-  style, PHPStan max, Deptrac (zero violations/uncovered) and PHPUnit
-  **79 tests / 5,929 assertions PASS**; final GitHub CI for follow-up SHA
-  must be verified before calling this candidate submission-ready.
+- **Local and remote release evidence:** Composer validation, strict PSR-4,
+  dependency audit (zero advisories), style, PHPStan max (zero errors),
+  Deptrac (zero violations/uncovered) and PHPUnit **79 tests / 5,929
+  assertions PASS**. The exact hardening commit
+  `120b46ec5c64eebeaf236517d23d092317aa9c58` has GitHub Actions
+  run `37763371072`: **completed, success** on PHP 8.3, 8.4 and 8.5,
+  including quality and live HTTP/CLI acceptance on each matrix job.
+  https://github.com/shomsy/fast-corporation-php-task/actions/runs/37763371072.
+  Any later documentation-only commit must independently pass CI on its SHA.
 - **Scope boundary:** no new framework, ORM, queue, Redis, CQRS or DI container.
   This is a reviewer demo, not a publicly deployed internet service:
   HTTPS, edge login throttling, request size, operational logging and dynamic
