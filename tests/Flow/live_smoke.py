@@ -176,6 +176,8 @@ def main():
             status, headers, failure_body = request(admin_user, base, "/download", {
                 "csrf_token": csrf(download_form)})
             assert status == 500, "Audit database failure was masked as an artifact failure"
+            audit_request_id = headers.get("X-Request-ID")
+            assert re.fullmatch(r"[0-9a-f]{24}", audit_request_id or ""), "Missing 500 request correlation ID"
             assert failure_body == b"Internal Server Error"
             assert headers.get("Cache-Control") == "no-store"
             assert headers.get("X-Content-Type-Options") == "nosniff"
@@ -196,6 +198,7 @@ def main():
 
         diagnostics = server_log.read_text(errors="replace")
         assert "PDOException" in diagnostics and "activity_events" in diagnostics
+        assert "request_id=" + audit_request_id in diagnostics
         print("Download audit DB failure -> safe HTTP 500 and server diagnostics: PASS")
 
         # Exercise actual front-controller behavior when PDO fails before routing.
@@ -228,6 +231,8 @@ def main():
                             )
                         time.sleep(0.08)
                 assert error_status == 500
+                startup_request_id = error_headers.get("X-Request-ID")
+                assert re.fullmatch(r"[0-9a-f]{24}", startup_request_id or ""), "Missing startup failure correlation ID"
                 assert error_body == b"Internal Server Error", "Server details exposed to client"
                 assert error_headers.get("Cache-Control") == "no-store"
                 assert error_headers.get("X-Content-Type-Options") == "nosniff"
@@ -239,6 +244,7 @@ def main():
                     broken_server.kill()
                     broken_server.wait()
         assert "PDOException" in failure_log.read_text(errors="replace")
+        assert "request_id=" + startup_request_id in failure_log.read_text(errors="replace")
         print("Safe 500 on PDO initialization failure: PASS")
 
 

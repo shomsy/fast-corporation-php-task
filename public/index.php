@@ -23,13 +23,15 @@ try {
     $router->dispatch(request: Request::fromGlobals())->send();
 } catch (Throwable $error) {
     // One outermost diagnostic boundary; expected 4xx responses do not throw.
-    error_log(message: (string) $error);
+    $requestId = bin2hex(string: random_bytes(length: 12));
+    error_log(message: 'request_id=' . $requestId . ' ' . (string) $error);
 
     if (! headers_sent()) {
         http_response_code(response_code: 500);
         header(header: 'Content-Type: text/plain; charset=UTF-8');
         header(header: 'Cache-Control: no-store');
         header(header: 'X-Content-Type-Options: nosniff');
+        header(header: 'X-Request-ID: ' . $requestId);
     }
 
     echo 'Internal Server Error';
