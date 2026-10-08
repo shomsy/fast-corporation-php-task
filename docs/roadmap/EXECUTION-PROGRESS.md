@@ -1,19 +1,19 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M01 IN PROGRESS; C-01 COMPLETE; C-02 NEXT. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
+**Status:** M01 IN PROGRESS; C-01 AND C-02 COMPLETE; C-21 NEXT. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `e20977586b6da783b2bd43d04a1186be7a4d7263` (C-01).
-**Next legal action:** M01 / C-02: reproduce nested output-buffer leak with a failing regression, restore buffer entry depth in Renderer and validate; then continue C-21 and C-31 under the execution program.
+**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `31d748482fd6ff930377e847a00898c699cf15ef` (C-02).
+**Next legal action:** M01 / C-21: verify HTTP 4xx/5xx error mapping with negative tests, then continue C-31.
 
 ## Milestone status
 
 | Phase | Goal | State | Evidence (commit/test) |
 |---|---|---|---|
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
-| M01 | Confirmed correctness | **IN PROGRESS — C-01 DONE** | `e209775`: NUL/array date filters now return HTTP 422; regression RED before fix, composer quality PASS (89 tests / 6007 assertions), live HTTP smoke PASS. |
+| M01 | Confirmed correctness | **IN PROGRESS — C-01/C-02 DONE** | `e209775`: NUL/array date filters now return HTTP 422; regression RED before fix, composer quality PASS (89 tests / 6007 assertions), live HTTP smoke PASS. |
 | M02 | Security/auth | NOT STARTED | — |
 | M03 | Runtime/session/config | NOT STARTED | — |
 | M04 | DB/audit/durability | NOT STARTED | — |
@@ -28,7 +28,7 @@
 ## Canonical packet status — 48/48 OPEN
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
-- [ ] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. *(OPEN; no implementation evidence yet)*
+- [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
 - [ ] **C-03** — Establish one username invariant (length, canonical uniqueness, Unicode spoofing decision) and one. *(OPEN; no implementation evidence yet)*
 - [ ] **C-04** — Close unknown-account password timing branch. *(OPEN; no implementation evidence yet)*
 - [ ] **C-05** — Add enforceable login/registration abuse limits at deployment boundary. *(OPEN; no implementation evidence yet)*
@@ -86,6 +86,8 @@
 |---|---|---|---|---|
 | 2026-10-09 | M00 baseline | `bb420841c8331d7064931115510b91f51f609206` | `composer quality` => PASS; `python3 tests/Flow/live_smoke.py` => PASS; 142/142 review IDs and 48/48 canonical IDs verified | Historical M00 baseline; C-01 later fixed. |
 | 2026-10-09 | M01 / C-01 | `e20977586b6da783b2bd43d04a1186be7a4d7263` | RED: 2 unit and 1 HTTP regression tests failed before fix; GREEN: 38 scoped tests / 5700 assertions; `composer quality` PASS 89 tests / 6007 assertions, PHPStan/Deptrac/audit PASS; `python3 tests/Flow/live_smoke.py` PASS | C-01 fixed with safe 422 for malformed inputs. Next C-02. |
+
+| 2026-10-09 | M01 / C-02 | `31d748482fd6ff930377e847a00898c699cf15ef` | RED 2 Renderer regressions; GREEN 92/92 PHPUnit (6017 assertions), PHPStan, Deptrac, audit, live HTTP smoke | Original exception preserved, output buffer depth restored; next C-21. |
 
 ## Decisions log
 
