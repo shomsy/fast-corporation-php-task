@@ -7,11 +7,11 @@ namespace InterviewTask\Bootstrap\Http;
 use InterviewTask\Accounts\AccessDenied;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SignedInAccount;
+use InterviewTask\Downloads\ArtifactUnavailable;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
-use RuntimeException;
 
 final readonly class DownloadPages
 {
@@ -56,7 +56,7 @@ final readonly class DownloadPages
                 'Cache-Control' => 'no-store',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
-        } catch (RuntimeException) {
+        } catch (ArtifactUnavailable) {
             return Response::text('Download is temporarily unavailable.', 503);
         }
     }

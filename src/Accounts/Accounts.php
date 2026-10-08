@@ -100,9 +100,15 @@ final readonly class Accounts
                 'created_at' => $createdAt->format('c'),
             ]);
         } catch (PDOException $exception) {
+            // SQLite code 19 also covers CHECK, NOT NULL, FK and trigger failures.
+            // Only the named username UNIQUE constraint is a duplicate username.
             $driverCode = $exception->errorInfo[1] ?? null;
-
-            if ($exception->getCode() === '23000' || $driverCode === 19) {
+            $driverMessage = $exception->errorInfo[2] ?? null;
+            if (
+                $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                && in_array($driverCode, [19, 2067, '19', '2067'], true)
+                && $driverMessage === 'UNIQUE constraint failed: accounts.username'
+            ) {
                 throw new UsernameTaken(previous: $exception);
             }
 

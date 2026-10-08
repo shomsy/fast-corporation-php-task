@@ -6,7 +6,6 @@ use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
-use InterviewTask\Accounts\Logout\Logout;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
@@ -49,7 +48,6 @@ return static function (Router $router) use ($config): void {
     $lifecycle = new AccountLifecycle(
         new Register($accounts, $clock),
         new Login($accounts, $identity),
-        new Logout($identity),
         $identity,
         $activity,
         new Transaction($pdo),

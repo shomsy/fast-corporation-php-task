@@ -83,9 +83,11 @@ def main():
         port = sock.getsockname()[1]
         sock.close()
         base = "http://127.0.0.1:" + str(port)
+        server_log = Path(tmp) / "web-server.log"
+        server_log_stream = server_log.open("wb")
         server = subprocess.Popen(
             php_command(tmp, ["-S", ("0.0.0.0:" if DOCKER_PHP else "127.0.0.1:") + str(port), "-t", "public", "public/index.php"], port),
-            cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=server_log_stream)
         try:
             user = client()
             for _ in range(70):
@@ -144,6 +146,25 @@ def main():
 
             status, headers, body = request(user, base, "/page-a", {})
             assert status == 405 and headers.get("Allow") == "GET"
+
+            # A real failing activity insert must reach the outer HTTP 500 boundary,
+            # not be misreported as a missing download artifact (503).
+            status, _, download_form = request(admin_user, base, "/page-b")
+            assert status == 200
+            subprocess.run(
+                php_command(tmp, [
+                    "-r",
+                    '$pdo = new PDO("sqlite:" . getenv("DB_PATH")); '
+                    '$pdo->exec("DROP TABLE activity_events");',
+                ]),
+                cwd=ROOT, env=env, capture_output=True, text=True, check=True)
+            status, headers, failure_body = request(admin_user, base, "/download", {
+                "csrf_token": csrf(download_form)})
+            assert status == 500, "Audit database failure was masked as an artifact failure"
+            assert failure_body == b"Internal Server Error"
+            assert headers.get("Cache-Control") == "no-store"
+            assert headers.get("X-Content-Type-Options") == "nosniff"
+
             print("LIVE ACCEPTANCE: PASS")
             print("Fresh and idempotent migrations: PASS")
             print("CLI admin bootstrap: PASS")
@@ -156,7 +177,11 @@ def main():
             except subprocess.TimeoutExpired:
                 server.kill()
                 server.wait()
+            server_log_stream.close()
 
+        diagnostics = server_log.read_text(errors="replace")
+        assert "PDOException" in diagnostics and "activity_events" in diagnostics
+        print("Download audit DB failure -> safe HTTP 500 and server diagnostics: PASS")
 
         # Exercise actual front-controller behavior when PDO fails before routing.
         failure_env = env.copy()

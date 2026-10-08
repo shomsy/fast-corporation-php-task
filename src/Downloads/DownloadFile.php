@@ -7,7 +7,6 @@ namespace InterviewTask\Downloads;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\TrackedButton;
 use InterviewTask\ActivityTracking\TrackedPage;
-use RuntimeException;
 
 /**
  * Only a server-configured artifact can be downloaded.
@@ -31,13 +30,13 @@ final readonly class DownloadFile
     public function read(int $actorId, string $actorLabel): string
     {
         if (!is_file($this->artifactPath) || !is_readable($this->artifactPath)) {
-            throw new RuntimeException('Download is temporarily unavailable.');
+            throw new ArtifactUnavailable('Download is temporarily unavailable.');
         }
 
         $contents = file_get_contents($this->artifactPath);
 
         if ($contents === false) {
-            throw new RuntimeException('Download is temporarily unavailable.');
+            throw new ArtifactUnavailable('Download is temporarily unavailable.');
         }
 
         $this->activityLog->recordButtonClick($actorId, $actorLabel, TrackedButton::Download);

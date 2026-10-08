@@ -17,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
+use ReflectionNamedType;
 use SplFileInfo;
 
 /**
@@ -85,6 +86,26 @@ final class PublicSurfaceTest extends TestCase
         self::assertTrue($view->hasMethod('current'));
         self::assertFalse($view->hasMethod('signIn'));
         self::assertFalse($view->hasMethod('signOut'));
+    }
+
+    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns(): void
+    {
+        $exports = self::exports(dirname(__DIR__, 2));
+        $lifecycle = new ReflectionClass(AccountLifecycle::class);
+        foreach ($lifecycle->getMethods() as $method) {
+            if (!$method->isPublic() || $method->isConstructor()) {
+                continue;
+            }
+            $return = $method->getReturnType();
+            self::assertInstanceOf(ReflectionNamedType::class, $return);
+            $name = $return->getName();
+            if (str_starts_with($name, 'InterviewTask\\Accounts\\')) {
+                self::assertContains($name, $exports['Accounts'], $method->getName() . ' leaks private type');
+            }
+        }
+        $registerReturn = $lifecycle->getMethod('register')->getReturnType();
+        self::assertInstanceOf(ReflectionNamedType::class, $registerReturn);
+        self::assertSame('void', $registerReturn->getName());
     }
 
     public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes(): void

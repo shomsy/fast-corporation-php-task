@@ -12,3 +12,7 @@ Project governance evidence status: **PILOT**. This is not a claim of Governance
 
 - Statistics: 51-row lookahead prevents false Next; no arbitrary 50,000-event audit visibility cap, but deep OFFSET remains a measured performance REVISIT.
 - Reports: a 5,000-event indexed query-plan test proves a representative case, not asymptotically bounded aggregate work or full production-scale latency.
+
+- Auth public return-contract: **MACHINE-ENFORCED** by `PublicSurfaceTest` reflection of lifecycle method returns; unexported Account cannot leak from the exported register() API.
+- Failure classification: **BEHAVIOR-ENFORCED** by real SQLite constraint regression and both in-process and live HTTP missing-audit-table download tests; only expected ArtifactUnavailable is converted to 503.
+- Proportional OOP decision: redundant Logout forwarding class removed; CowOffer's business meaning and DailyReports four-field array shape retained until measured change pressure justifies restructuring.

@@ -9,6 +9,7 @@ use InterviewTask\Accounts\Register\RegistrationRejected;
 use InterviewTask\Accounts\Role;
 use InterviewTask\Accounts\UsernameTaken;
 use PDO;
+use PDOException;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class RegisterTest extends AccountsTestCase
@@ -40,6 +41,25 @@ final class RegisterTest extends AccountsTestCase
 
         $this->expectException(UsernameTaken::class);
         $register->register('alice', 'second password');
+    }
+
+    public function testNonUniqueSQLiteConstraintFailureIsNotReportedAsUsernameTaken(): void
+    {
+        $this->pdo->exec(<<<'SQL'
+            CREATE TRIGGER accounts_reject_alice BEFORE INSERT ON accounts
+            WHEN NEW.username = 'alice'
+            BEGIN
+                SELECT RAISE(ABORT, 'simulated CHECK constraint failure');
+            END
+            SQL);
+
+        try {
+            (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
+            self::fail('Other SQLite constraints must not masquerade as duplicate usernames.');
+        } catch (PDOException $exception) {
+            self::assertStringContainsString('simulated CHECK constraint failure', $exception->getMessage());
+            self::assertNotSame('UNIQUE constraint failed: accounts.username', $exception->errorInfo[2] ?? null);
+        }
     }
 
     #[DataProvider('invalidRegistrationProvider')]

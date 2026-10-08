@@ -1,10 +1,62 @@
 # Implementation Plan
 
-Status: SUBMISSION READY (interview scope) — Compass deep-review hardening and exact application-SHA GitHub CI PASS; public deployment separately gated
+Status: DEEP REVIEW F-01/F-05 HARDENING — local acceptance PASS; exact new commit CI pending
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
 Repository language: English only
+
+## Compass Engineering + Books — error semantics and OOP follow-up (2026-10-08)
+
+Base: GitHub main at `233832fca3ac714cb72e9ea585754b56c6b76f1f`.
+This new review was independently reproduced with failing regression tests
+before the repairs. Earlier acceptance evidence remains historical until
+the exact new commit is independently validated in GitHub Actions.
+
+- **F-01 (download failure taxonomy):** expected unreadable/missing local
+  download artifact raises Downloads::ArtifactUnavailable and HTTP adapter
+  returns 503 only for that typed error. An activity log SQLite/PDO failure
+  now propagates to the central generic HTTP 500 handler, not a misleading
+  download-unavailable 503. PHPUnit covers both paths. The extended live HTTP
+  script removes the activity table after login and proves safe 500/no-store/
+  nosniff with PDO exception evidence in the server diagnostic log.
+- **F-02 (SQLite constraint accuracy):** Accounts translates only the
+  constraint whose SQLite driver code is 19/2067 **and** whose specific
+  message identifies `UNIQUE constraint failed: accounts.username` into
+  UsernameTaken. All other constraint/database failures propagate unchanged,
+  including a controlled non-unique-constraint trigger regression. The original
+  case-insensitive username duplicate behavior remains tested.
+- **F-03 (module public API):** AccountLifecycle::register now returns void
+  while retaining registration and its event in one transaction. AST/export
+  contract tests verify that public Accounts methods do not leak unexported
+  Account return types. The lower-level Account remains private to Accounts.
+- **F-04 (information hiding/OOP review):** removed redundant owner-internal
+  Logout pass-through class and its construction dependency; AccountLifecycle
+  directly performs signOut in its finally clause. Session invalidation on
+  activity-write failure remains tested. RequireAdmin, CurrentAccount and
+  RequireSignedIn protect meaningful read/authorization boundaries; CowOffer
+  preserves Page A/Buy Cow semantic event mapping despite being small.
+  Do not merge owners just to reduce class count.
+- **F-05 (reports contract):** current 4-metric array shape/SQL/template
+  duplication is acceptable at interview scope. Introducing a readonly
+  DailyActivityTotals model would add mapping/boilerplate without currently
+  demonstrated change pressure. REVISIT if metrics grow or are independently
+  consumed by multiple clients.
+- **Method:** minimal behavior-preserving refactor and regression coverage;
+  no framework, ORMs, queues, generic services, microservices or new storage.
+  The relevant information-hiding principles in Code Complete and coupling/
+  behavior-preserving refactoring principles in Balancing Coupling in Software
+  Design / Refactoring informed the decision, with executable behavior as the
+  decisive evidence.
+- **Local pre-release validation:** composer quality PASS: PHPUnit
+  **84 tests / 5,950 assertions**, PHPStan max 0 errors, Deptrac 0 violations,
+  0 skipped/0 uncovered, Composer validation/strict PSR-4/security audit PASS,
+  PHP-CS-Fixer PASS. Live HTTP/CLI smoke PASS including missing audit DB
+  during download with HTTP 500 and server-side diagnostics. Exact new SHA CI
+  and clean remote Git status still must be confirmed prior to release closure.
+- **Limits:** Governance remains PILOT. Public-internet HTTPS, secure cookies,
+  edge rate limits, request-size controls and operational logging remain
+  distinct deployment gates; no universal production certification is claimed.
 
 ## Compass deep-review remediation (2026-10-08)
 

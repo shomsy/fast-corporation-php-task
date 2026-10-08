@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace InterviewTask\Accounts;
 
 use InterviewTask\Accounts\Login\Login;
-use InterviewTask\Accounts\Logout\Logout;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\Infrastructure\Database\Transaction;
@@ -17,19 +16,16 @@ final readonly class AccountLifecycle
     public function __construct(
         private Register $register,
         private Login $login,
-        private Logout $logout,
         private SessionIdentity $identity,
         private ActivityLog $activity,
         private Transaction $transaction,
     ) {}
 
-    public function register(string $username, string $password): Account
+    public function register(string $username, string $password): void
     {
-        return $this->transaction->run(function () use ($username, $password): Account {
+        $this->transaction->run(function () use ($username, $password): void {
             $account = $this->register->register($username, $password);
             $this->activity->recordRegistration($account->id, $account->username);
-
-            return $account;
         });
     }
 
@@ -56,7 +52,7 @@ final readonly class AccountLifecycle
                 $this->activity->recordLogout($account->id, $account->username);
             }
         } finally {
-            $this->logout->logout();
+            $this->identity->signOut();
         }
     }
 }

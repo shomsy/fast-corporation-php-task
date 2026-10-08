@@ -9,7 +9,6 @@ use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
-use InterviewTask\Accounts\Logout\Logout;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
@@ -75,7 +74,6 @@ final class HttpFlowTest extends TestCase
         $lifecycle = new AccountLifecycle(
             new Register($this->accounts, $this->clock),
             new Login($this->accounts, $this->identity),
-            new Logout($this->identity),
             $this->identity,
             $activity,
             new Transaction($this->pdo),
@@ -268,6 +266,31 @@ final class HttpFlowTest extends TestCase
         $statement = $this->pdo->query("SELECT COUNT(*) FROM activity_events WHERE target = 'download'");
         self::assertNotFalse($statement);
         self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    public function testDownloadAuditFailurePropagatesDatabaseException(): void
+    {
+        $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
+        $this->identity->signIn($account);
+        $token = $this->csrf->token();
+        $this->pdo->exec('DROP TABLE activity_events');
+
+        $this->expectException(PDOException::class);
+        $this->downloadPages->download(new Request('POST', '/download', post: [
+            'csrf_token' => $token,
+        ]));
+    }
+
+    public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable(): void
+    {
+        $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
+        $this->identity->signIn($account);
+        $token = $this->csrf->token();
+        $this->pdo->exec('DROP TABLE activity_events');
+
+        $pages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
+        $response = $pages->download(new Request('POST', '/download', post: ['csrf_token' => $token]));
+        self::assertSame(503, $response->status());
     }
 
     public function testRegistrationTrackingFailureRollsBackAccountCreation(): void
