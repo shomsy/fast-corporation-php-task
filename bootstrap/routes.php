@@ -33,51 +33,51 @@ use InterviewTask\Runtime\Http\Router;
 /** @var array{databasePath: string, sessionCookieSecure: bool, root: string} $config */
 $config = require __DIR__ . '/config.php';
 
-return static function (Router $router) use ($config) : void {
-    $pdo      = SqliteConnection::open($config['databasePath']);
-    $accounts = new Accounts($pdo);
+return static function (Router $router) use ($config): void {
+    $pdo      = SqliteConnection::open(path: $config['databasePath']);
+    $accounts = new Accounts(pdo: $pdo);
     $session  = new PhpSession(secureCookie: $config['sessionCookieSecure']);
     $clock    = new SystemClock();
-    $identity = new SessionIdentity($session, $accounts, $clock);
-    $current  = new CurrentAccount($identity);
-    $csrf     = new Csrf($session);
-    $html     = new HtmlPage(new Renderer());
-    $activity = new ActivityLog($pdo, $clock);
-    $signedIn = new RequireSignedIn($identity);
+    $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
+    $current  = new CurrentAccount(identity: $identity);
+    $csrf     = new Csrf(session: $session);
+    $html     = new HtmlPage(renderer: new Renderer());
+    $activity = new ActivityLog(pdo: $pdo, clock: $clock);
+    $signedIn = new RequireSignedIn(identity: $identity);
 
     $lifecycle     = new AccountLifecycle(
-        new Register($accounts, $clock),
-        new Login($accounts, $identity),
-        $identity,
-        $activity,
-        new Transaction($pdo),
+        register: new Register(accounts: $accounts, clock: $clock),
+        login: new Login(accounts: $accounts, identity: $identity),
+        identity: $identity,
+        activity: $activity,
+        transaction: new Transaction(pdo: $pdo),
     );
-    $accountPages  = new AccountPages($lifecycle, $current, $csrf, $html);
-    $cowPages      = new CowOfferPages(new CowOffer($activity), $signedIn, $csrf, $html);
+    $accountPages  = new AccountPages(lifecycle: $lifecycle, identity: $current, csrf: $csrf, html: $html);
+    $cowPages      = new CowOfferPages(cow: new CowOffer(activityLog: $activity), signedIn: $signedIn, csrf: $csrf, html: $html);
     $downloadPages = new DownloadPages(
-        new DownloadFile($activity, $config['root'] . '/assets/sample.exe'),
-        $signedIn,
-        $csrf,
-        $html,
+        downloads: new DownloadFile(activityLog: $activity, artifactPath: $config['root'] . '/assets/sample.exe'),
+        signedIn: $signedIn,
+        csrf: $csrf,
+        html: $html,
     );
     $activityPages = new ActivityPages(
-        new Statistics($pdo),
-        new DailyReports($pdo),
-        new RequireAdmin($identity),
-        $current,
-        $html,
+        statistics: new Statistics(pdo: $pdo),
+        reports: new DailyReports(pdo: $pdo),
+        admin: new RequireAdmin(identity: $identity),
+        identity: $current,
+        html: $html,
     );
 
-    $router->add('GET', '/', static fn () : Response => $accountPages->home());
-    $router->add('GET', '/register', static fn () : Response => $accountPages->registerForm());
-    $router->add('POST', '/register', static fn (Request $request) : Response => $accountPages->registerSubmit($request));
-    $router->add('GET', '/login', static fn (Request $request) : Response => $accountPages->loginForm($request));
-    $router->add('POST', '/login', static fn (Request $request) : Response => $accountPages->loginSubmit($request));
-    $router->add('POST', '/logout', static fn (Request $request) : Response => $accountPages->logoutSubmit($request));
-    $router->add('GET', '/page-a', static fn () : Response => $cowPages->pageA());
-    $router->add('POST', '/buy-cow', static fn (Request $request) : Response => $cowPages->buyCow($request));
-    $router->add('GET', '/page-b', static fn () : Response => $downloadPages->pageB());
-    $router->add('POST', '/download', static fn (Request $request) : Response => $downloadPages->download($request));
-    $router->add('GET', '/statistics', static fn (Request $request) : Response => $activityPages->statisticsPage($request));
-    $router->add('GET', '/reports', static fn (Request $request) : Response => $activityPages->reportsPage($request));
+    $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home());
+    $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm());
+    $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request));
+    $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request));
+    $router->add(method: 'POST', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginSubmit(request: $request));
+    $router->add(method: 'POST', path: '/logout', handler: static fn(Request $request): Response => $accountPages->logoutSubmit(request: $request));
+    $router->add(method: 'GET', path: '/page-a', handler: static fn(): Response => $cowPages->pageA());
+    $router->add(method: 'POST', path: '/buy-cow', handler: static fn(Request $request): Response => $cowPages->buyCow(request: $request));
+    $router->add(method: 'GET', path: '/page-b', handler: static fn(): Response => $downloadPages->pageB());
+    $router->add(method: 'POST', path: '/download', handler: static fn(Request $request): Response => $downloadPages->download(request: $request));
+    $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request));
+    $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request));
 };

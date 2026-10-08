@@ -13,54 +13,54 @@ final readonly class Accounts
 {
     public function __construct(private PDO $pdo) {}
 
-    public function createUser(string $username, string $password, DateTimeImmutable $createdAt) : Account
+    public function createUser(string $username, #[\SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
-        return $this->create($username, $password, Role::User, $createdAt);
+        return $this->create(username: $username, password: $password, role: Role::User, createdAt: $createdAt);
     }
 
     private function create(
         string            $username,
-        string            $password,
+        #[\SensitiveParameter]
+        string $password,
         Role              $role,
         DateTimeImmutable $createdAt,
-    ) : Account
-    {
+    ): Account {
         if ($username === '' || $password === '') {
-            throw new RuntimeException('Account creation requires non-empty username and password.');
+            throw new RuntimeException(message: 'Account creation requires non-empty username and password.');
         }
 
         // Bcrypt silently ignores bytes after 72. Reject rather than truncate credentials.
-        if (strlen($password) > 72) {
-            throw new PasswordRejected('Password must not exceed 72 bytes.');
+        if (strlen(string: $password) > 72) {
+            throw new PasswordRejected(message: 'Password must not exceed 72 bytes.');
         }
 
-        if (str_contains($password, "\0")) {
-            throw new PasswordRejected('Password must not contain NUL bytes.');
+        if (str_contains(haystack: $password, needle: "\0")) {
+            throw new PasswordRejected(message: 'Password must not contain NUL bytes.');
         }
 
-        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+        $passwordHash = password_hash(password: $password, algo: PASSWORD_BCRYPT);
 
         try {
             $statement = $this->pdo->prepare(
-                <<<'SQL'
+                query: <<<'SQL'
                     INSERT INTO accounts (username, password_hash, role, created_at)
                     VALUES (:username, :password_hash, :role, :created_at)
                     SQL,
             );
-            $statement->execute([
-                                    'username'      => $username,
-                                    'password_hash' => $passwordHash,
-                                    'role'          => $role->value,
-                                    'created_at'    => $createdAt->format('c'),
-                                ]);
+            $statement->execute(params: [
+                'username'      => $username,
+                'password_hash' => $passwordHash,
+                'role'          => $role->value,
+                'created_at'    => $createdAt->format(format: 'c'),
+            ]);
         } catch (PDOException $exception) {
             // SQLite code 19 also covers CHECK, NOT NULL, FK and trigger failures.
             // Only the named username UNIQUE constraint is a duplicate username.
             $driverCode    = $exception->errorInfo[1] ?? null;
             $driverMessage = $exception->errorInfo[2] ?? null;
             if (
-                $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
-                && in_array($driverCode, [19, 2067, '19', '2067'], true)
+                $this->pdo->getAttribute(attribute: PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                && in_array(needle: $driverCode, haystack: [19, 2067, '19', '2067'], strict: true)
                 && $driverMessage === 'UNIQUE constraint failed: accounts.username'
             ) {
                 throw new UsernameTaken(previous: $exception);
@@ -71,43 +71,43 @@ final readonly class Accounts
 
         $id = (int) $this->pdo->lastInsertId();
 
-        return new Account($id, $username, $role, $createdAt);
+        return new Account(id: $id, username: $username, role: $role, createdAt: $createdAt);
     }
 
-    public function createAdmin(string $username, string $password, DateTimeImmutable $createdAt) : Account
+    public function createAdmin(string $username, #[\SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
-        return $this->create($username, $password, Role::Admin, $createdAt);
+        return $this->create(username: $username, password: $password, role: Role::Admin, createdAt: $createdAt);
     }
 
-    public function authenticate(string $username, string $password) : ?Account
+    public function authenticate(string $username, #[\SensitiveParameter] string $password): ?Account
     {
-        if (strlen($password) > 72 || str_contains($password, "\0")) {
+        if (strlen(string: $password) > 72 || str_contains(haystack: $password, needle: "\0")) {
             return null;
         }
 
         $statement = $this->pdo->prepare(
-            'SELECT id, username, password_hash, role, created_at FROM accounts WHERE username = :username LIMIT 1',
+            query: 'SELECT id, username, password_hash, role, created_at FROM accounts WHERE username = :username LIMIT 1',
         );
-        $statement->execute(['username' => $username]);
+        $statement->execute(params: ['username' => $username]);
 
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = $statement->fetch(mode: PDO::FETCH_ASSOC);
 
-        if (! is_array($row)) {
+        if (! is_array(value: $row)) {
             return null;
         }
 
         $hash = $row['password_hash'] ?? null;
 
-        if (! is_string($hash) || ! password_verify($password, $hash)) {
+        if (! is_string(value: $hash) || ! password_verify(password: $password, hash: $hash)) {
             return null;
         }
 
-        $account = $this->accountFromRow($row);
+        $account = $this->accountFromRow(row: $row);
 
-        if (password_needs_rehash($hash, PASSWORD_BCRYPT)) {
-            $rehash = password_hash($password, PASSWORD_BCRYPT);
-            $update = $this->pdo->prepare('UPDATE accounts SET password_hash = :hash WHERE id = :id');
-            $update->execute(['hash' => $rehash, 'id' => $account->id]);
+        if (password_needs_rehash(hash: $hash, algo: PASSWORD_BCRYPT)) {
+            $rehash = password_hash(password: $password, algo: PASSWORD_BCRYPT);
+            $update = $this->pdo->prepare(query: 'UPDATE accounts SET password_hash = :hash WHERE id = :id');
+            $update->execute(params: ['hash' => $rehash, 'id' => $account->id]);
         }
 
         return $account;
@@ -116,7 +116,7 @@ final readonly class Accounts
     /**
      * @param array<array-key, mixed> $row
      */
-    private function accountFromRow(array $row) : Account
+    private function accountFromRow(array $row): Account
     {
         $id        = $row['id'] ?? null;
         $username  = $row['username'] ?? null;
@@ -124,31 +124,31 @@ final readonly class Accounts
         $createdAt = $row['created_at'] ?? null;
 
         if (
-            (! is_int($id) && ! is_string($id))
-            || ! is_string($username)
-            || ! is_string($role)
-            || ! is_string($createdAt)
+            (! is_int(value: $id) && ! is_string(value: $id))
+            || ! is_string(value: $username)
+            || ! is_string(value: $role)
+            || ! is_string(value: $createdAt)
         ) {
-            throw new RuntimeException('Stored account row is invalid.');
+            throw new RuntimeException(message: 'Stored account row is invalid.');
         }
 
         return new Account(
-            (int) $id,
-            $username,
-            Role::from($role),
-            new DateTimeImmutable($createdAt),
+            id: (int) $id,
+            username: $username,
+            role: Role::from(value: $role),
+            createdAt: new DateTimeImmutable(datetime: $createdAt),
         );
     }
 
-    public function findById(int $id) : ?Account
+    public function findById(int $id): ?Account
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, username, role, created_at FROM accounts WHERE id = :id LIMIT 1',
+            query: 'SELECT id, username, role, created_at FROM accounts WHERE id = :id LIMIT 1',
         );
-        $statement->execute(['id' => $id]);
+        $statement->execute(params: ['id' => $id]);
 
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = $statement->fetch(mode: PDO::FETCH_ASSOC);
 
-        return is_array($row) ? $this->accountFromRow($row) : null;
+        return is_array(value: $row) ? $this->accountFromRow(row: $row) : null;
     }
 }

@@ -16,14 +16,14 @@ final readonly class CreateAdmin
         private ClockInterface $clock,
     ) {}
 
-    public function create(string $username, string $password) : Account
+    public function create(string $username, #[\SensitiveParameter] string $password): Account
     {
-        $username = trim($username);
+        $username = trim(string: $username);
 
         if ($username === '' || $password === '') {
-            throw new InvalidArgumentException('Username and password are required.');
+            throw new InvalidArgumentException(message: 'Username and password are required.');
         }
 
-        return $this->accounts->createAdmin($username, $password, $this->clock->now());
+        return $this->accounts->createAdmin(username: $username, password: $password, createdAt: $this->clock->now());
     }
 }

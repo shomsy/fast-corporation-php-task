@@ -19,7 +19,9 @@ abstract class AccountsTestCase extends TestCase
     protected Accounts   $accounts;
     protected FixedClock $clock;
 
-    protected function setUp() : void
+    #[\Override]
+
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -28,35 +30,37 @@ abstract class AccountsTestCase extends TestCase
         }
 
         $_SESSION = [];
-        session_id('');
-        ini_set('session.use_cookies', '0');
+        session_id(id: '');
+        ini_set(option: 'session.use_cookies', value: '0');
 
         $this->pdo = SqliteConnection::memory();
 
-        (new Migrator($this->pdo, [
-            'Accounts' => dirname(__DIR__, 2) . '/src/Accounts/migrations',
+        (new Migrator(pdo: $this->pdo, migrationDirectories: [
+            'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
         ]))->migrate();
 
-        $this->accounts = new Accounts($this->pdo);
+        $this->accounts = new Accounts(pdo: $this->pdo);
         $this->clock    = new FixedClock(
-            new DateTimeImmutable('2026-10-08T00:00:00+00:00', new DateTimeZone('UTC')),
+            now: new DateTimeImmutable(datetime: '2026-10-08T00:00:00+00:00', timezone: new DateTimeZone(timezone: 'UTC')),
         );
     }
 
-    protected function tearDown() : void
+    #[\Override]
+
+    protected function tearDown(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
         }
 
         $_SESSION = [];
-        session_id('');
+        session_id(id: '');
 
         parent::tearDown();
     }
 
-    protected function session() : PhpSession
+    protected function session(): PhpSession
     {
-        return new PhpSession('fast_task_test', false);
+        return new PhpSession(name: 'fast_task_test', secureCookie: false);
     }
 }

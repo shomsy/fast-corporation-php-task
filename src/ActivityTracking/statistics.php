@@ -1,6 +1,6 @@
 <?php
 /** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target:?string,occurred_at:string}>,date:string,user:string,action:string,error:string,page:int,hasNext:bool} $data */
-/** @var callable(mixed): string $escape */
+/** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
 <html lang="en">
@@ -64,20 +64,20 @@
     <h1>Activity statistics</h1>
     <form method="get" action="/statistics">
         <div><label for="date">Date (UTC)</label><input id="date" name="date" placeholder="YYYY-MM-DD"
-                                                        value="<?= $escape($data['date']) ?>"></div>
-        <div><label for="user">User</label><input id="user" name="user" value="<?= $escape($data['user']) ?>"></div>
+                                                        value="<?= $escape(value: $data['date']) ?>"></div>
+        <div><label for="user">User</label><input id="user" name="user" value="<?= $escape(value: $data['user']) ?>"></div>
         <div><label for="action">Action</label><select id="action" name="action">
                 <option value="">All actions</option>
                 <?php
                 foreach (['registration', 'login', 'logout', 'view-page', 'button-click'] as $action): ?>
-                    <option value="<?= $escape($action) ?>" <?= $action === $data['action'] ? 'selected' : '' ?>><?= $escape($action) ?></option>
+                    <option value="<?= $escape(value: $action) ?>" <?= $action === $data['action'] ? 'selected' : '' ?>><?= $escape(value: $action) ?></option>
                 <?php
                 endforeach; ?></select></div>
         <button type="submit">Filter</button>
         <a href="/statistics">Clear</a>
     </form>
     <?php
-    if ($data['error'] !== ''): ?><p role="alert" class="error"><?= $escape($data['error']) ?></p><?php
+    if ($data['error'] !== ''): ?><p role="alert" class="error"><?= $escape(value: $data['error']) ?></p><?php
     endif; ?>
     <div class="table-wrap">
         <table>
@@ -93,10 +93,10 @@
             <?php
             foreach ($data['events'] as $event): ?>
                 <tr>
-                    <td><?= $escape($event['occurred_at']) ?></td>
-                    <td><?= $escape($event['actor_label']) ?></td>
-                    <td><?= $escape($event['action']) ?></td>
-                    <td><?= $escape($event['target']) ?></td>
+                    <td><?= $escape(value: $event['occurred_at']) ?></td>
+                    <td><?= $escape(value: $event['actor_label']) ?></td>
+                    <td><?= $escape(value: $event['action']) ?></td>
+                    <td><?= $escape(value: $event['target']) ?></td>
                 </tr>
             <?php
             endforeach; ?>
@@ -110,20 +110,18 @@
         </table>
     </div>
     <?php
-    $filters = array_filter(['date' => $data['date'], 'user' => $data['user'], 'action' => $data['action']], static fn (string $value) : bool => $value !== '');
-    ?>
+    $filters = array_filter(array: ['date' => $data['date'], 'user' => $data['user'], 'action' => $data['action']], callback: static fn(string $value): bool => $value !== '');
+?>
     <nav aria-label="Activity pages">
         <?php
-        if ($data['page'] > 1): ?><a
-            href="/statistics?<?= $escape(http_build_query($filters + ['page' => $data['page'] - 1])) ?>">←
-                Previous</a><?php
-        endif; ?>
-        <span>Page <?= $escape($data['page']) ?></span>
+    if ($data['page'] > 1): ?><a
+            href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] - 1])) ?>">← Previous</a><?php
+    endif; ?>
+        <span>Page <?= $escape(value: $data['page']) ?></span>
         <?php
-        if ($data['hasNext']): ?><a
-            href="/statistics?<?= $escape(http_build_query($filters + ['page' => $data['page'] + 1])) ?>">Next
-                →</a><?php
-        endif; ?>
+    if ($data['hasNext']): ?><a
+            href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] + 1])) ?>">Next →</a><?php
+    endif; ?>
     </nav>
 </main>
 </body>

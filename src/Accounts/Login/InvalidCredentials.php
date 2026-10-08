@@ -10,6 +10,6 @@ final class InvalidCredentials extends DomainException
 {
     public function __construct()
     {
-        parent::__construct('Invalid username or password.');
+        parent::__construct(message: 'Invalid username or password.');
     }
 }

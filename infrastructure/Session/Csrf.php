@@ -10,27 +10,27 @@ final readonly class Csrf
 
     public function __construct(private PhpSession $session) {}
 
-    public function token() : string
+    public function token(): string
     {
-        $stored = $this->session->get(self::SESSION_KEY);
+        $stored = $this->session->get(key: self::SESSION_KEY);
 
-        if (is_string($stored) && $stored !== '') {
+        if (is_string(value: $stored) && $stored !== '') {
             return $stored;
         }
 
-        $token = bin2hex(random_bytes(32));
-        $this->session->put(self::SESSION_KEY, $token);
+        $token = bin2hex(string: random_bytes(length: 32));
+        $this->session->put(key: self::SESSION_KEY, value: $token);
 
         return $token;
     }
 
-    public function matches(mixed $submitted) : bool
+    public function matches(mixed $submitted): bool
     {
-        $stored = $this->session->get(self::SESSION_KEY);
+        $stored = $this->session->get(key: self::SESSION_KEY);
 
-        return is_string($submitted)
-            && is_string($stored)
+        return is_string(value: $submitted)
+            && is_string(value: $stored)
             && $stored !== ''
-            && hash_equals($stored, $submitted);
+            && hash_equals(known_string: $stored, user_string: $submitted);
     }
 }

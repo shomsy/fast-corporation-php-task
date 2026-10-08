@@ -11,6 +11,6 @@ final class UsernameTaken extends DomainException
 {
     public function __construct(?Throwable $previous = null)
     {
-        parent::__construct('Username is already taken.', previous: $previous);
+        parent::__construct(message: 'Username is already taken.', previous: $previous);
     }
 }

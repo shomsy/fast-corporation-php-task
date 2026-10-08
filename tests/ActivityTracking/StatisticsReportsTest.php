@@ -19,7 +19,7 @@ final class StatisticsReportsTest extends TestCase
     private Statistics   $statistics;
     private DailyReports $reports;
 
-    public function testStatisticsReturnsHistoryInStableNewestFirstOrder() : void
+    public function testStatisticsReturnsHistoryInStableNewestFirstOrder(): void
     {
         $events = $this->statistics->events();
 
@@ -31,21 +31,21 @@ final class StatisticsReportsTest extends TestCase
         self::assertSame('alice', $events[9]['actor_label']);
     }
 
-    public function testStatisticsCombinesDateUserAndActionFilters() : void
+    public function testStatisticsCombinesDateUserAndActionFilters(): void
     {
-        $events = $this->statistics->events('2026-10-07', 'ALICE', 'view-page');
+        $events = $this->statistics->events(date: '2026-10-07', user: 'ALICE', action: 'view-page');
 
         self::assertCount(2, $events);
         self::assertSame('page-b', $events[0]['target']);
         self::assertSame('page-a', $events[1]['target']);
     }
 
-    public function testStatisticsReturnsEmptyForUnknownUser() : void
+    public function testStatisticsReturnsEmptyForUnknownUser(): void
     {
         self::assertSame([], $this->statistics->events(user: 'missing'));
     }
 
-    public function testStatisticsRejectsMalformedOrInvalidDate() : void
+    public function testStatisticsRejectsMalformedOrInvalidDate(): void
     {
         foreach (['2026-02-30', '2026-8-1', "2026-10-07' OR 1=1 --"] as $date) {
             try {
@@ -57,29 +57,29 @@ final class StatisticsReportsTest extends TestCase
         }
     }
 
-    public function testStatisticsRejectsUnknownAction() : void
+    public function testStatisticsRejectsUnknownAction(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->statistics->events(action: 'delete-account');
     }
 
-    public function testStatisticsUsesPreparedStatementsForUserFilter() : void
+    public function testStatisticsUsesPreparedStatementsForUserFilter(): void
     {
         self::assertSame([], $this->statistics->events(user: "' OR 1=1 --"));
     }
 
-    public function testReportsHaveExactFourDailyCounts() : void
+    public function testReportsHaveExactFourDailyCounts(): void
     {
         self::assertSame([
-                             ['date' => '2026-10-07', 'page_a_views' => 2, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
-                             ['date' => '2026-10-08', 'page_a_views' => 1, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
-                         ], $this->reports->dailyCounts());
+            ['date' => '2026-10-07', 'page_a_views' => 2, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
+            ['date' => '2026-10-08', 'page_a_views' => 1, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
+        ], $this->reports->dailyCounts());
     }
 
-    public function testReportsIgnoreLoginOnlyDates() : void
+    public function testReportsIgnoreLoginOnlyDates(): void
     {
         $statement = $this->pdo->prepare(
-            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (3, 'charlie', 'login', NULL, '2026-10-06T10:00:00+00:00')",
+            query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (3, 'charlie', 'login', NULL, '2026-10-06T10:00:00+00:00')",
         );
         self::assertNotFalse($statement);
         self::assertTrue($statement->execute());
@@ -87,25 +87,25 @@ final class StatisticsReportsTest extends TestCase
         self::assertCount(2, $this->reports->dailyCounts());
     }
 
-    public function testReportsReturnEmptyForNoActivity() : void
+    public function testReportsReturnEmptyForNoActivity(): void
     {
-        $this->pdo->exec('DELETE FROM activity_events');
+        $this->pdo->exec(statement: 'DELETE FROM activity_events');
         self::assertSame([], $this->reports->dailyCounts());
     }
 
-    public function testSameTimestampUsesEventIdAsTieBreaker() : void
+    public function testSameTimestampUsesEventIdAsTieBreaker(): void
     {
-        $events = $this->statistics->events('2026-10-07', action: 'view-page');
+        $events = $this->statistics->events(date: '2026-10-07', action: 'view-page');
 
         self::assertCount(3, $events);
         self::assertSame(2, $events[1]['actor_id']);
         self::assertSame(1, $events[2]['actor_id']);
     }
 
-    public function testStatisticsPaginationBoundsRowsAndUsesStableOrdering() : void
+    public function testStatisticsPaginationBoundsRowsAndUsesStableOrdering(): void
     {
         $insert = $this->pdo->prepare(
-            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
+            query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
         );
         self::assertNotFalse($insert);
         for ($i = 0; $i < 105; ++$i) {
@@ -122,18 +122,18 @@ final class StatisticsReportsTest extends TestCase
         self::assertGreaterThan($third[0]['id'], $second[49]['id']);
     }
 
-    public function testStatisticsHasNoArbitraryFiftyThousandEventAccessCeiling() : void
+    public function testStatisticsHasNoArbitraryFiftyThousandEventAccessCeiling(): void
     {
         self::assertSame([], $this->statistics->events(page: 1001));
         $this->expectException(InvalidArgumentException::class);
         $this->statistics->events(page: 0);
     }
 
-    public function testHasNextIsFalseAtExactlyFiftyAndTrueAtFiftyOne() : void
+    public function testHasNextIsFalseAtExactlyFiftyAndTrueAtFiftyOne(): void
     {
-        $this->pdo->exec('DELETE FROM activity_events');
+        $this->pdo->exec(statement: 'DELETE FROM activity_events');
         $insert = $this->pdo->prepare(
-            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
+            query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
         );
         self::assertNotFalse($insert);
         for ($i = 0; $i < Statistics::PAGE_SIZE; ++$i) {
@@ -153,44 +153,44 @@ final class StatisticsReportsTest extends TestCase
         self::assertFalse($last['hasNext']);
     }
 
-    public function testReportsDateRangeLimitsDataset() : void
+    public function testReportsDateRangeLimitsDataset(): void
     {
         self::assertSame([
-                             ['date' => '2026-10-08', 'page_a_views' => 1, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
-                         ], $this->reports->dailyCounts('2026-10-08', '2026-10-08'));
+            ['date' => '2026-10-08', 'page_a_views' => 1, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
+        ], $this->reports->dailyCounts(from: '2026-10-08', to: '2026-10-08'));
     }
 
-    public function testReportsRejectInvalidDateRange() : void
+    public function testReportsRejectInvalidDateRange(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->reports->dailyCounts('2026-10-09', '2026-10-08');
+        $this->reports->dailyCounts(from: '2026-10-09', to: '2026-10-08');
     }
 
-    public function testReportsBoundNumberOfDays() : void
+    public function testReportsBoundNumberOfDays(): void
     {
         $stmt = $this->pdo->prepare(
-            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
+            query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
         );
         self::assertNotFalse($stmt);
         for ($i = 1; $i <= 40; ++$i) {
-            $date = (new DateTimeImmutable('2026-09-01T01:00:00+00:00'))->modify('+' . ($i - 1) . ' days');
-            self::assertTrue($stmt->execute([$date->format('c')]));
+            $date = (new DateTimeImmutable(datetime: '2026-09-01T01:00:00+00:00'))->modify(modifier: '+' . ($i - 1) . ' days');
+            self::assertTrue($stmt->execute(params: [$date->format(format: 'c')]));
         }
-        self::assertLessThanOrEqual(DailyReports::MAX_DAYS, count($this->reports->dailyCounts()));
+        self::assertLessThanOrEqual(DailyReports::MAX_DAYS, count(value: $this->reports->dailyCounts()));
     }
 
-    public function testRepresentativeFiveThousandEventReportIsBoundedAndIndexed() : void
+    public function testRepresentativeFiveThousandEventReportIsBoundedAndIndexed(): void
     {
         $this->pdo->beginTransaction();
         try {
             $insert = $this->pdo->prepare(
-                "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
+                query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
             );
             self::assertNotFalse($insert);
-            $start = new DateTimeImmutable('2026-08-01T01:00:00+00:00');
+            $start = new DateTimeImmutable(datetime: '2026-08-01T01:00:00+00:00');
             for ($i = 0; $i < 5000; ++$i) {
-                $date = $start->modify('+' . ($i % 60) . ' days');
-                self::assertTrue($insert->execute([$date->format('c')]));
+                $date = $start->modify(modifier: '+' . ($i % 60) . ' days');
+                self::assertTrue($insert->execute(params: [$date->format(format: 'c')]));
             }
             $this->pdo->commit();
         } catch (\Throwable $error) {
@@ -204,57 +204,59 @@ final class StatisticsReportsTest extends TestCase
         self::assertSame('2026-10-08', $daily[29]['date']);
 
         $plan = $this->pdo->query(
-            "EXPLAIN QUERY PLAN SELECT substr(occurred_at, 1, 10) AS date, COUNT(*) FROM activity_events WHERE action = 'view-page' AND target = 'page-a' AND substr(occurred_at, 1, 10) >= '2026-09-01' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT 30",
+            query: "EXPLAIN QUERY PLAN SELECT substr(occurred_at, 1, 10) AS date, COUNT(*) FROM activity_events WHERE action = 'view-page' AND target = 'page-a' AND substr(occurred_at, 1, 10) >= '2026-09-01' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT 30",
         );
         self::assertNotFalse($plan);
-        $details = implode(' ', array_map(static fn (mixed $row) : string => is_array($row) && isset($row['detail']) && is_string($row['detail']) ? $row['detail'] : '', $plan->fetchAll(PDO::FETCH_ASSOC)));
+        $details = implode(separator: ' ', array: array_map(callback: static fn(mixed $row): string => is_array(value: $row) && isset($row['detail']) && is_string(value: $row['detail']) ? $row['detail'] : '', array: $plan->fetchAll(mode: PDO::FETCH_ASSOC)));
         self::assertStringContainsString('idx_activity_day', $details);
     }
 
-    public function testMeasuredActivityIndexesSupportNewestFirstAndDailyGroupPlans() : void
+    public function testMeasuredActivityIndexesSupportNewestFirstAndDailyGroupPlans(): void
     {
         $recentPlan = $this->pdo->query(
-            'EXPLAIN QUERY PLAN SELECT id FROM activity_events ORDER BY occurred_at DESC, id DESC LIMIT 50',
+            query: 'EXPLAIN QUERY PLAN SELECT id FROM activity_events ORDER BY occurred_at DESC, id DESC LIMIT 50',
         );
         self::assertNotFalse($recentPlan);
-        $recentDetails = implode(' ', array_map(static fn (mixed $detail) : string => is_string($detail) ? $detail : '', array_column($recentPlan->fetchAll(PDO::FETCH_ASSOC), 'detail')));
+        $recentDetails = implode(separator: ' ', array: array_map(callback: static fn(mixed $detail): string => is_string(value: $detail) ? $detail : '', array: array_column(array: $recentPlan->fetchAll(mode: PDO::FETCH_ASSOC), column_key: 'detail')));
         self::assertStringContainsString('idx_activity_recent', $recentDetails);
 
         $dailyPlan = $this->pdo->query(
-            'EXPLAIN QUERY PLAN SELECT substr(occurred_at, 1, 10) AS day, COUNT(*) FROM activity_events GROUP BY substr(occurred_at, 1, 10) ORDER BY day DESC LIMIT 30',
+            query: 'EXPLAIN QUERY PLAN SELECT substr(occurred_at, 1, 10) AS day, COUNT(*) FROM activity_events GROUP BY substr(occurred_at, 1, 10) ORDER BY day DESC LIMIT 30',
         );
         self::assertNotFalse($dailyPlan);
-        $dailyDetails = implode(' ', array_map(static fn (mixed $detail) : string => is_string($detail) ? $detail : '', array_column($dailyPlan->fetchAll(PDO::FETCH_ASSOC), 'detail')));
+        $dailyDetails = implode(separator: ' ', array: array_map(callback: static fn(mixed $detail): string => is_string(value: $detail) ? $detail : '', array: array_column(array: $dailyPlan->fetchAll(mode: PDO::FETCH_ASSOC), column_key: 'detail')));
         self::assertStringContainsString('idx_activity_day', $dailyDetails);
     }
 
-    protected function setUp() : void
+    #[\Override]
+
+    protected function setUp(): void
     {
         $this->pdo = SqliteConnection::memory();
-        (new Migrator($this->pdo, [
-            'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
+        (new Migrator(pdo: $this->pdo, migrationDirectories: [
+            'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
-        $this->statistics = new Statistics($this->pdo);
-        $this->reports    = new DailyReports($this->pdo);
+        $this->statistics = new Statistics(pdo: $this->pdo);
+        $this->reports    = new DailyReports(pdo: $this->pdo);
 
         foreach ([
-                     [1, 'alice', 'view-page', 'page-a', '2026-10-07T10:00:00+00:00'],
-                     [2, 'bob', 'view-page', 'page-a', '2026-10-07T10:00:00+00:00'],
-                     [1, 'alice', 'view-page', 'page-b', '2026-10-07T11:00:00+00:00'],
-                     [1, 'alice', 'button-click', 'buy-cow', '2026-10-07T12:00:00+00:00'],
-                     [2, 'bob', 'button-click', 'download', '2026-10-07T13:00:00+00:00'],
-                     [2, 'bob', 'login', null, '2026-10-07T14:00:00+00:00'],
-                     [1, 'alice', 'view-page', 'page-a', '2026-10-08T09:00:00+00:00'],
-                     [1, 'alice', 'button-click', 'download', '2026-10-08T10:00:00+00:00'],
-                     [2, 'bob', 'view-page', 'page-b', '2026-10-08T11:00:00+00:00'],
-                     [2, 'bob', 'button-click', 'buy-cow', '2026-10-08T12:00:00+00:00'],
-                 ] as $record) {
+            [1, 'alice', 'view-page', 'page-a', '2026-10-07T10:00:00+00:00'],
+            [2, 'bob', 'view-page', 'page-a', '2026-10-07T10:00:00+00:00'],
+            [1, 'alice', 'view-page', 'page-b', '2026-10-07T11:00:00+00:00'],
+            [1, 'alice', 'button-click', 'buy-cow', '2026-10-07T12:00:00+00:00'],
+            [2, 'bob', 'button-click', 'download', '2026-10-07T13:00:00+00:00'],
+            [2, 'bob', 'login', null, '2026-10-07T14:00:00+00:00'],
+            [1, 'alice', 'view-page', 'page-a', '2026-10-08T09:00:00+00:00'],
+            [1, 'alice', 'button-click', 'download', '2026-10-08T10:00:00+00:00'],
+            [2, 'bob', 'view-page', 'page-b', '2026-10-08T11:00:00+00:00'],
+            [2, 'bob', 'button-click', 'buy-cow', '2026-10-08T12:00:00+00:00'],
+        ] as $record) {
             $statement = $this->pdo->prepare(
-                'INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (?, ?, ?, ?, ?)',
+                query: 'INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (?, ?, ?, ?, ?)',
             );
             self::assertNotFalse($statement);
-            self::assertTrue($statement->execute($record));
+            self::assertTrue($statement->execute(params: $record));
         }
     }
 

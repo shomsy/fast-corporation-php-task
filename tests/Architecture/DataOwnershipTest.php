@@ -25,24 +25,24 @@ final class DataOwnershipTest extends TestCase
             'activity_events' => 'ActivityTracking',
         ];
 
-    public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables() : void
+    public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables(): void
     {
-        $root       = dirname(__DIR__, 2) . '/src';
+        $root       = dirname(path: __DIR__, levels: 2) . '/src';
         $violations = [];
         foreach (['Accounts', 'ActivityTracking', 'CowOffer', 'Downloads'] as $owner) {
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/' . $owner));
+            $iterator = new RecursiveIteratorIterator(iterator: new RecursiveDirectoryIterator(directory: $root . '/' . $owner));
             foreach ($iterator as $file) {
                 if (! $file instanceof SplFileInfo || ! $file->isFile()
-                    || ! in_array($file->getExtension(), ['php', 'sql'], true)) {
+                    || ! in_array(needle: $file->getExtension(), haystack: ['php', 'sql'], strict: true)) {
                     continue;
                 }
-                $contents = file_get_contents($file->getPathname());
+                $contents = file_get_contents(filename: $file->getPathname());
                 self::assertIsString($contents);
                 $sqlStrings = $file->getExtension() === 'sql'
                     ? [$contents]
-                    : self::literalStrings($contents);
+                    : self::literalStrings(source: $contents);
                 foreach ($sqlStrings as $sql) {
-                    foreach (self::foreignTables($owner, $sql) as $table) {
+                    foreach (self::foreignTables(owner: $owner, sql: $sql) as $table) {
                         $violations[] = $file->getPathname() . ' accesses foreign table ' . $table;
                     }
                 }
@@ -54,16 +54,16 @@ final class DataOwnershipTest extends TestCase
     /**
      * @return list<string>
      */
-    private static function literalStrings(string $source) : array
+    private static function literalStrings(string $source): array
     {
-        $parsed = (new ParserFactory())->createForNewestSupportedVersion()->parse($source);
+        $parsed = (new ParserFactory())->createForNewestSupportedVersion()->parse(code: $source);
         if ($parsed === null) {
             return [];
         }
 
         $finder = new NodeFinder();
         $values = [];
-        foreach ($finder->findInstanceOf($parsed, String_::class) as $node) {
+        foreach ($finder->findInstanceOf(nodes: $parsed, class: String_::class) as $node) {
             $values[] = $node->value;
         }
 
@@ -73,41 +73,41 @@ final class DataOwnershipTest extends TestCase
     /**
      * @return list<string>
      */
-    private static function foreignTables(string $owner, string $sql) : array
+    private static function foreignTables(string $owner, string $sql): array
     {
         preg_match_all(
-            '/\b(?:FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE(?:\s+IF\s+NOT\s+EXISTS)?)\s+["\x60]?([a-z][a-z0-9_]*)/i',
-            $sql,
-            $matches,
+            pattern: '/\b(?:FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE(?:\s+IF\s+NOT\s+EXISTS)?)\s+["\x60]?([a-z][a-z0-9_]*)/i',
+            subject: $sql,
+            matches: $matches,
         );
         $violations = [];
         foreach ($matches[1] as $table) {
-            $table = strtolower($table);
+            $table = strtolower(string: $table);
             if (isset(self::TABLE_OWNERS[$table]) && self::TABLE_OWNERS[$table] !== $owner) {
                 $violations[$table] = $table;
             }
         }
 
-        return array_values($violations);
+        return array_values(array: $violations);
     }
 
-    public function testForeignTableReferenceMutationsFailOwnerPolicy() : void
+    public function testForeignTableReferenceMutationsFailOwnerPolicy(): void
     {
         self::assertSame(['activity_events'], self::foreignTables(
-            'Accounts',
-            "INSERT INTO activity_events (actor_id) VALUES (1)",
+            owner: 'Accounts',
+            sql: "INSERT INTO activity_events (actor_id) VALUES (1)",
         ));
         self::assertSame(['accounts'], self::foreignTables(
-            'ActivityTracking',
-            'SELECT role FROM accounts WHERE id = :id',
+            owner: 'ActivityTracking',
+            sql: 'SELECT role FROM accounts WHERE id = :id',
         ));
         self::assertSame(['accounts'], self::foreignTables(
-            'CowOffer',
-            'UPDATE accounts SET role = :role WHERE id = :id',
+            owner: 'CowOffer',
+            sql: 'UPDATE accounts SET role = :role WHERE id = :id',
         ));
         self::assertSame([], self::foreignTables(
-            'ActivityTracking',
-            'SELECT id FROM activity_events WHERE actor_id = :id',
+            owner: 'ActivityTracking',
+            sql: 'SELECT id FROM activity_events WHERE actor_id = :id',
         ));
     }
 }

@@ -1,6 +1,6 @@
 <?php
 /** @var array{csrfToken: string} $data */
-/** @var callable(mixed): string $escape */
+/** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
 <html lang="en">
@@ -35,7 +35,7 @@
     <h1>Page B</h1>
     <p>Download a fixed, harmless sample executable.</p>
     <form method="post" action="/download"><input type="hidden" name="csrf_token"
-                                                  value="<?= $escape($data['csrfToken']) ?>">
+                                                  value="<?= $escape(value: $data['csrfToken']) ?>">
         <button type="submit">Download</button>
     </form>
 </main>

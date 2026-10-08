@@ -22,35 +22,35 @@ final readonly class SessionIdentity
         private ?ClockInterface $clock = null,
     ) {}
 
-    public function signIn(Account $account) : SignedInAccount
+    public function signIn(Account $account): SignedInAccount
     {
         $this->session->regenerate();
-        $this->session->put(self::ACCOUNT_ID, $account->id);
+        $this->session->put(key: self::ACCOUNT_ID, value: $account->id);
         $now = $this->now();
-        $this->session->put(self::ISSUED_AT, $now);
-        $this->session->put(self::LAST_SEEN_AT, $now);
+        $this->session->put(key: self::ISSUED_AT, value: $now);
+        $this->session->put(key: self::LAST_SEEN_AT, value: $now);
 
-        return SignedInAccount::fromAccount($account);
+        return SignedInAccount::fromAccount(account: $account);
     }
 
-    private function now() : int
+    private function now(): int
     {
         return ($this->clock ?? new SystemClock())->now()->getTimestamp();
     }
 
-    public function current() : ?SignedInAccount
+    public function current(): ?SignedInAccount
     {
-        $id = $this->session->get(self::ACCOUNT_ID);
+        $id = $this->session->get(key: self::ACCOUNT_ID);
 
-        if (! is_int($id)) {
+        if (! is_int(value: $id)) {
             return null;
         }
 
-        $issuedAt = $this->session->get(self::ISSUED_AT);
-        $lastSeen = $this->session->get(self::LAST_SEEN_AT);
+        $issuedAt = $this->session->get(key: self::ISSUED_AT);
+        $lastSeen = $this->session->get(key: self::LAST_SEEN_AT);
         $now      = $this->now();
 
-        if (! is_int($issuedAt) || ! is_int($lastSeen)
+        if (! is_int(value: $issuedAt) || ! is_int(value: $lastSeen)
             || $issuedAt > $now || $lastSeen > $now || $lastSeen < $issuedAt
             || $now - $issuedAt >= self::MAX_LIFETIME_SECONDS
             || $now - $lastSeen >= self::MAX_IDLE_SECONDS
@@ -60,20 +60,20 @@ final readonly class SessionIdentity
             return null;
         }
 
-        $account = $this->accounts->findById($id);
+        $account = $this->accounts->findById(id: $id);
 
         if ($account === null) {
-            $this->session->remove(self::ACCOUNT_ID);
+            $this->session->remove(key: self::ACCOUNT_ID);
 
             return null;
         }
 
-        $this->session->put(self::LAST_SEEN_AT, $now);
+        $this->session->put(key: self::LAST_SEEN_AT, value: $now);
 
-        return SignedInAccount::fromAccount($account);
+        return SignedInAccount::fromAccount(account: $account);
     }
 
-    public function signOut() : void
+    public function signOut(): void
     {
         $this->session->destroy();
     }

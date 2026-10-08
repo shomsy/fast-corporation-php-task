@@ -15,14 +15,14 @@ final readonly class CowOffer
 {
     public function __construct(private ActivityLog $activityLog) {}
 
-    public function view(int $actorId, string $actorLabel) : void
+    public function view(int $actorId, string $actorLabel): void
     {
-        $this->activityLog->recordPageView($actorId, $actorLabel, TrackedPage::PageA);
+        $this->activityLog->recordPageView(actorId: $actorId, actorLabel: $actorLabel, page: TrackedPage::PageA);
     }
 
-    public function buy(int $actorId, string $actorLabel) : string
+    public function buy(int $actorId, string $actorLabel): string
     {
-        $this->activityLog->recordButtonClick($actorId, $actorLabel, TrackedButton::BuyCow);
+        $this->activityLog->recordButtonClick(actorId: $actorId, actorLabel: $actorLabel, button: TrackedButton::BuyCow);
 
         return 'thankYou';
     }

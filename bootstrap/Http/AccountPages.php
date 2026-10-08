@@ -23,93 +23,93 @@ final readonly class AccountPages
         private HtmlPage         $html,
     ) {}
 
-    public function registerForm() : Response
+    public function registerForm(): Response
     {
-        return $this->html->render('src/Accounts/Register/form.php', [
+        return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
             'csrfToken' => $this->csrf->token(), 'username' => '', 'error' => '',
         ]);
     }
 
-    public function registerSubmit(Request $request) : Response
+    public function registerSubmit(Request $request): Response
     {
-        if (! $this->csrf->matches($request->post('csrf_token'))) {
-            return Response::text('Forbidden', 403);
+        if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
+            return Response::text(body: 'Forbidden', status: 403);
         }
 
-        $username = $this->stringInput($request->post('username'));
-        $password = $this->stringInput($request->post('password'));
+        $username = $this->stringInput(value: $request->post(key: 'username'));
+        $password = $this->stringInput(value: $request->post(key: 'password'));
 
         try {
-            $this->lifecycle->register($username, $password);
+            $this->lifecycle->register(username: $username, password: $password);
 
-            return Response::redirect('/login?registered=1');
+            return Response::redirect(location: '/login?registered=1');
         } catch (UsernameTaken) {
-            return $this->html->render('src/Accounts/Register/form.php', [
+            return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
                 'csrfToken' => $this->csrf->token(), 'username' => $username,
                 'error'     => 'Username is already taken.',
-            ],                         409);
+            ], status: 409);
         } catch (RegistrationRejected $e) {
-            return $this->html->render('src/Accounts/Register/form.php', [
+            return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
                 'csrfToken' => $this->csrf->token(), 'username' => $username,
                 'error'     => $e->getMessage(),
-            ],                         422);
+            ], status: 422);
         }
     }
 
-    private function stringInput(mixed $value) : string
+    private function stringInput(mixed $value): string
     {
-        return is_string($value) ? $value : '';
+        return is_string(value: $value) ? $value : '';
     }
 
-    public function loginForm(Request $request) : Response
+    public function loginForm(Request $request): Response
     {
-        return $this->html->render('src/Accounts/Login/form.php', [
-            'csrfToken' => $this->csrf->token(), 'registered' => $request->query('registered') === '1',
+        return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
+            'csrfToken' => $this->csrf->token(), 'registered' => $request->query(key: 'registered') === '1',
             'error'     => '',
         ]);
     }
 
-    public function loginSubmit(Request $request) : Response
+    public function loginSubmit(Request $request): Response
     {
-        if (! $this->csrf->matches($request->post('csrf_token'))) {
-            return Response::text('Forbidden', 403);
+        if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
+            return Response::text(body: 'Forbidden', status: 403);
         }
 
         try {
             $this->lifecycle->login(
-                $this->stringInput($request->post('username')),
-                $this->stringInput($request->post('password')),
+                username: $this->stringInput(value: $request->post(key: 'username')),
+                password: $this->stringInput(value: $request->post(key: 'password')),
             );
         } catch (InvalidCredentials) {
-            return $this->html->render('src/Accounts/Login/form.php', [
+            return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
                 'csrfToken'  => $this->csrf->token(),
                 'registered' => false, 'error' => 'Invalid username or password.',
-            ],                         401);
+            ], status: 401);
         }
 
-        return Response::redirect('/');
+        return Response::redirect(location: '/');
     }
 
-    public function logoutSubmit(Request $request) : Response
+    public function logoutSubmit(Request $request): Response
     {
-        if (! $this->csrf->matches($request->post('csrf_token'))) {
-            return Response::text('Forbidden', 403);
+        if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
+            return Response::text(body: 'Forbidden', status: 403);
         }
 
         $this->lifecycle->logout();
 
-        return Response::redirect('/login');
+        return Response::redirect(location: '/login');
     }
 
-    public function home() : Response
+    public function home(): Response
     {
         $account = $this->identity->current();
 
         if ($account === null) {
-            return Response::redirect('/login');
+            return Response::redirect(location: '/login');
         }
 
-        return $this->html->render('src/Accounts/home.php', [
+        return $this->html->render(path: 'src/Accounts/home.php', data: [
             'username'  => $account->username, 'role' => $account->role->value,
             'csrfToken' => $this->csrf->token(),
         ]);

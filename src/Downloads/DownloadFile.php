@@ -19,27 +19,27 @@ final readonly class DownloadFile
         private string      $artifactPath,
     ) {}
 
-    public function view(int $actorId, string $actorLabel) : void
+    public function view(int $actorId, string $actorLabel): void
     {
-        $this->activityLog->recordPageView($actorId, $actorLabel, TrackedPage::PageB);
+        $this->activityLog->recordPageView(actorId: $actorId, actorLabel: $actorLabel, page: TrackedPage::PageB);
     }
 
     /**
      * @return string Complete contents of the fixed readable artifact.
      */
-    public function read(int $actorId, string $actorLabel) : string
+    public function read(int $actorId, string $actorLabel): string
     {
-        if (! is_file($this->artifactPath) || ! is_readable($this->artifactPath)) {
-            throw new ArtifactUnavailable('Download is temporarily unavailable.');
+        if (! is_file(filename: $this->artifactPath) || ! is_readable(filename: $this->artifactPath)) {
+            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 
-        $contents = file_get_contents($this->artifactPath);
+        $contents = file_get_contents(filename: $this->artifactPath);
 
         if ($contents === false) {
-            throw new ArtifactUnavailable('Download is temporarily unavailable.');
+            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 
-        $this->activityLog->recordButtonClick($actorId, $actorLabel, TrackedButton::Download);
+        $this->activityLog->recordButtonClick(actorId: $actorId, actorLabel: $actorLabel, button: TrackedButton::Download);
 
         return $contents;
     }

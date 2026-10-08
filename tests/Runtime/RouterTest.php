@@ -11,45 +11,45 @@ use PHPUnit\Framework\TestCase;
 
 final class RouterTest extends TestCase
 {
-    public function testDispatchesExactRoute() : void
+    public function testDispatchesExactRoute(): void
     {
         $router = new Router();
-        $router->add('GET', '/hello', static fn (Request $request) : Response => Response::text(
-            'hello:' . $request->path(),
+        $router->add(method: 'GET', path: '/hello', handler: static fn(Request $request): Response => Response::text(
+            body: 'hello:' . $request->path(),
         ));
 
-        $response = $router->dispatch(new Request('GET', '/hello'));
+        $response = $router->dispatch(request: new Request(method: 'GET', path: '/hello'));
 
         self::assertSame(200, $response->status());
         self::assertSame('hello:/hello', $response->body());
     }
 
-    public function testReturnsMethodNotAllowedWhenPathExistsForAnotherMethod() : void
+    public function testReturnsMethodNotAllowedWhenPathExistsForAnotherMethod(): void
     {
         $router = new Router();
-        $router->add('POST', '/submit', static fn () : Response => Response::text('ok'));
+        $router->add(method: 'POST', path: '/submit', handler: static fn(): Response => Response::text(body: 'ok'));
 
-        $response = $router->dispatch(new Request('GET', '/submit'));
+        $response = $router->dispatch(request: new Request(method: 'GET', path: '/submit'));
 
         self::assertSame(405, $response->status());
         self::assertSame('POST', $response->headers()['Allow']);
     }
 
-    public function testAllowListsAllRegisteredMethods() : void
+    public function testAllowListsAllRegisteredMethods(): void
     {
         $router = new Router();
-        $router->add('POST', '/submit', static fn () : Response => Response::text('ok'));
-        $router->add('GET', '/submit', static fn () : Response => Response::text('ok'));
+        $router->add(method: 'POST', path: '/submit', handler: static fn(): Response => Response::text(body: 'ok'));
+        $router->add(method: 'GET', path: '/submit', handler: static fn(): Response => Response::text(body: 'ok'));
 
-        $response = $router->dispatch(new Request('DELETE', '/submit'));
+        $response = $router->dispatch(request: new Request(method: 'DELETE', path: '/submit'));
 
         self::assertSame(405, $response->status());
         self::assertSame('POST, GET', $response->headers()['Allow']);
     }
 
-    public function testReturnsNotFoundForUnknownPath() : void
+    public function testReturnsNotFoundForUnknownPath(): void
     {
-        $response = (new Router())->dispatch(new Request('GET', '/missing'));
+        $response = (new Router())->dispatch(request: new Request(method: 'GET', path: '/missing'));
 
         self::assertSame(404, $response->status());
     }

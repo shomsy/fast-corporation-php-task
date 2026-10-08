@@ -12,7 +12,7 @@ final readonly class CurrentAccount
 {
     public function __construct(private SessionIdentity $identity) {}
 
-    public function current() : ?SignedInAccount
+    public function current(): ?SignedInAccount
     {
         return $this->identity->current();
     }

@@ -14,14 +14,14 @@ use ReflectionClass;
 
 final class ComposerAutoloadTest extends TestCase
 {
-    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly() : void
+    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly(): void
     {
         foreach ([AccountPages::class, ActivityPages::class, CowOfferPages::class, DownloadPages::class, HtmlPage::class] as $class) {
-            self::assertTrue(class_exists($class), $class);
-            $file = (new ReflectionClass($class))->getFileName();
+            self::assertTrue(class_exists(class: $class), $class);
+            $file = (new ReflectionClass(objectOrClass: $class))->getFileName();
             self::assertIsString($file);
             self::assertSame(
-                realpath(dirname(__DIR__, 2) . '/bootstrap/Http/' . basename($file)),
+                realpath(path: dirname(path: __DIR__, levels: 2) . '/bootstrap/Http/' . basename(path: $file)),
                 $file,
             );
         }

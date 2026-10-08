@@ -23,9 +23,9 @@ final readonly class ActivityLog
         private ClockInterface $clock,
     ) {}
 
-    public function recordRegistration(int $actorId, string $actorLabel) : void
+    public function recordRegistration(int $actorId, string $actorLabel): void
     {
-        $this->append($actorId, $actorLabel, ActivityAction::Registration, null);
+        $this->append(actorId: $actorId, actorLabel: $actorLabel, action: ActivityAction::Registration, target: null);
     }
 
     private function append(
@@ -33,51 +33,50 @@ final readonly class ActivityLog
         string         $actorLabel,
         ActivityAction $action,
         ?string        $target,
-    ) : void
-    {
+    ): void {
         if ($actorId < 1) {
-            throw new InvalidArgumentException('Actor ID must be positive.');
+            throw new InvalidArgumentException(message: 'Actor ID must be positive.');
         }
 
-        if (trim($actorLabel) === '') {
-            throw new InvalidArgumentException('Actor label cannot be blank.');
+        if (trim(string: $actorLabel) === '') {
+            throw new InvalidArgumentException(message: 'Actor label cannot be blank.');
         }
 
         $statement = $this->pdo->prepare(
-            'INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at)
+            query: 'INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at)
              VALUES (:actor_id, :actor_label, :action, :target, :occurred_at)',
         );
 
         if ($statement === false) {
-            throw new RuntimeException('Unable to prepare activity recording.');
+            throw new RuntimeException(message: 'Unable to prepare activity recording.');
         }
 
-        $statement->execute([
-                                'actor_id'    => $actorId,
-                                'actor_label' => $actorLabel,
-                                'action'      => $action->value,
-                                'target'      => $target,
-                                'occurred_at' => $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
-                            ]);
+        $statement->execute(params: [
+            'actor_id'    => $actorId,
+            'actor_label' => $actorLabel,
+            'action'      => $action->value,
+            'target'      => $target,
+            'occurred_at' => $this->clock->now()->setTimezone(timezone: new DateTimeZone(timezone: 'UTC'))->format(format: DATE_ATOM),
+        ]);
     }
 
-    public function recordLogin(int $actorId, string $actorLabel) : void
+    public function recordLogin(int $actorId, string $actorLabel): void
     {
-        $this->append($actorId, $actorLabel, ActivityAction::Login, null);
+        $this->append(actorId: $actorId, actorLabel: $actorLabel, action: ActivityAction::Login, target: null);
     }
 
-    public function recordLogout(int $actorId, string $actorLabel) : void
+    public function recordLogout(int $actorId, string $actorLabel): void
     {
-        $this->append($actorId, $actorLabel, ActivityAction::Logout, null);
+        $this->append(actorId: $actorId, actorLabel: $actorLabel, action: ActivityAction::Logout, target: null);
     }
 
-    public function recordPageView(int $actorId, string $actorLabel, TrackedPage $page) : void
+    public function recordPageView(int $actorId, string $actorLabel, TrackedPage $page): void
     {
-        $this->append($actorId, $actorLabel, ActivityAction::ViewPage, $page->value);
+        $this->append(actorId: $actorId, actorLabel: $actorLabel, action: ActivityAction::ViewPage, target: $page->value);
     }
 
-    public function recordButtonClick(int $actorId, string $actorLabel, TrackedButton $button) : void
+    public function recordButtonClick(int $actorId, string $actorLabel, TrackedButton $button): void
     {
-        $this->append($actorId, $actorLabel, ActivityAction::ButtonClick, $button->value);
+        $this->append(actorId: $actorId, actorLabel: $actorLabel, action: ActivityAction::ButtonClick, target: $button->value);
     }
 }

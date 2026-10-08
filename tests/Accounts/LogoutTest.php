@@ -9,11 +9,11 @@ use InterviewTask\Accounts\SessionIdentity;
 
 final class LogoutTest extends AccountsTestCase
 {
-    public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity() : void
+    public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity(): void
     {
-        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'password');
-        $identity = new SessionIdentity($this->session(), $this->accounts);
-        $identity->signIn($account);
+        $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'password');
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);
+        $identity->signIn(account: $account);
 
         self::assertNotNull($identity->current());
 

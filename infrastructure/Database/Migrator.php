@@ -20,11 +20,11 @@ final class Migrator
     /**
      * @return list<string> migration identifiers applied by this run
      */
-    public function migrate() : array
+    public function migrate(): array
     {
         $this->ensureMetadataTable();
 
-        $applied      = array_fill_keys($this->appliedMigrationIds(), true);
+        $applied      = array_fill_keys(keys: $this->appliedMigrationIds(), value: true);
         $migrations   = $this->discoverMigrations();
         $newlyApplied = [];
 
@@ -33,17 +33,17 @@ final class Migrator
                 continue;
             }
 
-            $this->apply($identifier, $file);
+            $this->apply(identifier: $identifier, file: $file);
             $newlyApplied[] = $identifier;
         }
 
         return $newlyApplied;
     }
 
-    private function ensureMetadataTable() : void
+    private function ensureMetadataTable(): void
     {
         $this->pdo->exec(
-            <<<'SQL'
+            statement: <<<'SQL'
                 CREATE TABLE IF NOT EXISTS schema_migrations (
                     migration TEXT PRIMARY KEY,
                     applied_at TEXT NOT NULL
@@ -55,20 +55,20 @@ final class Migrator
     /**
      * @return list<string>
      */
-    private function appliedMigrationIds() : array
+    private function appliedMigrationIds(): array
     {
-        $statement = $this->pdo->query('SELECT migration FROM schema_migrations ORDER BY migration');
+        $statement = $this->pdo->query(query: 'SELECT migration FROM schema_migrations ORDER BY migration');
 
         if ($statement === false) {
-            throw new RuntimeException('Unable to read applied migrations.');
+            throw new RuntimeException(message: 'Unable to read applied migrations.');
         }
 
-        $rows       = $statement->fetchAll(PDO::FETCH_COLUMN);
+        $rows       = $statement->fetchAll(mode: PDO::FETCH_COLUMN);
         $migrations = [];
 
         foreach ($rows as $row) {
-            if (! is_string($row)) {
-                throw new RuntimeException('Migration identifier must be a string.');
+            if (! is_string(value: $row)) {
+                throw new RuntimeException(message: 'Migration identifier must be a string.');
             }
 
             $migrations[] = $row;
@@ -80,51 +80,51 @@ final class Migrator
     /**
      * @return array<string, string> migration identifier => file path
      */
-    private function discoverMigrations() : array
+    private function discoverMigrations(): array
     {
         $migrations = [];
 
         foreach ($this->migrationDirectories as $owner => $directory) {
-            if (! is_dir($directory)) {
-                throw new RuntimeException(sprintf('Migration directory for %s does not exist: %s', $owner, $directory));
+            if (! is_dir(filename: $directory)) {
+                throw new RuntimeException(message: sprintf('Migration directory for %s does not exist: %s', $owner, $directory));
             }
 
-            $files = glob(rtrim($directory, '/') . '/*.sql');
+            $files = glob(pattern: rtrim(string: $directory, characters: '/') . '/*.sql');
 
             if ($files === false) {
-                throw new RuntimeException('Unable to enumerate migrations in: ' . $directory);
+                throw new RuntimeException(message: 'Unable to enumerate migrations in: ' . $directory);
             }
 
             foreach ($files as $file) {
-                $identifier              = $owner . ':' . basename($file);
+                $identifier              = $owner . ':' . basename(path: $file);
                 $migrations[$identifier] = $file;
             }
         }
 
-        ksort($migrations, SORT_STRING);
+        ksort(array: $migrations, flags: SORT_STRING);
 
         return $migrations;
     }
 
-    private function apply(string $identifier, string $file) : void
+    private function apply(string $identifier, string $file): void
     {
-        $sql = file_get_contents($file);
+        $sql = file_get_contents(filename: $file);
 
-        if ($sql === false || trim($sql) === '') {
-            throw new RuntimeException('Migration is empty or unreadable: ' . $file);
+        if ($sql === false || trim(string: $sql) === '') {
+            throw new RuntimeException(message: 'Migration is empty or unreadable: ' . $file);
         }
 
-        (new Transaction($this->pdo))->run(function () use ($identifier, $sql) : void {
-            $this->pdo->exec($sql);
+        (new Transaction(pdo: $this->pdo))->run(operation: function () use ($identifier, $sql): void {
+            $this->pdo->exec(statement: $sql);
 
             $statement = $this->pdo->prepare(
-                'INSERT INTO schema_migrations (migration, applied_at) VALUES (:migration, :applied_at)',
+                query: 'INSERT INTO schema_migrations (migration, applied_at) VALUES (:migration, :applied_at)',
             );
 
-            $statement->execute([
-                                    'migration'  => $identifier,
-                                    'applied_at' => gmdate('c'),
-                                ]);
+            $statement->execute(params: [
+                'migration'  => $identifier,
+                'applied_at' => gmdate(format: 'c'),
+            ]);
         });
     }
 }

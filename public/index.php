@@ -6,22 +6,22 @@ use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Router;
 
 // Never expose exception messages or stack traces to HTTP clients.
-ini_set('display_errors', '0');
+ini_set(option: 'display_errors', value: '0');
 
 try {
     /** @var Router $router */
-    $router = require dirname(__DIR__) . '/bootstrap/app.php';
+    $router = require dirname(path: __DIR__) . '/bootstrap/app.php';
 
-    $router->dispatch(Request::fromGlobals())->send();
+    $router->dispatch(request: Request::fromGlobals())->send();
 } catch (Throwable $error) {
     // One outermost diagnostic boundary; expected 4xx responses do not throw.
-    error_log((string) $error);
+    error_log(message: (string) $error);
 
     if (! headers_sent()) {
-        http_response_code(500);
-        header('Content-Type: text/plain; charset=UTF-8');
-        header('Cache-Control: no-store');
-        header('X-Content-Type-Options: nosniff');
+        http_response_code(response_code: 500);
+        header(header: 'Content-Type: text/plain; charset=UTF-8');
+        header(header: 'Cache-Control: no-store');
+        header(header: 'X-Content-Type-Options: nosniff');
     }
 
     echo 'Internal Server Error';

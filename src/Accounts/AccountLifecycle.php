@@ -21,20 +21,20 @@ final readonly class AccountLifecycle
         private Transaction     $transaction,
     ) {}
 
-    public function register(string $username, string $password) : void
+    public function register(string $username, #[\SensitiveParameter] string $password): void
     {
-        $this->transaction->run(function () use ($username, $password) : void {
-            $account = $this->register->register($username, $password);
-            $this->activity->recordRegistration($account->id, $account->username);
+        $this->transaction->run(operation: function () use ($username, $password): void {
+            $account = $this->register->register(username: $username, password: $password);
+            $this->activity->recordRegistration(actorId: $account->id, actorLabel: $account->username);
         });
     }
 
-    public function login(string $username, string $password) : SignedInAccount
+    public function login(string $username, #[\SensitiveParameter] string $password): SignedInAccount
     {
-        $account = $this->login->login($username, $password);
+        $account = $this->login->login(username: $username, password: $password);
 
         try {
-            $this->activity->recordLogin($account->id, $account->username);
+            $this->activity->recordLogin(actorId: $account->id, actorLabel: $account->username);
         } catch (Throwable $error) {
             $this->identity->signOut();
             throw $error;
@@ -43,13 +43,13 @@ final readonly class AccountLifecycle
         return $account;
     }
 
-    public function logout() : void
+    public function logout(): void
     {
         try {
             $account = $this->identity->current();
 
             if ($account !== null) {
-                $this->activity->recordLogout($account->id, $account->username);
+                $this->activity->recordLogout(actorId: $account->id, actorLabel: $account->username);
             }
         } finally {
             // Session revocation must not depend on account lookup or audit availability.

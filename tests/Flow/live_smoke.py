@@ -55,7 +55,7 @@ def request(opener, base, path, data=None):
 
 
 def csrf(body):
-    match = re.search(rb'name="csrf_token" value="([^"]+)"', body)
+    match = re.search(rb'name="csrf_token"\s+value="([^"]+)"', body)
     assert match, "No CSRF hidden field"
     return match.group(1).decode()
 

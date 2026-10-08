@@ -24,19 +24,19 @@ final class ActivityLogTest extends TestCase
     private PDO         $pdo;
     private ActivityLog $log;
 
-    public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp() : void
+    public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp(): void
     {
-        $this->log->recordRegistration(7, 'alice');
-        $this->log->recordLogin(7, 'alice');
-        $this->log->recordPageView(7, 'alice', TrackedPage::PageA);
-        $this->log->recordPageView(7, 'alice', TrackedPage::PageB);
-        $this->log->recordButtonClick(7, 'alice', TrackedButton::BuyCow);
-        $this->log->recordButtonClick(7, 'alice', TrackedButton::Download);
-        $this->log->recordLogout(7, 'alice');
+        $this->log->recordRegistration(actorId: 7, actorLabel: 'alice');
+        $this->log->recordLogin(actorId: 7, actorLabel: 'alice');
+        $this->log->recordPageView(actorId: 7, actorLabel: 'alice', page: TrackedPage::PageA);
+        $this->log->recordPageView(actorId: 7, actorLabel: 'alice', page: TrackedPage::PageB);
+        $this->log->recordButtonClick(actorId: 7, actorLabel: 'alice', button: TrackedButton::BuyCow);
+        $this->log->recordButtonClick(actorId: 7, actorLabel: 'alice', button: TrackedButton::Download);
+        $this->log->recordLogout(actorId: 7, actorLabel: 'alice');
 
-        $statement = $this->pdo->query('SELECT actor_id, actor_label, action, target, occurred_at FROM activity_events ORDER BY id');
+        $statement = $this->pdo->query(query: 'SELECT actor_id, actor_label, action, target, occurred_at FROM activity_events ORDER BY id');
         self::assertNotFalse($statement);
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
         self::assertCount(7, $rows);
 
         $expected = [
@@ -58,64 +58,67 @@ final class ActivityLogTest extends TestCase
         }
     }
 
-    public function testDoesNotReadAccountsOrChangeEarlierActorLabels() : void
+    public function testDoesNotReadAccountsOrChangeEarlierActorLabels(): void
     {
-        $this->log->recordLogin(14, 'old-label');
-        $this->log->recordLogout(14, 'new-label');
+        $this->log->recordLogin(actorId: 14, actorLabel: 'old-label');
+        $this->log->recordLogout(actorId: 14, actorLabel: 'new-label');
 
-        $statement = $this->pdo->query('SELECT actor_label FROM activity_events ORDER BY id');
+        $statement = $this->pdo->query(query: 'SELECT actor_label FROM activity_events ORDER BY id');
         self::assertNotFalse($statement);
-        self::assertSame(['old-label', 'new-label'], $statement->fetchAll(PDO::FETCH_COLUMN));
+        self::assertSame(['old-label', 'new-label'], $statement->fetchAll(mode: PDO::FETCH_COLUMN));
     }
 
-    public function testRejectsInvalidActorBeforeWriting() : void
+    public function testRejectsInvalidActorBeforeWriting(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->log->recordLogin(0, 'alice');
+        $this->log->recordLogin(actorId: 0, actorLabel: 'alice');
     }
 
-    public function testRejectsBlankActorLabelBeforeWriting() : void
+    public function testRejectsBlankActorLabelBeforeWriting(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->log->recordLogin(1, '  ');
+        $this->log->recordLogin(actorId: 1, actorLabel: '  ');
     }
 
-    public function testDatabaseRejectsInvalidEventTaxonomy() : void
+    public function testDatabaseRejectsInvalidEventTaxonomy(): void
     {
         $this->expectException(PDOException::class);
-        $this->pdo->exec("INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'button-click', 'page-a', '2026-10-08T10:15:00+00:00')");
+        $this->pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'button-click', 'page-a', '2026-10-08T10:15:00+00:00')");
     }
 
-    public function testParticipatesInSameLocalTransactionAndRollsBack() : void
+    public function testParticipatesInSameLocalTransactionAndRollsBack(): void
     {
         try {
-            (new Transaction($this->pdo))->run(function () : void {
-                $this->log->recordRegistration(5, 'alice');
-                $this->pdo->exec("INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (5, 'alice', 'view-page', 'buy-cow', '2026-10-08T10:15:00+00:00')");
+            (new Transaction(pdo: $this->pdo))->run(operation: function (): void {
+                $this->log->recordRegistration(actorId: 5, actorLabel: 'alice');
+                $this->pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (5, 'alice', 'view-page', 'buy-cow', '2026-10-08T10:15:00+00:00')");
             });
         } catch (PDOException) {
             // The second write violates event taxonomy; first write must roll back.
         }
-        $statement = $this->pdo->query('SELECT COUNT(*) FROM activity_events');
+        $statement = $this->pdo->query(query: 'SELECT COUNT(*) FROM activity_events');
         self::assertNotFalse($statement);
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
-    protected function setUp() : void
+    #[\Override]
+
+    protected function setUp(): void
     {
         $this->pdo = SqliteConnection::memory();
 
-        (new Migrator($this->pdo, [
-            'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
+        (new Migrator(pdo: $this->pdo, migrationDirectories: [
+            'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
         $clock = new class implements ClockInterface {
-            public function now() : DateTimeImmutable
+            #[\Override]
+            public function now(): DateTimeImmutable
             {
-                return new DateTimeImmutable('2026-10-08 12:15:00', new DateTimeZone('Europe/Belgrade'));
+                return new DateTimeImmutable(datetime: '2026-10-08 12:15:00', timezone: new DateTimeZone(timezone: 'Europe/Belgrade'));
             }
         };
 
-        $this->log = new ActivityLog($this->pdo, $clock);
+        $this->log = new ActivityLog(pdo: $this->pdo, clock: $clock);
     }
 }

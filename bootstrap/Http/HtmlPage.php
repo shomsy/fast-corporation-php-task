@@ -15,12 +15,12 @@ final readonly class HtmlPage
     /**
      * @param array<string, mixed> $data
      */
-    public function render(string $path, array $data, int $status = 200) : Response
+    public function render(string $path, array $data, int $status = 200): Response
     {
         return new Response(
-            $this->renderer->render(dirname(__DIR__, 2) . '/' . $path, $data),
-            $status,
-            [
+            body: $this->renderer->render(template: dirname(path: __DIR__, levels: 2) . '/' . $path, data: $data),
+            status: $status,
+            headers: [
                 'Content-Type'            => 'text/html; charset=UTF-8',
                 'Cache-Control'           => 'no-store',
                 'X-Content-Type-Options'  => 'nosniff',

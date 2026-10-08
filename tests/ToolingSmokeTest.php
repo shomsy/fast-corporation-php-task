@@ -10,10 +10,10 @@ use PHPUnit\Framework\TestCase;
 #[CoversNothing]
 final class ToolingSmokeTest extends TestCase
 {
-    public function testRequiredRuntimeCapabilitiesAreAvailable() : void
+    public function testRequiredRuntimeCapabilitiesAreAvailable(): void
     {
         self::assertGreaterThanOrEqual(80300, PHP_VERSION_ID);
-        self::assertTrue(extension_loaded('pdo_sqlite'));
-        self::assertTrue(extension_loaded('session'));
+        self::assertTrue(extension_loaded(extension: 'pdo_sqlite'));
+        self::assertTrue(extension_loaded(extension: 'session'));
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use InterviewTask\Runtime\Http\Router;
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+require dirname(path: __DIR__) . '/vendor/autoload.php';
 
 $router = new Router();
 

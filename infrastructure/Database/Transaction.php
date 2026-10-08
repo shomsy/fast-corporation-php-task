@@ -18,7 +18,7 @@ final readonly class Transaction
      *
      * @return T
      */
-    public function run(callable $operation) : mixed
+    public function run(callable $operation): mixed
     {
         $this->pdo->beginTransaction();
 

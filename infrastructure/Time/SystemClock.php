@@ -10,8 +10,9 @@ use Psr\Clock\ClockInterface;
 
 final class SystemClock implements ClockInterface
 {
-    public function now() : DateTimeImmutable
+    #[\Override]
+    public function now(): DateTimeImmutable
     {
-        return new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        return new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'UTC'));
     }
 }

@@ -16,18 +16,18 @@ final readonly class Register
         private ClockInterface $clock,
     ) {}
 
-    public function register(string $username, string $password) : Account
+    public function register(string $username, #[\SensitiveParameter] string $password): Account
     {
-        $username = trim($username);
+        $username = trim(string: $username);
 
         if ($username === '' || $password === '') {
-            throw new RegistrationRejected('Username and password are required.');
+            throw new RegistrationRejected(message: 'Username and password are required.');
         }
 
         try {
-            return $this->accounts->createUser($username, $password, $this->clock->now());
+            return $this->accounts->createUser(username: $username, password: $password, createdAt: $this->clock->now());
         } catch (PasswordRejected $e) {
-            throw new RegistrationRejected($e->getMessage(), previous: $e);
+            throw new RegistrationRejected(message: $e->getMessage(), previous: $e);
         }
     }
 }

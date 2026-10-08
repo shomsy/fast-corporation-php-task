@@ -1,6 +1,6 @@
 <?php
 /** @var array{daily: list<array{date:string,page_a_views:int,page_b_views:int,buy_cow_clicks:int,download_clicks:int}>,from:string,to:string,error:string} $data */
-/** @var callable(mixed): string $escape */
+/** @var callable(mixed $value): string $escape */
 $daily  = $data['daily'];
 $series = [
     'page_a_views'    => ['label' => 'Page A views', 'color' => '#1d4ed8'],
@@ -14,9 +14,9 @@ foreach ($daily as $day) {
         $max = max($max, (int) $day[$key]);
     }
 }
-$count = count($daily);
-$xFor  = static fn (int $i) : float => 75 + ($count < 2 ? 0 : $i * 830 / ($count - 1));
-$yFor  = static fn (int $value) : float => 265 - $value * 215 / $max;
+$count = count(value: $daily);
+$xFor  = static fn(int $i): float => 75 + ($count < 2 ? 0 : $i * 830 / ($count - 1));
+$yFor  = static fn(int $value): float => 265 - $value * 215 / $max;
 ?>
 <!doctype html>
 <html lang="en">
@@ -74,53 +74,52 @@ $yFor  = static fn (int $value) : float => 265 - $value * 215 / $max;
     <p>All dates are UTC. The chart and table use the same daily dataset (up
         to <?= \InterviewTask\ActivityTracking\DailyReports::MAX_DAYS ?> recent active dates).</p>
     <form method="get" action="/reports">
-        <label>From (UTC) <input name="from" placeholder="YYYY-MM-DD" value="<?= $escape($data['from']) ?>"></label>
-        <label>To (UTC) <input name="to" placeholder="YYYY-MM-DD" value="<?= $escape($data['to']) ?>"></label>
+        <label>From (UTC) <input name="from" placeholder="YYYY-MM-DD" value="<?= $escape(value: $data['from']) ?>"></label>
+        <label>To (UTC) <input name="to" placeholder="YYYY-MM-DD" value="<?= $escape(value: $data['to']) ?>"></label>
         <button type="submit">Filter</button>
         <a href="/reports">Clear</a>
     </form>
     <?php
-    if ($data['error'] !== ''): ?><p role="alert"><?= $escape($data['error']) ?></p><?php
+    if ($data['error'] !== ''): ?><p role="alert"><?= $escape(value: $data['error']) ?></p><?php
     endif; ?>
     <?php
     if ($daily === []): ?>
         <p>No reportable activity yet.</p>
-    <?php
-    else: ?>
+    <?php else: ?>
         <div class="legend">
             <?php
-            foreach ($series as $s): ?><span style="color:<?= $escape($s['color']) ?>">
-                ● <?= $escape($s['label']) ?></span><?php
+            foreach ($series as $s): ?><span style="color:<?= $escape(value: $s['color']) ?>">
+                ● <?= $escape(value: $s['label']) ?></span><?php
             endforeach; ?>
         </div>
         <svg viewBox="0 0 960 330" role="img" aria-label="Daily Page A, Page B, Buy Cow and Download event counts">
             <line x1="75" y1="50" x2="75" y2="265" stroke="#64748b"/>
             <line x1="75" y1="265" x2="905" y2="265" stroke="#64748b"/>
             <?php
-            foreach ([0, 1, 2, 3, 4] as $i): $val = (int) round($max * $i / 4);
-                $y = $yFor($val); ?>
-                <line x1="75" y1="<?= $escape($y) ?>" x2="905" y2="<?= $escape($y) ?>" stroke="#e2e8f0"/>
-                <text x="65" y="<?= $escape($y + 4) ?>" text-anchor="end" font-size="12"
-                      fill="#475569"><?= $escape($val) ?></text>
+            foreach ([0, 1, 2, 3, 4] as $i): $val = (int) round(num: $max * $i / 4);
+                $y = $yFor(value: $val); ?>
+                <line x1="75" y1="<?= $escape(value: $y) ?>" x2="905" y2="<?= $escape(value: $y) ?>" stroke="#e2e8f0"/>
+                <text x="65" y="<?= $escape(value: $y + 4) ?>" text-anchor="end" font-size="12"
+                      fill="#475569"><?= $escape(value: $val) ?></text>
             <?php
             endforeach; ?>
             <?php
             foreach ($series as $key => $s): ?>
-                <polyline fill="none" stroke="<?= $escape($s['color']) ?>" stroke-width="3" points="<?php
-                foreach ($daily as $i => $day): ?><?= $escape(round($xFor($i), 2) . ',' . round($yFor((int) $day[$key]), 2)) ?> <?php
+                <polyline fill="none" stroke="<?= $escape(value: $s['color']) ?>" stroke-width="3" points="<?php
+                foreach ($daily as $i => $day): ?><?= $escape(value: round(num: $xFor(i: $i), precision: 2) . ',' . round(num: $yFor(value: (int) $day[$key]), precision: 2)) ?> <?php
                 endforeach; ?>"/>
                 <?php
                 foreach ($daily as $i => $day): ?>
-                <circle cx="<?= $escape($xFor($i)) ?>" cy="<?= $escape($yFor((int) $day[$key])) ?>" r="4"
-                        fill="<?= $escape($s['color']) ?>">
-                    <title><?= $escape($s['label'] . ': ' . $day[$key] . ' on ' . $day['date']) ?></title></circle><?php
+                <circle cx="<?= $escape(value: $xFor(i: $i)) ?>" cy="<?= $escape(value: $yFor(value: (int) $day[$key])) ?>" r="4"
+                        fill="<?= $escape(value: $s['color']) ?>">
+                    <title><?= $escape(value: $s['label'] . ': ' . $day[$key] . ' on ' . $day['date']) ?></title></circle><?php
                 endforeach; ?>
             <?php
             endforeach; ?>
             <?php
             foreach ($daily as $i => $day): ?>
-                <text x="<?= $escape($xFor($i)) ?>" y="295" font-size="12" text-anchor="middle"
-                      fill="#475569"><?= $escape($day['date']) ?></text><?php
+                <text x="<?= $escape(value: $xFor(i: $i)) ?>" y="295" font-size="12" text-anchor="middle"
+                      fill="#475569"><?= $escape(value: $day['date']) ?></text><?php
             endforeach; ?>
         </svg>
     <?php
@@ -141,11 +140,11 @@ $yFor  = static fn (int $value) : float => 265 - $value * 215 / $max;
             <?php
             foreach ($daily as $day): ?>
                 <tr>
-                <td><?= $escape($day['date']) ?></td>
-                <td><?= $escape($day['page_a_views']) ?></td>
-                <td><?= $escape($day['page_b_views']) ?></td>
-                <td><?= $escape($day['buy_cow_clicks']) ?></td>
-                <td><?= $escape($day['download_clicks']) ?></td></tr><?php
+                <td><?= $escape(value: $day['date']) ?></td>
+                <td><?= $escape(value: $day['page_a_views']) ?></td>
+                <td><?= $escape(value: $day['page_b_views']) ?></td>
+                <td><?= $escape(value: $day['buy_cow_clicks']) ?></td>
+                <td><?= $escape(value: $day['download_clicks']) ?></td></tr><?php
             endforeach; ?>
             <?php
             if ($daily === []): ?>

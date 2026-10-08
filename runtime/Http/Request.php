@@ -19,27 +19,26 @@ final readonly class Request
         private array  $query = [],
         private array  $post = [],
         private array  $server = [],
-    )
-    {
-        if ($path === '' || ! str_starts_with($path, '/')) {
-            throw new InvalidArgumentException('Request path must start with "/".');
+    ) {
+        if ($path === '' || ! str_starts_with(haystack: $path, needle: '/')) {
+            throw new InvalidArgumentException(message: 'Request path must start with "/".');
         }
     }
 
-    public static function fromGlobals() : self
+    public static function fromGlobals(): self
     {
-        $uri = is_string($_SERVER['REQUEST_URI'] ?? null)
+        $uri = is_string(value: $_SERVER['REQUEST_URI'] ?? null)
             ? $_SERVER['REQUEST_URI']
             : '/';
 
-        $path = parse_url($uri, PHP_URL_PATH);
+        $path = parse_url(url: $uri, component: PHP_URL_PATH);
 
         return new self(
-            method: is_string($_SERVER['REQUEST_METHOD'] ?? null) ? $_SERVER['REQUEST_METHOD'] : 'GET',
-            path  : is_string($path) && $path !== '' ? $path : '/',
-            query : self::stringKeyed($_GET),
-            post  : self::stringKeyed($_POST),
-            server: self::stringKeyed($_SERVER),
+            method: is_string(value: $_SERVER['REQUEST_METHOD'] ?? null) ? $_SERVER['REQUEST_METHOD'] : 'GET',
+            path  : is_string(value: $path) && $path !== '' ? $path : '/',
+            query : self::stringKeyed(values: $_GET),
+            post  : self::stringKeyed(values: $_POST),
+            server: self::stringKeyed(values: $_SERVER),
         );
     }
 
@@ -48,12 +47,12 @@ final readonly class Request
      *
      * @return array<string, mixed>
      */
-    private static function stringKeyed(array $values) : array
+    private static function stringKeyed(array $values): array
     {
         $result = [];
 
         foreach ($values as $key => $value) {
-            if (is_string($key)) {
+            if (is_string(value: $key)) {
                 $result[$key] = $value;
             }
         }
@@ -61,27 +60,27 @@ final readonly class Request
         return $result;
     }
 
-    public function method() : string
+    public function method(): string
     {
-        return strtoupper($this->method);
+        return strtoupper(string: $this->method);
     }
 
-    public function path() : string
+    public function path(): string
     {
         return $this->path;
     }
 
-    public function query(string $key) : mixed
+    public function query(string $key): mixed
     {
         return $this->query[$key] ?? null;
     }
 
-    public function post(string $key) : mixed
+    public function post(string $key): mixed
     {
         return $this->post[$key] ?? null;
     }
 
-    public function server(string $key) : mixed
+    public function server(string $key): mixed
     {
         return $this->server[$key] ?? null;
     }

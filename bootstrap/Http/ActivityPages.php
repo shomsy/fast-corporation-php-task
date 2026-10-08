@@ -23,25 +23,25 @@ final readonly class ActivityPages
         private HtmlPage       $html,
     ) {}
 
-    public function statisticsPage(Request $request) : Response
+    public function statisticsPage(Request $request): Response
     {
         $denied = $this->requireAdministrator();
         if ($denied !== null) {
             return $denied;
         }
 
-        $date      = $this->optionalInput($request->query('date'));
-        $user      = $this->optionalInput($request->query('user'));
-        $action    = $this->optionalInput($request->query('action'));
-        $pageValue = $this->optionalInput($request->query('page')) ?? '1';
+        $date      = $this->optionalInput(value: $request->query(key: 'date'));
+        $user      = $this->optionalInput(value: $request->query(key: 'user'));
+        $action    = $this->optionalInput(value: $request->query(key: 'action'));
+        $pageValue = $this->optionalInput(value: $request->query(key: 'page')) ?? '1';
         $page      = 1;
 
         try {
-            if (! preg_match('/^[1-9][0-9]{0,17}$/', $pageValue)) {
-                throw new InvalidArgumentException('Invalid page.');
+            if (! preg_match(pattern: '/^[1-9][0-9]{0,17}$/', subject: $pageValue)) {
+                throw new InvalidArgumentException(message: 'Invalid page.');
             }
             $page    = (int) $pageValue;
-            $result  = $this->statistics->page($date, $user, $action, $page);
+            $result  = $this->statistics->page(date: $date, user: $user, action: $action, page: $page);
             $events  = $result['events'];
             $hasNext = $result['hasNext'];
             $error   = '';
@@ -53,15 +53,15 @@ final readonly class ActivityPages
             $status  = 422;
         }
 
-        return $this->html->render('src/ActivityTracking/statistics.php', [
+        return $this->html->render(path: 'src/ActivityTracking/statistics.php', data: [
             'events'  => $events, 'date' => $date ?? '',
             'user'    => $user ?? '', 'action' => $action ?? '',
             'error'   => $error, 'page' => $page,
             'hasNext' => $hasNext,
-        ],                         $status);
+        ], status: $status);
     }
 
-    private function requireAdministrator() : ?Response
+    private function requireAdministrator(): ?Response
     {
         try {
             $this->admin->account();
@@ -69,27 +69,27 @@ final readonly class ActivityPages
             return null;
         } catch (AccessDenied) {
             return $this->identity->current() === null
-                ? Response::redirect('/login')
-                : Response::text('Forbidden', 403);
+                ? Response::redirect(location: '/login')
+                : Response::text(body: 'Forbidden', status: 403);
         }
     }
 
-    private function optionalInput(mixed $value) : ?string
+    private function optionalInput(mixed $value): ?string
     {
-        return is_string($value) && $value !== '' ? $value : null;
+        return is_string(value: $value) && $value !== '' ? $value : null;
     }
 
-    public function reportsPage(?Request $request = null) : Response
+    public function reportsPage(?Request $request = null): Response
     {
         $denied = $this->requireAdministrator();
         if ($denied !== null) {
             return $denied;
         }
 
-        $from = $request === null ? null : $this->optionalInput($request->query('from'));
-        $to   = $request === null ? null : $this->optionalInput($request->query('to'));
+        $from = $request === null ? null : $this->optionalInput(value: $request->query(key: 'from'));
+        $to   = $request === null ? null : $this->optionalInput(value: $request->query(key: 'to'));
         try {
-            $daily  = $this->reports->dailyCounts($from, $to);
+            $daily  = $this->reports->dailyCounts(from: $from, to: $to);
             $error  = '';
             $status = 200;
         } catch (InvalidArgumentException $e) {
@@ -98,8 +98,8 @@ final readonly class ActivityPages
             $status = 422;
         }
 
-        return $this->html->render('src/ActivityTracking/reports.php', [
+        return $this->html->render(path: 'src/ActivityTracking/reports.php', data: [
             'daily' => $daily, 'from' => $from ?? '', 'to' => $to ?? '', 'error' => $error,
-        ],                         $status);
+        ], status: $status);
     }
 }

@@ -14,10 +14,10 @@ use InterviewTask\Accounts\SessionIdentity;
 
 final class AuthorizationTest extends AccountsTestCase
 {
-    public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount() : void
+    public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount(): void
     {
-        $identity = new SessionIdentity($this->session(), $this->accounts);
-        $guard    = new RequireSignedIn($identity);
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);
+        $guard    = new RequireSignedIn(identity: $identity);
 
         try {
             $guard->account();
@@ -26,20 +26,20 @@ final class AuthorizationTest extends AccountsTestCase
             self::assertNull($identity->current());
         }
 
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'password');
-        $identity->signIn($account);
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'password');
+        $identity->signIn(account: $account);
 
         self::assertSame($account->id, $guard->account()->id);
     }
 
-    public function testAdminGuardRejectsUserAndAcceptsAdmin() : void
+    public function testAdminGuardRejectsUserAndAcceptsAdmin(): void
     {
         $session  = $this->session();
-        $identity = new SessionIdentity($session, $this->accounts);
-        $guard    = new RequireAdmin($identity);
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts);
+        $guard    = new RequireAdmin(identity: $identity);
 
-        $user = (new Register($this->accounts, $this->clock))->register('alice', 'password');
-        $identity->signIn($user);
+        $user = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'password');
+        $identity->signIn(account: $user);
 
         try {
             $guard->account();
@@ -50,21 +50,21 @@ final class AuthorizationTest extends AccountsTestCase
 
         $identity->signOut();
 
-        $admin = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'password');
-        $identity->signIn($admin);
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'password');
+        $identity->signIn(account: $admin);
 
         self::assertSame(Role::Admin, $guard->account()->role);
     }
 
-    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession() : void
+    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession(): void
     {
-        $identity = new SessionIdentity($this->session(), $this->accounts, $this->clock);
-        $guard    = new RequireAdmin($identity);
-        $admin    = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'password');
-        $identity->signIn($admin);
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
+        $guard    = new RequireAdmin(identity: $identity);
+        $admin    = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'password');
+        $identity->signIn(account: $admin);
         self::assertSame(Role::Admin, $guard->account()->role);
 
-        $update = $this->pdo->prepare('UPDATE accounts SET role = :role WHERE id = :id');
+        $update = $this->pdo->prepare(query: 'UPDATE accounts SET role = :role WHERE id = :id');
         self::assertNotFalse($update);
         self::assertTrue($update->execute(['role' => Role::User->value, 'id' => $admin->id]));
 

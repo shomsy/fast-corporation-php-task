@@ -17,10 +17,9 @@ final readonly class DailyReports
     public function __construct(private PDO $pdo) {}
 
     /**
-     * @return list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks:
-     *                          int}>
+     * @return list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}>
      */
-    public function dailyCounts(?string $from = null, ?string $to = null) : array
+    public function dailyCounts(?string $from = null, ?string $to = null): array
     {
         $parameters = [];
         foreach (['from' => $from, 'to' => $to] as $name => $value) {
@@ -28,15 +27,15 @@ final readonly class DailyReports
                 continue;
             }
 
-            $parsed = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-            if ($parsed === false || $parsed->format('Y-m-d') !== $value) {
-                throw new InvalidArgumentException('Invalid report date.');
+            $parsed = DateTimeImmutable::createFromFormat(format: '!Y-m-d', datetime: $value);
+            if ($parsed === false || $parsed->format(format: 'Y-m-d') !== $value) {
+                throw new InvalidArgumentException(message: 'Invalid report date.');
             }
             $parameters[$name] = $value;
         }
 
         if (isset($parameters['from'], $parameters['to']) && $parameters['from'] > $parameters['to']) {
-            throw new InvalidArgumentException('Report date range must be ascending.');
+            throw new InvalidArgumentException(message: 'Report date range must be ascending.');
         }
 
         $conditions = ["((action = 'view-page' AND target IN ('page-a', 'page-b')) OR (action = 'button-click' AND target IN ('buy-cow', 'download')))"];
@@ -54,16 +53,16 @@ final readonly class DailyReports
                 SUM(CASE WHEN action = 'button-click' AND target = 'download' THEN 1 ELSE 0 END) AS download_clicks
             FROM activity_events WHERE
             SQL;
-        $query     .= implode(' AND ', $conditions);
+        $query     .= implode(separator: ' AND ', array: $conditions);
         $query     .= ' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT ' . self::MAX_DAYS;
-        $statement = $this->pdo->prepare('SELECT * FROM (' . $query . ') ORDER BY date ASC');
+        $statement = $this->pdo->prepare(query: 'SELECT * FROM (' . $query . ') ORDER BY date ASC');
         if ($statement === false) {
-            throw new RuntimeException('Unable to prepare daily activity report.');
+            throw new RuntimeException(message: 'Unable to prepare daily activity report.');
         }
-        $statement->execute($parameters);
+        $statement->execute(params: $parameters);
 
         /** @var list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}> $rows */
-        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
 
         return $rows;
     }

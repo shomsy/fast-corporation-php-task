@@ -1,6 +1,6 @@
 <?php
 /** @var array{csrfToken: string, bought: bool} $data */
-/** @var callable(mixed): string $escape */
+/** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
 <html lang="en">
@@ -42,11 +42,10 @@
     <?php
     if ($data['bought']): ?>
         <p class="success" role="status">thankYou</p>
-    <?php
-    else: ?>
+    <?php else: ?>
         <p>Would you like to buy a cow?</p>
         <form method="post" action="/buy-cow"><input type="hidden" name="csrf_token"
-                                                     value="<?= $escape($data['csrfToken']) ?>">
+                                                     value="<?= $escape(value: $data['csrfToken']) ?>">
             <button type="submit">Buy a cow</button>
         </form>
     <?php

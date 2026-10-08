@@ -15,20 +15,20 @@ final readonly class Login
         private SessionIdentity $identity,
     ) {}
 
-    public function login(string $username, string $password) : SignedInAccount
+    public function login(string $username, #[\SensitiveParameter] string $password): SignedInAccount
     {
-        $username = trim($username);
+        $username = trim(string: $username);
 
         if ($username === '' || $password === '') {
             throw new InvalidCredentials();
         }
 
-        $account = $this->accounts->authenticate($username, $password);
+        $account = $this->accounts->authenticate(username: $username, password: $password);
 
         if ($account === null) {
             throw new InvalidCredentials();
         }
 
-        return $this->identity->signIn($account);
+        return $this->identity->signIn(account: $account);
     }
 }

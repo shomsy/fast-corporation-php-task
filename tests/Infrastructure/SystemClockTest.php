@@ -11,12 +11,12 @@ use Psr\Clock\ClockInterface;
 
 final class SystemClockTest extends TestCase
 {
-    public function testUsesUtc() : void
+    public function testUsesUtc(): void
     {
         self::assertSame('UTC', (new SystemClock())->now()->getTimezone()->getName());
     }
 
-    public function testImplementsStandardPsr20Contract() : void
+    public function testImplementsStandardPsr20Contract(): void
     {
         $clock = new SystemClock();
 

@@ -10,20 +10,20 @@ use RuntimeException;
 
 final class RendererTest extends TestCase
 {
-    public function testProvidesCentralEscapingHelperToTemplate() : void
+    public function testProvidesCentralEscapingHelperToTemplate(): void
     {
-        $template = tempnam(sys_get_temp_dir(), 'fast-task-template-');
+        $template = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-task-template-');
 
         if ($template === false) {
-            throw new RuntimeException('Unable to create temporary template.');
+            throw new RuntimeException(message: 'Unable to create temporary template.');
         }
 
-        file_put_contents($template, '<?php echo $escape($data["name"]); ?>');
+        file_put_contents(filename: $template, data: '<?php echo $escape($data["name"]); ?>');
 
         try {
-            $output = (new Renderer())->render($template, ['name' => '<script>alert("x")</script>']);
+            $output = (new Renderer())->render(template: $template, data: ['name' => '<script>alert("x")</script>']);
         } finally {
-            unlink($template);
+            unlink(filename: $template);
         }
 
         self::assertSame('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;', $output);

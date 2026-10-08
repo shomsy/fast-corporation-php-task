@@ -30,14 +30,14 @@ final class PublicSurfaceTest extends TestCase
     /** @var list<string> */
     private const array OWNERS = ['Accounts', 'ActivityTracking', 'CowOffer', 'Downloads'];
 
-    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface() : void
+    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface(): void
     {
-        $root     = dirname(__DIR__, 2);
-        $exports  = self::exports($root);
+        $root     = dirname(path: __DIR__, levels: 2);
+        $exports  = self::exports(root: $root);
         $problems = [];
 
         foreach ([$root . '/src', $root . '/bootstrap/Http'] as $directory) {
-            $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+            $iterator = new RecursiveIteratorIterator(iterator: new RecursiveDirectoryIterator(directory: $directory));
             foreach ($iterator as $entry) {
                 if (! $entry instanceof SplFileInfo || ! $entry->isFile()
                     || $entry->getExtension() !== 'php' || $entry->getFilename() === 'module.php') {
@@ -45,19 +45,19 @@ final class PublicSurfaceTest extends TestCase
                 }
 
                 $path     = $entry->getPathname();
-                $contents = file_get_contents($path);
+                $contents = file_get_contents(filename: $path);
                 self::assertIsString($contents);
                 $currentOwner = null;
                 foreach (self::OWNERS as $owner) {
-                    if (str_starts_with($path, $root . '/src/' . $owner . '/')) {
+                    if (str_starts_with(haystack: $path, needle: $root . '/src/' . $owner . '/')) {
                         $currentOwner = $owner;
                         break;
                     }
                 }
 
-                foreach (self::referencedOwnerTypes($contents) as [$owner, $type]) {
-                    if ($currentOwner !== $owner && ! in_array($type, $exports[$owner], true)) {
-                        $problems[] = substr($path, strlen($root) + 1) . ' references private ' . $type;
+                foreach (self::referencedOwnerTypes(source: $contents) as [$owner, $type]) {
+                    if ($currentOwner !== $owner && ! in_array(needle: $type, haystack: $exports[$owner], strict: true)) {
+                        $problems[] = substr(string: $path, offset: strlen(string: $root) + 1) . ' references private ' . $type;
                     }
                 }
             }
@@ -69,7 +69,7 @@ final class PublicSurfaceTest extends TestCase
     /**
      * @return array<string, list<string>>
      */
-    private static function exports(string $root) : array
+    private static function exports(string $root): array
     {
         $result = [];
         foreach (self::OWNERS as $owner) {
@@ -87,34 +87,34 @@ final class PublicSurfaceTest extends TestCase
     /**
      * @return list<array{string, string}>
      */
-    private static function referencedOwnerTypes(string $source) : array
+    private static function referencedOwnerTypes(string $source): array
     {
         $parser = (new ParserFactory())->createForNewestSupportedVersion();
-        $parsed = $parser->parse($source);
+        $parsed = $parser->parse(code: $source);
         if ($parsed === null) {
             return [];
         }
 
         $traverser = new NodeTraverser(new NameResolver());
-        $nodes     = $traverser->traverse($parsed);
+        $nodes     = $traverser->traverse(nodes: $parsed);
         $finder    = new NodeFinder();
         $names     = [];
 
         // NameResolver expands aliases in new, type hints, static calls,
         // class constants, traits, attributes, instanceof, extends and more.
-        foreach ($finder->findInstanceOf($nodes, FullyQualified::class) as $name) {
+        foreach ($finder->findInstanceOf(nodes: $nodes, class: FullyQualified::class) as $name) {
             $names[] = $name->toString();
         }
 
         // Import declarations are not necessarily rewritten by NameResolver.
-        foreach ($finder->findInstanceOf($nodes, Use_::class) as $use) {
+        foreach ($finder->findInstanceOf(nodes: $nodes, class: Use_::class) as $use) {
             foreach ($use->uses as $item) {
                 if ($use->type === Use_::TYPE_NORMAL && $item->type !== Use_::TYPE_FUNCTION && $item->type !== Use_::TYPE_CONSTANT) {
                     $names[] = $item->name->toString();
                 }
             }
         }
-        foreach ($finder->findInstanceOf($nodes, GroupUse::class) as $group) {
+        foreach ($finder->findInstanceOf(nodes: $nodes, class: GroupUse::class) as $group) {
             if ($group->type !== Use_::TYPE_NORMAL) {
                 continue;
             }
@@ -127,46 +127,46 @@ final class PublicSurfaceTest extends TestCase
 
         $found = [];
         foreach ($names as $className) {
-            $parts = explode('\\', $className);
+            $parts = explode(separator: '\\', string: $className);
             $owner = $parts[1] ?? null;
             if (($parts[0] ?? null) !== 'InterviewTask'
-                || $owner === null || ! in_array($owner, self::OWNERS, true)
-                || count($parts) < 3) {
+                || $owner === null || ! in_array(needle: $owner, haystack: self::OWNERS, strict: true)
+                || count(value: $parts) < 3) {
                 continue;
             }
             $found[$className] = [$owner, $className];
         }
-        ksort($found);
+        ksort(array: $found);
 
-        return array_values($found);
+        return array_values(array: $found);
     }
 
-    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges() : void
+    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges(): void
     {
-        $exports = self::exports(dirname(__DIR__, 2));
+        $exports = self::exports(root: dirname(path: __DIR__, levels: 2));
         self::assertContains(AccountLifecycle::class, $exports['Accounts']);
         self::assertContains(CurrentAccount::class, $exports['Accounts']);
 
         foreach ([
-                     'InterviewTask\Accounts\Register\Register',
-                     'InterviewTask\Accounts\Login\Login',
-                     'InterviewTask\Accounts\Logout\Logout',
-                     'InterviewTask\Accounts\SessionIdentity',
-                     'InterviewTask\Accounts\Accounts',
-                 ] as $privateType) {
+            'InterviewTask\Accounts\Register\Register',
+            'InterviewTask\Accounts\Login\Login',
+            'InterviewTask\Accounts\Logout\Logout',
+            'InterviewTask\Accounts\SessionIdentity',
+            'InterviewTask\Accounts\Accounts',
+        ] as $privateType) {
             self::assertNotContains($privateType, $exports['Accounts'], $privateType . ' is a private implementation detail');
         }
 
-        $view = new ReflectionClass(CurrentAccount::class);
-        self::assertTrue($view->hasMethod('current'));
-        self::assertFalse($view->hasMethod('signIn'));
-        self::assertFalse($view->hasMethod('signOut'));
+        $view = new ReflectionClass(objectOrClass: CurrentAccount::class);
+        self::assertTrue($view->hasMethod(name: 'current'));
+        self::assertFalse($view->hasMethod(name: 'signIn'));
+        self::assertFalse($view->hasMethod(name: 'signOut'));
     }
 
-    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns() : void
+    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns(): void
     {
-        $exports   = self::exports(dirname(__DIR__, 2));
-        $lifecycle = new ReflectionClass(AccountLifecycle::class);
+        $exports   = self::exports(root: dirname(path: __DIR__, levels: 2));
+        $lifecycle = new ReflectionClass(objectOrClass: AccountLifecycle::class);
         foreach ($lifecycle->getMethods() as $method) {
             if (! $method->isPublic() || $method->isConstructor()) {
                 continue;
@@ -174,16 +174,16 @@ final class PublicSurfaceTest extends TestCase
             $return = $method->getReturnType();
             self::assertInstanceOf(ReflectionNamedType::class, $return);
             $name = $return->getName();
-            if (str_starts_with($name, 'InterviewTask\\Accounts\\')) {
+            if (str_starts_with(haystack: $name, needle: 'InterviewTask\\Accounts\\')) {
                 self::assertContains($name, $exports['Accounts'], $method->getName() . ' leaks private type');
             }
         }
-        $registerReturn = $lifecycle->getMethod('register')->getReturnType();
+        $registerReturn = $lifecycle->getMethod(name: 'register')->getReturnType();
         self::assertInstanceOf(ReflectionNamedType::class, $registerReturn);
         self::assertSame('void', $registerReturn->getName());
     }
 
-    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes() : void
+    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes(): void
     {
         $cases   = [
             "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n",
@@ -194,9 +194,9 @@ final class PublicSurfaceTest extends TestCase
             "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::class;\n",
             "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\PasswordRejected as P;\nclass C { public function get(): P { throw new \\Exception(); } }\n",
         ];
-        $exports = self::exports(dirname(__DIR__, 2));
+        $exports = self::exports(root: dirname(path: __DIR__, levels: 2));
         foreach ($cases as $source) {
-            $refs = self::referencedOwnerTypes($source);
+            $refs = self::referencedOwnerTypes(source: $source);
             self::assertContains(['Accounts', 'InterviewTask\Accounts\PasswordRejected'], $refs, $source);
             self::assertNotContains('InterviewTask\Accounts\PasswordRejected', $exports['Accounts']);
         }

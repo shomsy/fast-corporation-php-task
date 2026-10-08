@@ -1,7 +1,7 @@
 <?php
 
 /** @var array{username: string, role: string, csrfToken: string} $data */
-/** @var callable(mixed): string $escape */
+/** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
 <html lang="en">
@@ -34,7 +34,7 @@
 <body>
 <main>
     <h1>Activity Tracker</h1>
-    <p>Signed in as <strong><?= $escape($data['username']) ?></strong> (<?= $escape($data['role']) ?>).</p>
+    <p>Signed in as <strong><?= $escape(value: $data['username']) ?></strong> (<?= $escape(value: $data['role']) ?>).</p>
     <nav aria-label="Pages">
         <a href="/page-a">Page A</a>
         <a href="/page-b">Page B</a>
@@ -48,7 +48,7 @@
     <p>Use Page A to try Buy a cow and Page B to download the sample file. These actions are recorded in activity
         history.</p>
     <form method="post" action="/logout">
-        <input type="hidden" name="csrf_token" value="<?= $escape($data['csrfToken']) ?>">
+        <input type="hidden" name="csrf_token" value="<?= $escape(value: $data['csrfToken']) ?>">
         <button type="submit">Sign out</button>
     </form>
 </main>

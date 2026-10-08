@@ -12,8 +12,8 @@ final readonly class SignedInAccount
         public Role   $role,
     ) {}
 
-    public static function fromAccount(Account $account) : self
+    public static function fromAccount(Account $account): self
     {
-        return new self($account->id, $account->username, $account->role);
+        return new self(id: $account->id, username: $account->username, role: $account->role);
     }
 }

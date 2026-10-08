@@ -1,7 +1,7 @@
 <?php
 
 /** @var array{csrfToken: string, username: string, error: string} $data */
-/** @var callable(mixed): string $escape */
+/** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
 <html lang="en">
@@ -50,12 +50,12 @@
 <main>
     <h1>Create account</h1>
     <?php
-    if ($data['error'] !== ''): ?><p class="error" role="alert"><?= $escape($data['error']) ?></p><?php
+    if ($data['error'] !== ''): ?><p class="error" role="alert"><?= $escape(value: $data['error']) ?></p><?php
     endif; ?>
     <form action="/register" method="post">
-        <input type="hidden" name="csrf_token" value="<?= $escape($data['csrfToken']) ?>">
+        <input type="hidden" name="csrf_token" value="<?= $escape(value: $data['csrfToken']) ?>">
         <label for="username">Username</label>
-        <input id="username" name="username" autocomplete="username" value="<?= $escape($data['username']) ?>" required>
+        <input id="username" name="username" autocomplete="username" value="<?= $escape(value: $data['username']) ?>" required>
         <label for="password">Password</label>
         <input id="password" type="password" name="password" autocomplete="new-password" required>
         <button type="submit">Register</button>

@@ -12,16 +12,16 @@ use InterviewTask\Accounts\SessionIdentity;
 
 final class LoginTest extends AccountsTestCase
 {
-    public function testValidCredentialsRegenerateSessionAndEstablishIdentity() : void
+    public function testValidCredentialsRegenerateSessionAndEstablishIdentity(): void
     {
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'correct horse battery staple');
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'correct horse battery staple');
 
         $session = $this->session();
         $session->start();
         $before = session_id();
 
-        $identity = new SessionIdentity($session, $this->accounts);
-        $signedIn = (new Login($this->accounts, $identity))->login('alice', 'correct horse battery staple');
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts);
+        $signedIn = (new Login(accounts: $this->accounts, identity: $identity))->login(username: 'alice', password: 'correct horse battery staple');
 
         self::assertNotSame($before, session_id());
         self::assertSame($account->id, $signedIn->id);
@@ -30,9 +30,9 @@ final class LoginTest extends AccountsTestCase
         self::assertEquals($signedIn, $identity->current());
     }
 
-    public function testUnknownUserAndWrongPasswordExposeSameFailure() : void
+    public function testUnknownUserAndWrongPasswordExposeSameFailure(): void
     {
-        (new Register($this->accounts, $this->clock))->register('alice', 'correct horse battery staple');
+        (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'correct horse battery staple');
 
         foreach (
             [
@@ -40,11 +40,11 @@ final class LoginTest extends AccountsTestCase
                 ['alice', 'wrong password'],
             ] as [$username, $password]
         ) {
-            $identity = new SessionIdentity($this->session(), $this->accounts);
-            $login    = new Login($this->accounts, $identity);
+            $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);
+            $login    = new Login(accounts: $this->accounts, identity: $identity);
 
             try {
-                $login->login($username, $password);
+                $login->login(username: $username, password: $password);
                 self::fail('Expected invalid credentials.');
             } catch (InvalidCredentials $exception) {
                 self::assertSame('Invalid username or password.', $exception->getMessage());
