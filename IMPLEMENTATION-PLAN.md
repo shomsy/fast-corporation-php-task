@@ -133,6 +133,15 @@ Remote `main` is the delivery source of truth. Each loop iteration resumes from 
 - Isolated live HTTP smoke: **PASS** for fresh and idempotent SQLite migrations, CLI admin bootstrap, complete user registration/login/cow/download/logout and admin Statistics/filters/Reports using actual local HTTP server.
 - Release gate: commit `f319e57fd02e8beebeec57a5f32adb2269039668` is pushed to `origin/main`; GitHub Actions run `37710008109` completed successfully on PHP 8.3, 8.4 and 8.5; clean working tree verified.
 
+## Standards & Maintainability — vNext
+
+A behavior-preserving L1 hardening after the original accepted release added PSR-4
+autoloading for `InterviewTask\Bootstrap\`, focused business-named HTTP adapters
+under `bootstrap/Http/` in place of the old `WebPages` class, and the explicit
+`@PER-CS3x0` preset without formatting churn. This does not add any owner or
+claim full PER-CS 3.1 compliance. See `docs/PHP-STANDARDS-VNEXT.md` for
+the implementation decisions, validation criteria, and evidence.
+
 ## Delivery phases
 
 - Phase 0 — Planning / architecture — DONE (`113e2d4`)

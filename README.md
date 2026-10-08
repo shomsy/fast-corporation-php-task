@@ -62,3 +62,14 @@ composer quality              # composer validation, dependency audit, style, PH
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it starts the same PHP version with explicit database environment and mapped temporary directory.
 
 For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the pinned Architecture Governance 1.7.1 document.
+
+## PHP standards and maintainability
+
+Composer PSR-4 autoloads all project classes, including `InterviewTask\Bootstrap\`.
+The explicit HTTP adapter classes live in `bootstrap/Http/` and keep routing,
+security response headers and transport mapping separate from business ownership.
+Run `composer dump-autoload --optimize --strict-psr` to check autoload integrity.
+
+PHP-CS-Fixer uses `@PER-CS3x0` (PER Coding Style 3.0), plus project-specific strict
+rules. This does **not** assert complete PER Coding Style 3.1 verification.
+See `docs/PHP-STANDARDS-VNEXT.md` for the decision and acceptance evidence.

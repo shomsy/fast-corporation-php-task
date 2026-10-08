@@ -19,7 +19,7 @@ $finder = PhpCsFixer\Finder::create()
 return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
-        '@PER-CS2.0' => true,
+        '@PER-CS3x0' => true,
         'declare_strict_types' => true,
         'no_unused_imports' => true,
         'ordered_imports' => true,
