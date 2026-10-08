@@ -99,6 +99,8 @@ Independent review pending reconciliation: **[ClaudeCode original text](docs/rev
 
 Separate **[LLD design & code review](docs/reviews/LLD-CODE-REVIEW-2026-10-08.md)**: 26 independently tracked findings (8 high, 14 medium, 4 low), with roles, risks and proposed fixes. It is not yet reconciled with the OOP or ClaudeCode lists.
 
+New independent **[ClaudeCode LLD review — original 26 TODOs](docs/reviews/CLAUDE-CODE-LLD-REVIEW-2026-10-08.md)** and its **[LLD findings index](docs/reviews/CLAUDE-CODE-LLD-REVIEW-INDEX.md)** (8 high, 10 medium, 8 low). Kept verbatim, unmerged and unimplemented pending cross-review reconciliation.
+
 For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the
 pinned Architecture Governance 1.7.1 document. The architecture tests use `nikic/php-parser` to verify statically named
 cross-owner references (normal/grouped imports, fully-qualified names, type hints, static calls), and inspect literal

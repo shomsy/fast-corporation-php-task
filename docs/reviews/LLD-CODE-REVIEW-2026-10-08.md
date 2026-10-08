@@ -5,6 +5,8 @@
 **Autor review-a:** ChatGPT — višedisciplinarna LLD procena
 **Status:** ARCHIVED / NOT MERGED / NOT IMPLEMENTED
 
+**New parallel source:** [Independent ClaudeCode LLD review](CLAUDE-CODE-LLD-REVIEW-2026-10-08.md) and [its 26-item index](CLAUDE-CODE-LLD-REVIEW-INDEX.md). Do not overwrite original LLD IDs or merge findings yet.
+
 **Opseg:** Principal Software Architect, Staff Engineer, Principal Platform & Infrastructure Architect, Senior Software Engineer, Security Architect, Performance & Reliability Engineer, AI/Agent Infrastructure Architect, OSS Technology Evaluator.
 
 **Važna napomena:** Ovo je zaseban izvorni LLD review koji prenosi svih **26 TODO stavki** iz razgovora. Ne potvrđuje da su zadaci rešeni. Postojeća 18-stavki [OOP lista](../OOP-ARCHITECTURE-REMEDIATION-TODO.md) i [ClaudeCode review](CLAUDE-CODE-REVIEW-2026-10-08.txt) ostaju odvojeni do buduće kanonske konsolidacije. Prioriteti su procena review-a, ne automatski usvojen razvojni plan. Potvrđene nalaze treba ponovo testirati na commitu na kojem se budu ispravljali.
