@@ -8,7 +8,7 @@ final readonly class RequireAdmin
 {
     public function __construct(private SessionIdentity $identity) {}
 
-    public function account(): SignedInAccount
+    public function account() : SignedInAccount
     {
         $account = $this->identity->current();
 

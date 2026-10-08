@@ -7,12 +7,12 @@ namespace InterviewTask\Accounts;
 final readonly class SignedInAccount
 {
     public function __construct(
-        public int $id,
+        public int    $id,
         public string $username,
-        public Role $role,
+        public Role   $role,
     ) {}
 
-    public static function fromAccount(Account $account): self
+    public static function fromAccount(Account $account) : self
     {
         return new self($account->id, $account->username, $account->role);
     }

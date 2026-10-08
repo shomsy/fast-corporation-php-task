@@ -10,13 +10,13 @@ use InterviewTask\Infrastructure\Session\PhpSession;
 
 final class SessionExpiryTest extends AccountsTestCase
 {
-    public function testStrictModeAndSignOutDestroySession(): void
+    public function testStrictModeAndSignOutDestroySession() : void
     {
         $session = $this->session();
         $session->start();
         self::assertSame('1', ini_get('session.use_strict_mode'));
 
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
+        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
         $identity = new SessionIdentity($session, $this->accounts, $this->clock);
         $identity->signIn($account);
         self::assertNotNull($identity->current());
@@ -25,14 +25,14 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertNull($identity->current());
     }
 
-    public function testSignInRotatesTheAnonymousSessionIdentifier(): void
+    public function testSignInRotatesTheAnonymousSessionIdentifier() : void
     {
         $session = $this->session();
         $session->start();
         $anonymousId = session_id();
         self::assertNotSame('', $anonymousId);
 
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
+        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
         $identity = new SessionIdentity($session, $this->accounts, $this->clock);
         $identity->signIn($account);
 
@@ -40,7 +40,7 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame('alice', $identity->current()?->username);
     }
 
-    public function testAttackerProvidedUnknownSessionIdIsRejected(): void
+    public function testAttackerProvidedUnknownSessionIdIsRejected() : void
     {
         $attackerId = str_repeat('a', 32);
         session_id($attackerId);
@@ -51,7 +51,7 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame([], $_SESSION);
     }
 
-    public function testCookieConfigurationRequiresSecureHttpOnlyAndSameSiteLax(): void
+    public function testCookieConfigurationRequiresSecureHttpOnlyAndSameSiteLax() : void
     {
         ini_set('session.use_cookies', '1');
         $session = new PhpSession('secure_cookie_test', true);
@@ -64,9 +64,9 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame('/', $params['path']);
     }
 
-    public function testIdleTimeoutRevokesPreviouslyValidAuthentication(): void
+    public function testIdleTimeoutRevokesPreviouslyValidAuthentication() : void
     {
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
+        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
         $identity = new SessionIdentity($this->session(), $this->accounts, $this->clock);
         $identity->signIn($account);
 
@@ -76,9 +76,9 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame([], $_SESSION);
     }
 
-    public function testAbsoluteTimeoutRevokesSessionEvenWhenRecentlyActive(): void
+    public function testAbsoluteTimeoutRevokesSessionEvenWhenRecentlyActive() : void
     {
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
+        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
         $identity = new SessionIdentity($this->session(), $this->accounts, $this->clock);
         $identity->signIn($account);
         $_SESSION['authenticated_at'] = $this->clock->now()->getTimestamp() - 43200;
@@ -87,9 +87,9 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertNull($identity->current());
     }
 
-    public function testUnknownSessionMetadataDoesNotAuthenticate(): void
+    public function testUnknownSessionMetadataDoesNotAuthenticate() : void
     {
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
+        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
         $identity = new SessionIdentity(new PhpSession('expired_session_test', false), $this->accounts, $this->clock);
         $identity->signIn($account);
         unset($_SESSION['authenticated_at']);

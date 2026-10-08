@@ -38,80 +38,24 @@ use PHPUnit\Framework\TestCase;
 
 final class HttpFlowTest extends TestCase
 {
-    private PDO $pdo;
-    private Accounts $accounts;
+    private PDO             $pdo;
+    private Accounts        $accounts;
     private SessionIdentity $identity;
-    private Csrf $csrf;
-    private AccountPages $accountPages;
-    private CowOfferPages $cowPages;
-    private DownloadPages $downloadPages;
-    private ActivityPages $activityPages;
-    private SystemClock $clock;
+    private Csrf            $csrf;
+    private AccountPages    $accountPages;
+    private CowOfferPages   $cowPages;
+    private DownloadPages   $downloadPages;
+    private ActivityPages   $activityPages;
+    private SystemClock     $clock;
 
-    protected function setUp(): void
-    {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_destroy();
-        }
-        $_SESSION = [];
-        session_id('');
-        ini_set('session.use_cookies', '0');
-
-        $this->pdo = SqliteConnection::memory();
-        (new Migrator($this->pdo, [
-            'Accounts' => dirname(__DIR__, 2) . '/src/Accounts/migrations',
-            'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
-        ]))->migrate();
-
-        $this->accounts = new Accounts($this->pdo);
-        $session = new PhpSession('web_test', false);
-        $this->identity = new SessionIdentity($session, $this->accounts);
-        $this->csrf = new Csrf($session);
-        $this->clock = new SystemClock();
-        $activity = new ActivityLog($this->pdo, $this->clock);
-        $html = new HtmlPage(new Renderer());
-        $signedIn = new RequireSignedIn($this->identity);
-        $lifecycle = new AccountLifecycle(
-            new Register($this->accounts, $this->clock),
-            new Login($this->accounts, $this->identity),
-            $this->identity,
-            $activity,
-            new Transaction($this->pdo),
-        );
-        $this->accountPages = new AccountPages($lifecycle, new CurrentAccount($this->identity), $this->csrf, $html);
-        $this->cowPages = new CowOfferPages(
-            new CowOffer($activity),
-            $signedIn,
-            $this->csrf,
-            $html,
-        );
-        $this->downloadPages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/sample.exe');
-        $this->activityPages = new ActivityPages(
-            new Statistics($this->pdo),
-            new DailyReports($this->pdo),
-            new RequireAdmin($this->identity),
-            new CurrentAccount($this->identity),
-            $html,
-        );
-    }
-
-    protected function tearDown(): void
-    {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            session_destroy();
-        }
-        $_SESSION = [];
-        session_id('');
-    }
-
-    public function testEndToEndBrowserFlowRecordsEveryRequiredUserEvent(): void
+    public function testEndToEndBrowserFlowRecordsEveryRequiredUserEvent() : void
     {
         self::assertSame(200, $this->accountPages->registerForm()->status());
         self::assertSame(200, $this->accountPages->loginForm(new Request('GET', '/login'))->status());
 
         $registered = $this->accountPages->registerSubmit(new Request('POST', '/register', post: [
             'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
-            'role' => 'admin',
+            'role'     => 'admin',
         ]));
         self::assertSame(303, $registered->status());
         self::assertSame('/login?registered=1', $registered->headers()['Location']);
@@ -153,17 +97,17 @@ final class HttpFlowTest extends TestCase
         $statement = $this->pdo->query('SELECT action, target FROM activity_events ORDER BY id');
         self::assertNotFalse($statement);
         self::assertSame([
-            ['action' => 'registration', 'target' => null],
-            ['action' => 'login', 'target' => null],
-            ['action' => 'view-page', 'target' => 'page-a'],
-            ['action' => 'button-click', 'target' => 'buy-cow'],
-            ['action' => 'view-page', 'target' => 'page-b'],
-            ['action' => 'button-click', 'target' => 'download'],
-            ['action' => 'logout', 'target' => null],
-        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+                             ['action' => 'registration', 'target' => null],
+                             ['action' => 'login', 'target' => null],
+                             ['action' => 'view-page', 'target' => 'page-a'],
+                             ['action' => 'button-click', 'target' => 'buy-cow'],
+                             ['action' => 'view-page', 'target' => 'page-b'],
+                             ['action' => 'button-click', 'target' => 'download'],
+                             ['action' => 'logout', 'target' => null],
+                         ], $statement->fetchAll(PDO::FETCH_ASSOC));
     }
 
-    public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists(): void
+    public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists() : void
     {
         $admin = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'safe-pass');
         $this->identity->signIn($admin);
@@ -192,7 +136,7 @@ final class HttpFlowTest extends TestCase
         self::assertStringNotContainsString('Next →', $oldPage->body());
     }
 
-    public function testAnonymousAndRegularUsersCannotReadAdminPages(): void
+    public function testAnonymousAndRegularUsersCannotReadAdminPages() : void
     {
         self::assertSame('/login', $this->cowPages->pageA()->headers()['Location']);
         self::assertSame('/login', $this->downloadPages->pageB()->headers()['Location']);
@@ -205,17 +149,17 @@ final class HttpFlowTest extends TestCase
         self::assertSame(403, $this->activityPages->reportsPage()->status());
     }
 
-    public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents(): void
+    public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
         foreach ([
-            $this->accountPages->registerSubmit(new Request('POST', '/register')),
-            $this->accountPages->loginSubmit(new Request('POST', '/login')),
-            $this->cowPages->buyCow(new Request('POST', '/buy-cow')),
-            $this->downloadPages->download(new Request('POST', '/download')),
-            $this->accountPages->logoutSubmit(new Request('POST', '/logout')),
-        ] as $response) {
+                     $this->accountPages->registerSubmit(new Request('POST', '/register')),
+                     $this->accountPages->loginSubmit(new Request('POST', '/login')),
+                     $this->cowPages->buyCow(new Request('POST', '/buy-cow')),
+                     $this->downloadPages->download(new Request('POST', '/download')),
+                     $this->accountPages->logoutSubmit(new Request('POST', '/logout')),
+                 ] as $response) {
             self::assertSame(403, $response->status());
         }
         self::assertNotNull($this->identity->current());
@@ -224,7 +168,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
-    public function testAdminStatisticsAndReportsShowCorrectDataAndEscapeUntrustedLabels(): void
+    public function testAdminStatisticsAndReportsShowCorrectDataAndEscapeUntrustedLabels() : void
     {
         $admin = (new CreateAdmin($this->accounts, $this->clock))->create('root', 'safe-pass');
         $this->identity->signIn($admin);
@@ -256,11 +200,11 @@ final class HttpFlowTest extends TestCase
         self::assertStringContainsString('Daily totals', $report->body());
     }
 
-    public function testMissingArtifactFailsWithoutDownloadActivity(): void
+    public function testMissingArtifactFailsWithoutDownloadActivity() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
-        $pages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
+        $pages    = $this->downloadPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
         $response = $pages->download(new Request('POST', '/download', post: ['csrf_token' => $this->csrf->token()]));
         self::assertSame(503, $response->status());
         $statement = $this->pdo->query("SELECT COUNT(*) FROM activity_events WHERE target = 'download'");
@@ -268,7 +212,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
-    public function testDownloadAuditFailurePropagatesDatabaseException(): void
+    public function testDownloadAuditFailurePropagatesDatabaseException() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
@@ -281,19 +225,19 @@ final class HttpFlowTest extends TestCase
         ]));
     }
 
-    public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable(): void
+    public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
         $token = $this->csrf->token();
         $this->pdo->exec('DROP TABLE activity_events');
 
-        $pages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
+        $pages    = $this->downloadPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
         $response = $pages->download(new Request('POST', '/download', post: ['csrf_token' => $token]));
         self::assertSame(503, $response->status());
     }
 
-    public function testRegistrationTrackingFailureRollsBackAccountCreation(): void
+    public function testRegistrationTrackingFailureRollsBackAccountCreation() : void
     {
         $this->pdo->exec('DROP TABLE activity_events');
 
@@ -309,7 +253,7 @@ final class HttpFlowTest extends TestCase
         }
     }
 
-    public function testLogoutRevokesSessionEvenWhenAccountLookupFails(): void
+    public function testLogoutRevokesSessionEvenWhenAccountLookupFails() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
@@ -327,7 +271,7 @@ final class HttpFlowTest extends TestCase
         }
     }
 
-    public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails(): void
+    public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
@@ -342,7 +286,7 @@ final class HttpFlowTest extends TestCase
         }
     }
 
-    public function testHtmlResponsesCarryNoStoreAndBrowserSecurityHeaders(): void
+    public function testHtmlResponsesCarryNoStoreAndBrowserSecurityHeaders() : void
     {
         $response = $this->accountPages->registerForm();
 
@@ -353,7 +297,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame('no-referrer', $response->headers()['Referrer-Policy']);
     }
 
-    public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent(): void
+    public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent() : void
     {
         $first = $this->accountPages->registerSubmit(new Request('POST', '/register', post: [
             'username' => 'Alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
@@ -373,14 +317,14 @@ final class HttpFlowTest extends TestCase
         self::assertSame(1, (int) $statement->fetchColumn());
     }
 
-    public function testLoginTrackingFailureRevokesSessionAndPropagatesFailure(): void
+    public function testLoginTrackingFailureRevokesSessionAndPropagatesFailure() : void
     {
         (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->pdo->exec('DROP TABLE activity_events');
 
         try {
             $this->accountPages->loginSubmit(new Request('POST', '/login', post: [
-                'username' => 'alice', 'password' => 'safe-pass',
+                'username'   => 'alice', 'password' => 'safe-pass',
                 'csrf_token' => $this->csrf->token(),
             ]));
             self::fail('Successful login cannot silently omit its required activity event.');
@@ -389,24 +333,24 @@ final class HttpFlowTest extends TestCase
         }
     }
 
-    public function testDownloadNeverUsesUserSuppliedFilePath(): void
+    public function testDownloadNeverUsesUserSuppliedFilePath() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
 
         $response = $this->downloadPages->download(new Request('POST', '/download', post: [
             'csrf_token' => $this->csrf->token(),
-            'file' => '../../../../etc/passwd',
+            'file'       => '../../../../etc/passwd',
         ]));
         self::assertSame(200, $response->status());
         self::assertSame('MZ', substr($response->body(), 0, 2));
         self::assertSame('no-store', $response->headers()['Cache-Control']);
     }
 
-    public function testAnonymousCannotTriggerSignedInActionsEvenWithValidCsrfToken(): void
+    public function testAnonymousCannotTriggerSignedInActionsEvenWithValidCsrfToken() : void
     {
-        $csrf = $this->csrf->token();
-        $buy = $this->cowPages->buyCow(new Request('POST', '/buy-cow', post: [
+        $csrf     = $this->csrf->token();
+        $buy      = $this->cowPages->buyCow(new Request('POST', '/buy-cow', post: [
             'csrf_token' => $csrf,
         ]));
         $download = $this->downloadPages->download(new Request('POST', '/download', post: [
@@ -420,11 +364,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
-    public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions(): void
+    public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
-        $csrf = $this->csrf->token();
+        $csrf                         = $this->csrf->token();
         $_SESSION['last_activity_at'] = time() - 1801;
 
         self::assertSame('/login', $this->cowPages->pageA()->headers()['Location']);
@@ -442,7 +386,54 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
-    private function downloadPages(string $artifact): DownloadPages
+    protected function setUp() : void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        $_SESSION = [];
+        session_id('');
+        ini_set('session.use_cookies', '0');
+
+        $this->pdo = SqliteConnection::memory();
+        (new Migrator($this->pdo, [
+            'Accounts'         => dirname(__DIR__, 2) . '/src/Accounts/migrations',
+            'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
+        ]))->migrate();
+
+        $this->accounts      = new Accounts($this->pdo);
+        $session             = new PhpSession('web_test', false);
+        $this->identity      = new SessionIdentity($session, $this->accounts);
+        $this->csrf          = new Csrf($session);
+        $this->clock         = new SystemClock();
+        $activity            = new ActivityLog($this->pdo, $this->clock);
+        $html                = new HtmlPage(new Renderer());
+        $signedIn            = new RequireSignedIn($this->identity);
+        $lifecycle           = new AccountLifecycle(
+            new Register($this->accounts, $this->clock),
+            new Login($this->accounts, $this->identity),
+            $this->identity,
+            $activity,
+            new Transaction($this->pdo),
+        );
+        $this->accountPages  = new AccountPages($lifecycle, new CurrentAccount($this->identity), $this->csrf, $html);
+        $this->cowPages      = new CowOfferPages(
+            new CowOffer($activity),
+            $signedIn,
+            $this->csrf,
+            $html,
+        );
+        $this->downloadPages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/sample.exe');
+        $this->activityPages = new ActivityPages(
+            new Statistics($this->pdo),
+            new DailyReports($this->pdo),
+            new RequireAdmin($this->identity),
+            new CurrentAccount($this->identity),
+            $html,
+        );
+    }
+
+    private function downloadPages(string $artifact) : DownloadPages
     {
         return new DownloadPages(
             new DownloadFile(new ActivityLog($this->pdo, $this->clock), $artifact),
@@ -450,5 +441,14 @@ final class HttpFlowTest extends TestCase
             $this->csrf,
             new HtmlPage(new Renderer()),
         );
+    }
+
+    protected function tearDown() : void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+        $_SESSION = [];
+        session_id('');
     }
 }

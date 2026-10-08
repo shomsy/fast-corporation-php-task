@@ -1,10 +1,10 @@
 # Boundary Register
 
-| Boundary | Protects | Contract | Current evidence |
-|---|---|---|---|
-| Accounts -> ActivityTracking | credential/access authority vs activity-history authority | AccountLifecycle tracked auth mutation; narrow activity recording surface | PILOT — Deptrac, AST exports, no-mutation CurrentAccount, rollback/login/logout tests |
-| CowOffer -> ActivityTracking | Page A/Buy Cow behavior vs activity history | page/button recording surface | PILOT — Deptrac, module import tests and scoped behavior evidence |
-| Downloads -> ActivityTracking | download/artifact behavior vs activity history | page/button recording surface | PILOT — Deptrac, module import tests and scoped behavior evidence |
-| Business -> Runtime | business meaning from HTTP execution mechanics | neutral HTTP contracts | PILOT — Deptrac, module import tests and scoped behavior evidence |
-| Business -> Infrastructure | business meaning from driven technical resources | neutral DB/session/template/time contracts | PILOT — Deptrac, module import tests and scoped behavior evidence |
-| Owner -> own data | one authority per logical fact | owner-local behavior/schema | PILOT — owner-local migrations and DataOwnershipTest static SQL-literal checks; computed table names remain review-enforced |
+| Boundary                      | Protects                                                  | Contract                                                                  | Current evidence                                                                                                            |
+|-------------------------------|-----------------------------------------------------------|---------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| Accounts -> ActivityTracking  | credential/access authority vs activity-history authority | AccountLifecycle tracked auth mutation; narrow activity recording surface | PILOT — Deptrac, AST exports, no-mutation CurrentAccount, rollback/login/logout tests                                       |
+| CowOffer -> ActivityTracking  | Page A/Buy Cow behavior vs activity history               | page/button recording surface                                             | PILOT — Deptrac, module import tests and scoped behavior evidence                                                           |
+| Downloads -> ActivityTracking | download/artifact behavior vs activity history            | page/button recording surface                                             | PILOT — Deptrac, module import tests and scoped behavior evidence                                                           |
+| Business -> Runtime           | business meaning from HTTP execution mechanics            | neutral HTTP contracts                                                    | PILOT — Deptrac, module import tests and scoped behavior evidence                                                           |
+| Business -> Infrastructure    | business meaning from driven technical resources          | neutral DB/session/template/time contracts                                | PILOT — Deptrac, module import tests and scoped behavior evidence                                                           |
+| Owner -> own data             | one authority per logical fact                            | owner-local behavior/schema                                               | PILOT — owner-local migrations and DataOwnershipTest static SQL-literal checks; computed table names remain review-enforced |

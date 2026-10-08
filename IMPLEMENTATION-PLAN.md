@@ -1,6 +1,7 @@
 # Implementation Plan
 
-Status: SUBMISSION READY (interview scope) — deep-review hardening application commit CI PASS on PHP 8.3/8.4/8.5; public internet deployment separately gated
+Status: SUBMISSION READY (interview scope) — deep-review hardening application commit CI PASS on PHP 8.3/8.4/8.5; public
+internet deployment separately gated
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
@@ -49,8 +50,8 @@ remains historical, not proof for the updated application code.
   behavior-preserving refactoring principles in Balancing Coupling in Software
   Design / Refactoring informed the decision, with executable behavior as the
   decisive evidence.
-- **Local pre-release validation:** composer quality PASS: PHPUnit
-  **84 tests / 5,950 assertions**, PHPStan max 0 errors, Deptrac 0 violations,
+- **Local pre-release validation:** composer quality PASS: PHPUnit **84 tests / 5,950 assertions**, PHPStan max 0
+  errors, Deptrac 0 violations,
   0 skipped/0 uncovered, Composer validation/strict PSR-4/security audit PASS,
   PHP-CS-Fixer PASS. Live HTTP/CLI smoke PASS including missing audit DB
   during download with HTTP 500 and server-side diagnostics. The application
@@ -158,22 +159,29 @@ further below are historical and do not replace this validation.
 
 ## Goal
 
-Deliver a small, secure, reviewer-friendly Vanilla PHP application that satisfies the task exactly and demonstrates senior engineering judgment without speculative architecture.
+Deliver a small, secure, reviewer-friendly Vanilla PHP application that satisfies the task exactly and demonstrates
+senior engineering judgment without speculative architecture.
 
 ## Accepted ownership model
 
 One deployable modular monolith with synchronous in-process collaboration.
 
 ### Accounts
-Owns account identity, credentials, roles, authenticated identity/session meaning and access policy. Behaviors: Register, Login, Logout, CreateAdmin.
+
+Owns account identity, credentials, roles, authenticated identity/session meaning and access policy. Behaviors:
+Register, Login, Logout, CreateAdmin.
 
 ### ActivityTracking
-Owns activity vocabulary, append-only activity history, Statistics filtering semantics and Reports metrics. Behaviors: record activity, Statistics, Reports.
+
+Owns activity vocabulary, append-only activity history, Statistics filtering semantics and Reports metrics. Behaviors:
+record activity, Statistics, Reports.
 
 ### CowOffer
+
 Owns Page A and Buy Cow behavior. No durable purchase state is invented. Behaviors: ViewPageA, BuyCow.
 
 ### Downloads
+
 Owns Page B and fixed downloadable-artifact delivery. Behaviors: ViewPageB, DownloadFile.
 
 Dependency direction:
@@ -188,7 +196,8 @@ Infrastructure -X--------> business owners
 Bootstrap ----------------> all (wiring only)
 ```
 
-A local dependency, public contract or transaction is a cost to evaluate, not evidence that distinct owners should be merged (Governance 1.7.1 P14/CMP-2).
+A local dependency, public contract or transaction is a cost to evaluate, not evidence that distinct owners should be
+merged (Governance 1.7.1 P14/CMP-2).
 
 ## Physical direction
 
@@ -209,40 +218,55 @@ infrastructure/
 └── Time/
 ```
 
-Each business owner gains business-named behavior slices and one `module.php` public-surface manifest when code exists. No `Owner/`, `Domain/`, `Features/`, `Capabilities/` or `Implementations/` directory is created merely to mirror governance vocabulary.
+Each business owner gains business-named behavior slices and one `module.php` public-surface manifest when code exists.
+No `Owner/`, `Domain/`, `Features/`, `Capabilities/` or `Implementations/` directory is created merely to mirror
+governance vocabulary.
 
 ## Data model
 
-`accounts`: id, username, password_hash, role, created_at. Username is unique; public registration always creates role `user`; plaintext passwords are never stored.
+`accounts`: id, username, password_hash, role, created_at. Username is unique; public registration always creates role
+`user`; plaintext passwords are never stored.
 
-`activity_events`: id, actor_id, actor_label, action, target, occurred_at. Actions: registration, login, logout, view-page, button-click. Targets: page-a, page-b, buy-cow, download, or null where no target is meaningful.
+`activity_events`: id, actor_id, actor_label, action, target, occurred_at. Actions: registration, login, logout,
+view-page, button-click. Targets: page-a, page-b, buy-cow, download, or null where no target is meaningful.
 
-ActivityTracking stores a historical actor-label snapshot and does not read private Accounts storage. No `cow_purchases` table exists without a durable-purchase requirement.
+ActivityTracking stores a historical actor-label snapshot and does not read private Accounts storage. No `cow_purchases`
+table exists without a durable-purchase requirement.
 
 ## Security baseline
 
-Use password_hash/password_verify, session-id regeneration after login, server-side authorization, safe logout invalidation, HttpOnly/SameSite cookies, Secure under HTTPS, POST+CSRF for state-changing browser actions, prepared PDO statements, centralized HTML escaping, generic auth failures, a fixed server-side download path, and no credentials/session ids in logs.
+Use password_hash/password_verify, session-id regeneration after login, server-side authorization, safe logout
+invalidation, HttpOnly/SameSite cookies, Secure under HTTPS, POST+CSRF for state-changing browser actions, prepared PDO
+statements, centralized HTML escaping, generic auth failures, a fixed server-side download path, and no
+credentials/session ids in logs.
 
 ## Tracking semantics
 
-Activity tracking is product behavior, not best-effort telemetry. Record successful registration/login, Page A/B views, Buy Cow click and Download click. Use the smallest local transaction that keeps accepted actions consistent. A local transaction spanning owner tables does not merge ownership.
+Activity tracking is product behavior, not best-effort telemetry. Record successful registration/login, Page A/B views,
+Buy Cow click and Download click. Use the smallest local transaction that keeps accepted actions consistent. A local
+transaction spanning owner tables does not merge ownership.
 
 Logout is security-sensitive: activity recording may fail, but session destruction must still complete.
 
 ## Statistics and Reports
 
-Statistics is admin-only with date/user/action filters. Reports is admin-only as a documented assumption. One aggregate dataset feeds graph and table with daily Page A views, Page B views, Buy Cow clicks and Download clicks. No projection table until measured evidence requires one.
+Statistics is admin-only with date/user/action filters. Reports is admin-only as a documented assumption. One aggregate
+dataset feeds graph and table with daily Page A views, Page B views, Buy Cow clicks and Download clicks. No projection
+table until measured evidence requires one.
 
 ## Delivery loop
 
-The project is executed as a sequence of small, independently reviewable delivery units. Do not accumulate several phases into one large commit.
+The project is executed as a sequence of small, independently reviewable delivery units. Do not accumulate several
+phases into one large commit.
 
 ### Temporary delivery validation order — operator instruction 2026-10-08
 
-**Scope:** This Fast Corporation interview task, until final submission acceptance.
-**Reason:** Prioritize complete business behavior before running repeated project-wide static and style checks.
-**Authorizing instruction:** The accountable human explicitly changed the execution order in this conversation. This temporarily supersedes the earlier per-phase `composer quality` gate and its matching delivery-loop wording. It does not weaken any quality rule, disable any tool, waive security or permit calling the project submission-ready without final proof.
-**Expiry:** After the final project-wide validation and submission readiness checkpoint, this sequencing exception expires.
+**Scope:** This Fast Corporation interview task, until final submission acceptance. **Reason:** Prioritize complete
+business behavior before running repeated project-wide static and style checks. **Authorizing instruction:** The
+accountable human explicitly changed the execution order in this conversation. This temporarily supersedes the earlier
+per-phase `composer quality` gate and its matching delivery-loop wording. It does not weaken any quality rule, disable
+any tool, waive security or permit calling the project submission-ready without final proof. **Expiry:** After the final
+project-wide validation and submission readiness checkpoint, this sequencing exception expires.
 
 For each coherent implementation scope:
 
@@ -255,12 +279,15 @@ For each coherent implementation scope:
 Only **after the complete task's implementation and functional tests**:
 
 6. Run PHPStan max, Deptrac, PHP-CS-Fixer, Composer validation/security audit and remaining full quality gates.
-7. Fix every issue at its actual owner, without suppressions or weakening architecture constraints; rerun all quality gates until green.
+7. Fix every issue at its actual owner, without suppressions or weakening architecture constraints; rerun all quality
+   gates until green.
 8. Run security, clean-install, user/admin browser journeys and download acceptance.
-9. Review the final diff, update documentation/evidence, commit coherent changes and push `origin/main`; verify the exact commit's GitHub Actions result.
+9. Review the final diff, update documentation/evidence, commit coherent changes and push `origin/main`; verify the
+   exact commit's GitHub Actions result.
 10. Declare `SUBMISSION READY` only after all final acceptance conditions pass.
 
-Do not make unverified intermediate commits merely to meet a clock-driven cadence. The earlier per-phase commit cadence is deferred during this temporary sequencing exception to keep `main` deployable.
+Do not make unverified intermediate commits merely to meet a clock-driven cadence. The earlier per-phase commit cadence
+is deferred during this temporary sequencing exception to keep `main` deployable.
 
 Commit cadence:
 
@@ -270,18 +297,28 @@ Commit cadence:
 - never leave an intentionally broken commit on `main`;
 - keep the working tree clean at every pushed checkpoint.
 
-Remote `main` is the delivery source of truth. Each loop iteration resumes from the latest synchronized clean checkpoint rather than relying on uncommitted local memory.
+Remote `main` is the delivery source of truth. Each loop iteration resumes from the latest synchronized clean checkpoint
+rather than relying on uncommitted local memory.
 
 ## Acceptance evidence — local final gates (2026-10-08)
 
-- Functional task coverage: registration/login/logout; authenticated Page A, Buy a cow -> `thankYou`; authenticated Page B -> fixed `assets/sample.exe`; admin Statistics date/user/action filters; admin Reports SVG and table from one UTC daily aggregate.
-- Owner boundaries: Accounts, ActivityTracking, CowOffer, Downloads. Technical HTTP transport mapping belongs to four focused adapters under `bootstrap/Http/`; no business owner imports Runtime HTTP types.
-- Security: password hashing, generic invalid login, regeneration on sign-in, CSRF for POST actions, server-side authorization, escaped HTML, prepared queries, session destruction on logout, fixed download path, failure-visible activity logging and transaction rollback.
+- Functional task coverage: registration/login/logout; authenticated Page A, Buy a cow -> `thankYou`; authenticated Page
+  B -> fixed `assets/sample.exe`; admin Statistics date/user/action filters; admin Reports SVG and table from one UTC
+  daily aggregate.
+- Owner boundaries: Accounts, ActivityTracking, CowOffer, Downloads. Technical HTTP transport mapping belongs to four
+  focused adapters under `bootstrap/Http/`; no business owner imports Runtime HTTP types.
+- Security: password hashing, generic invalid login, regeneration on sign-in, CSRF for POST actions, server-side
+  authorization, escaped HTML, prepared queries, session destruction on logout, fixed download path, failure-visible
+  activity logging and transaction rollback.
 - Scoped HTTP tests: **PASS, 12 tests / 77 assertions**.
-- Complete PHPUnit: **PASS, 50 tests / 400 assertions** (PHP 8.5.5). Superseded Accounts HTTP adapter test was replaced by actual composition-boundary Flow coverage.
-- `composer quality`: **PASS**. Composer validation PASS, dependency security audit PASS (no advisories), PHP-CS-Fixer PASS, PHPStan max PASS (0 errors), Deptrac PASS (0 violations, 0 skipped), PHPUnit PASS.
-- Isolated live HTTP smoke: **PASS** for fresh and idempotent SQLite migrations, CLI admin bootstrap, complete user registration/login/cow/download/logout and admin Statistics/filters/Reports using actual local HTTP server.
-- Release gate: commit `f319e57fd02e8beebeec57a5f32adb2269039668` is pushed to `origin/main`; GitHub Actions run `37710008109` completed successfully on PHP 8.3, 8.4 and 8.5; clean working tree verified.
+- Complete PHPUnit: **PASS, 50 tests / 400 assertions** (PHP 8.5.5). Superseded Accounts HTTP adapter test was replaced
+  by actual composition-boundary Flow coverage.
+- `composer quality`: **PASS**. Composer validation PASS, dependency security audit PASS (no advisories), PHP-CS-Fixer
+  PASS, PHPStan max PASS (0 errors), Deptrac PASS (0 violations, 0 skipped), PHPUnit PASS.
+- Isolated live HTTP smoke: **PASS** for fresh and idempotent SQLite migrations, CLI admin bootstrap, complete user
+  registration/login/cow/download/logout and admin Statistics/filters/Reports using actual local HTTP server.
+- Release gate: commit `f319e57fd02e8beebeec57a5f32adb2269039668` is pushed to `origin/main`; GitHub Actions run
+  `37710008109` completed successfully on PHP 8.3, 8.4 and 8.5; clean working tree verified.
 
 ## Standards & Maintainability — vNext
 
@@ -320,15 +357,18 @@ See `docs/PHP-STANDARDS-VNEXT.md` for exact coverage and decision rationale.
 - Phase 6 — Statistics — DONE locally
 - Phase 7 — Reports — DONE locally
 - Phase 8 — Security and failure hardening — DONE locally, quality PASS
-- Phase 9 — Acceptance and reviewer experience — DONE (live HTTP smoke, full quality suite, synchronized Git, and remote PHP 8.3/8.4/8.5 CI PASS)
+- Phase 9 — Acceptance and reviewer experience — DONE (live HTTP smoke, full quality suite, synchronized Git, and remote
+  PHP 8.3/8.4/8.5 CI PASS)
 
 ### Alignment exit
 
-Governance snapshot, ADRs, owner skeleton, namespaces and architecture fitness config agree and `composer quality` is green.
+Governance snapshot, ADRs, owner skeleton, namespaces and architecture fitness config agree and `composer quality` is
+green.
 
 ### Phase 2
 
-Neutral HTTP runtime; neutral driven database/session/template/time mechanisms; SQLite connection and transaction; migration runner; deterministic test database; owner-local initial migrations.
+Neutral HTTP runtime; neutral driven database/session/template/time mechanisms; SQLite connection and transaction;
+migration runner; deterministic test database; owner-local initial migrations.
 
 ### Phase 3
 
@@ -336,7 +376,8 @@ Registration, login, logout, secure sessions, access policy, admin bootstrap and
 
 ### Phase 4
 
-Activity vocabulary, append-only log, actor snapshot, recording surface, account-flow integration and transaction/failure tests.
+Activity vocabulary, append-only log, actor snapshot, recording surface, account-flow integration and
+transaction/failure tests.
 
 ### Phase 5
 
@@ -352,7 +393,8 @@ Daily aggregate query and one dataset for the graph/table four required metrics.
 
 ### Phase 8
 
-CSRF, injection, escaping, authorization bypass, session lifecycle, missing/unreadable download and activity-write failure tests.
+CSRF, injection, escaping, authorization bypass, session lifecycle, missing/unreadable download and activity-write
+failure tests.
 
 ### Phase 9
 
@@ -360,15 +402,19 @@ Complete user/admin journeys, clean-install rehearsal, final README and full qua
 
 ## Definition of done
 
-Functional requirements pass; authorization is server-enforced; requested events appear in Statistics; report metrics are correct; architecture tests preserve accepted ownership; PHPUnit/PHPStan/style/architecture/security checks are green; clean reviewer setup works.
+Functional requirements pass; authorization is server-enforced; requested events appear in Statistics; report metrics
+are correct; architecture tests preserve accepted ownership; PHPUnit/PHPStan/style/architecture/security checks are
+green; clean reviewer setup works.
 
 ## REVISIT triggers
 
 - CowOffer gains durable purchase/payment/inventory lifecycle -> re-evaluate its state and boundaries.
 - Downloads gains catalog/version/per-user authorization/lifecycle -> re-evaluate its state and boundaries.
-- Statistics/Reports miss an accepted latency target on representative measured data -> consider index/derived aggregate.
+- Statistics/Reports miss an accepted latency target on representative measured data -> consider index/derived
+  aggregate.
 - Activity correctness can no longer be maintained by local synchronous writes -> reconsider delivery mechanism.
-- Owner-local technical realizations become a coherent body whose grouping materially improves navigation/information hiding/enforcement -> consider `Implementations/`.
+- Owner-local technical realizations become a coherent body whose grouping materially improves navigation/information
+  hiding/enforcement -> consider `Implementations/`.
 - HTTP edge becomes materially complex -> evaluate an established framework.
 
 Until a trigger fires, do not build for it.

@@ -30,21 +30,21 @@ final class PublicSurfaceTest extends TestCase
     /** @var list<string> */
     private const array OWNERS = ['Accounts', 'ActivityTracking', 'CowOffer', 'Downloads'];
 
-    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface(): void
+    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface() : void
     {
-        $root = dirname(__DIR__, 2);
-        $exports = self::exports($root);
+        $root     = dirname(__DIR__, 2);
+        $exports  = self::exports($root);
         $problems = [];
 
         foreach ([$root . '/src', $root . '/bootstrap/Http'] as $directory) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
             foreach ($iterator as $entry) {
-                if (!$entry instanceof SplFileInfo || !$entry->isFile()
+                if (! $entry instanceof SplFileInfo || ! $entry->isFile()
                     || $entry->getExtension() !== 'php' || $entry->getFilename() === 'module.php') {
                     continue;
                 }
 
-                $path = $entry->getPathname();
+                $path     = $entry->getPathname();
                 $contents = file_get_contents($path);
                 self::assertIsString($contents);
                 $currentOwner = null;
@@ -56,7 +56,7 @@ final class PublicSurfaceTest extends TestCase
                 }
 
                 foreach (self::referencedOwnerTypes($contents) as [$owner, $type]) {
-                    if ($currentOwner !== $owner && !in_array($type, $exports[$owner], true)) {
+                    if ($currentOwner !== $owner && ! in_array($type, $exports[$owner], true)) {
                         $problems[] = substr($path, strlen($root) + 1) . ' references private ' . $type;
                     }
                 }
@@ -66,71 +66,10 @@ final class PublicSurfaceTest extends TestCase
         self::assertSame([], $problems);
     }
 
-    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges(): void
-    {
-        $exports = self::exports(dirname(__DIR__, 2));
-        self::assertContains(AccountLifecycle::class, $exports['Accounts']);
-        self::assertContains(CurrentAccount::class, $exports['Accounts']);
-
-        foreach ([
-            'InterviewTask\Accounts\Register\Register',
-            'InterviewTask\Accounts\Login\Login',
-            'InterviewTask\Accounts\Logout\Logout',
-            'InterviewTask\Accounts\SessionIdentity',
-            'InterviewTask\Accounts\Accounts',
-        ] as $privateType) {
-            self::assertNotContains($privateType, $exports['Accounts'], $privateType . ' is a private implementation detail');
-        }
-
-        $view = new ReflectionClass(CurrentAccount::class);
-        self::assertTrue($view->hasMethod('current'));
-        self::assertFalse($view->hasMethod('signIn'));
-        self::assertFalse($view->hasMethod('signOut'));
-    }
-
-    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns(): void
-    {
-        $exports = self::exports(dirname(__DIR__, 2));
-        $lifecycle = new ReflectionClass(AccountLifecycle::class);
-        foreach ($lifecycle->getMethods() as $method) {
-            if (!$method->isPublic() || $method->isConstructor()) {
-                continue;
-            }
-            $return = $method->getReturnType();
-            self::assertInstanceOf(ReflectionNamedType::class, $return);
-            $name = $return->getName();
-            if (str_starts_with($name, 'InterviewTask\\Accounts\\')) {
-                self::assertContains($name, $exports['Accounts'], $method->getName() . ' leaks private type');
-            }
-        }
-        $registerReturn = $lifecycle->getMethod('register')->getReturnType();
-        self::assertInstanceOf(ReflectionNamedType::class, $registerReturn);
-        self::assertSame('void', $registerReturn->getName());
-    }
-
-    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes(): void
-    {
-        $cases = [
-            "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n",
-            "<?php\nnamespace Consumer;\nnew \\InterviewTask\\Accounts\\PasswordRejected();\n",
-            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\{PasswordRejected as Reject, CurrentAccount};\nnew Reject();\n",
-            "<?php\nnamespace Consumer;\nclass C { public function fail(\\InterviewTask\\Accounts\\PasswordRejected \$e): void {} }\n",
-            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::forbidden();\n",
-            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::class;\n",
-            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\PasswordRejected as P;\nclass C { public function get(): P { throw new \\Exception(); } }\n",
-        ];
-        $exports = self::exports(dirname(__DIR__, 2));
-        foreach ($cases as $source) {
-            $refs = self::referencedOwnerTypes($source);
-            self::assertContains(['Accounts', 'InterviewTask\Accounts\PasswordRejected'], $refs, $source);
-            self::assertNotContains('InterviewTask\Accounts\PasswordRejected', $exports['Accounts']);
-        }
-    }
-
     /**
      * @return array<string, list<string>>
      */
-    private static function exports(string $root): array
+    private static function exports(string $root) : array
     {
         $result = [];
         foreach (self::OWNERS as $owner) {
@@ -138,7 +77,7 @@ final class PublicSurfaceTest extends TestCase
             self::assertIsArray($manifest);
             self::assertIsArray($manifest['public']);
             /** @var list<string> $public */
-            $public = $manifest['public'];
+            $public         = $manifest['public'];
             $result[$owner] = $public;
         }
 
@@ -148,7 +87,7 @@ final class PublicSurfaceTest extends TestCase
     /**
      * @return list<array{string, string}>
      */
-    private static function referencedOwnerTypes(string $source): array
+    private static function referencedOwnerTypes(string $source) : array
     {
         $parser = (new ParserFactory())->createForNewestSupportedVersion();
         $parsed = $parser->parse($source);
@@ -157,9 +96,9 @@ final class PublicSurfaceTest extends TestCase
         }
 
         $traverser = new NodeTraverser(new NameResolver());
-        $nodes = $traverser->traverse($parsed);
-        $finder = new NodeFinder();
-        $names = [];
+        $nodes     = $traverser->traverse($parsed);
+        $finder    = new NodeFinder();
+        $names     = [];
 
         // NameResolver expands aliases in new, type hints, static calls,
         // class constants, traits, attributes, instanceof, extends and more.
@@ -191,7 +130,7 @@ final class PublicSurfaceTest extends TestCase
             $parts = explode('\\', $className);
             $owner = $parts[1] ?? null;
             if (($parts[0] ?? null) !== 'InterviewTask'
-                || $owner === null || !in_array($owner, self::OWNERS, true)
+                || $owner === null || ! in_array($owner, self::OWNERS, true)
                 || count($parts) < 3) {
                 continue;
             }
@@ -200,5 +139,66 @@ final class PublicSurfaceTest extends TestCase
         ksort($found);
 
         return array_values($found);
+    }
+
+    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges() : void
+    {
+        $exports = self::exports(dirname(__DIR__, 2));
+        self::assertContains(AccountLifecycle::class, $exports['Accounts']);
+        self::assertContains(CurrentAccount::class, $exports['Accounts']);
+
+        foreach ([
+                     'InterviewTask\Accounts\Register\Register',
+                     'InterviewTask\Accounts\Login\Login',
+                     'InterviewTask\Accounts\Logout\Logout',
+                     'InterviewTask\Accounts\SessionIdentity',
+                     'InterviewTask\Accounts\Accounts',
+                 ] as $privateType) {
+            self::assertNotContains($privateType, $exports['Accounts'], $privateType . ' is a private implementation detail');
+        }
+
+        $view = new ReflectionClass(CurrentAccount::class);
+        self::assertTrue($view->hasMethod('current'));
+        self::assertFalse($view->hasMethod('signIn'));
+        self::assertFalse($view->hasMethod('signOut'));
+    }
+
+    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns() : void
+    {
+        $exports   = self::exports(dirname(__DIR__, 2));
+        $lifecycle = new ReflectionClass(AccountLifecycle::class);
+        foreach ($lifecycle->getMethods() as $method) {
+            if (! $method->isPublic() || $method->isConstructor()) {
+                continue;
+            }
+            $return = $method->getReturnType();
+            self::assertInstanceOf(ReflectionNamedType::class, $return);
+            $name = $return->getName();
+            if (str_starts_with($name, 'InterviewTask\\Accounts\\')) {
+                self::assertContains($name, $exports['Accounts'], $method->getName() . ' leaks private type');
+            }
+        }
+        $registerReturn = $lifecycle->getMethod('register')->getReturnType();
+        self::assertInstanceOf(ReflectionNamedType::class, $registerReturn);
+        self::assertSame('void', $registerReturn->getName());
+    }
+
+    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes() : void
+    {
+        $cases   = [
+            "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n",
+            "<?php\nnamespace Consumer;\nnew \\InterviewTask\\Accounts\\PasswordRejected();\n",
+            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\{PasswordRejected as Reject, CurrentAccount};\nnew Reject();\n",
+            "<?php\nnamespace Consumer;\nclass C { public function fail(\\InterviewTask\\Accounts\\PasswordRejected \$e): void {} }\n",
+            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::forbidden();\n",
+            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::class;\n",
+            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\PasswordRejected as P;\nclass C { public function get(): P { throw new \\Exception(); } }\n",
+        ];
+        $exports = self::exports(dirname(__DIR__, 2));
+        foreach ($cases as $source) {
+            $refs = self::referencedOwnerTypes($source);
+            self::assertContains(['Accounts', 'InterviewTask\Accounts\PasswordRejected'], $refs, $source);
+            self::assertNotContains('InterviewTask\Accounts\PasswordRejected', $exports['Accounts']);
+        }
     }
 }

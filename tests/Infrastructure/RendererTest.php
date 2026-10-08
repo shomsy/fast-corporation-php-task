@@ -10,7 +10,7 @@ use RuntimeException;
 
 final class RendererTest extends TestCase
 {
-    public function testProvidesCentralEscapingHelperToTemplate(): void
+    public function testProvidesCentralEscapingHelperToTemplate() : void
     {
         $template = tempnam(sys_get_temp_dir(), 'fast-task-template-');
 

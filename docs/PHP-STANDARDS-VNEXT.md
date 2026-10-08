@@ -81,8 +81,10 @@ Acceptance evidence from the local vNext run (2026-10-08):
 - Composer validation PASS; dependency audit PASS (no vulnerability advisories).
 - Fresh SQLite migrations and second idempotent run PASS.
 - Real user and admin HTTP journeys, fixed download and admin CLI bootstrap PASS.
-- Previous refactor commit `04ee86f` pushed to `origin/main`, exact GitHub Actions run `37713637004` PASS on PHP 8.3, 8.4 and 8.5.
-- Style/docs commit `c405e53` was pushed to `origin/main`; exact GitHub Actions run `37713941049` PASS for PHP 8.3, 8.4, and 8.5.
+- Previous refactor commit `04ee86f` pushed to `origin/main`, exact GitHub Actions run `37713637004` PASS on PHP 8.3,
+  8.4 and 8.5.
+- Style/docs commit `c405e53` was pushed to `origin/main`; exact GitHub Actions run `37713941049` PASS for PHP 8.3, 8.4,
+  and 8.5.
 
 ## PSR-20 clock contract and PSR-4 enforcement
 

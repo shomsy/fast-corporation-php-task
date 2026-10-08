@@ -9,23 +9,18 @@ use RuntimeException;
 
 final class SqliteConnection
 {
-    public static function open(string $path): PDO
+    public static function open(string $path) : PDO
     {
         $directory = dirname($path);
 
-        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+        if (! is_dir($directory) && ! mkdir($directory, 0775, true) && ! is_dir($directory)) {
             throw new RuntimeException('Unable to create database directory: ' . $directory);
         }
 
         return self::configure(new PDO('sqlite:' . $path));
     }
 
-    public static function memory(): PDO
-    {
-        return self::configure(new PDO('sqlite::memory:'));
-    }
-
-    private static function configure(PDO $pdo): PDO
+    private static function configure(PDO $pdo) : PDO
     {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
@@ -33,5 +28,10 @@ final class SqliteConnection
         $pdo->exec('PRAGMA busy_timeout = 5000');
 
         return $pdo;
+    }
+
+    public static function memory() : PDO
+    {
+        return self::configure(new PDO('sqlite::memory:'));
     }
 }

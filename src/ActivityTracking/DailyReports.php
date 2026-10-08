@@ -17,9 +17,10 @@ final readonly class DailyReports
     public function __construct(private PDO $pdo) {}
 
     /**
-     * @return list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}>
+     * @return list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks:
+     *                          int}>
      */
-    public function dailyCounts(?string $from = null, ?string $to = null): array
+    public function dailyCounts(?string $from = null, ?string $to = null) : array
     {
         $parameters = [];
         foreach (['from' => $from, 'to' => $to] as $name => $value) {
@@ -45,7 +46,7 @@ final readonly class DailyReports
         if (isset($parameters['to'])) {
             $conditions[] = 'substr(occurred_at, 1, 10) <= :to';
         }
-        $query = <<<'SQL'
+        $query     = <<<'SQL'
             SELECT substr(occurred_at, 1, 10) AS date,
                 SUM(CASE WHEN action = 'view-page' AND target = 'page-a' THEN 1 ELSE 0 END) AS page_a_views,
                 SUM(CASE WHEN action = 'view-page' AND target = 'page-b' THEN 1 ELSE 0 END) AS page_b_views,
@@ -53,8 +54,8 @@ final readonly class DailyReports
                 SUM(CASE WHEN action = 'button-click' AND target = 'download' THEN 1 ELSE 0 END) AS download_clicks
             FROM activity_events WHERE
             SQL;
-        $query .= implode(' AND ', $conditions);
-        $query .= ' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT ' . self::MAX_DAYS;
+        $query     .= implode(' AND ', $conditions);
+        $query     .= ' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT ' . self::MAX_DAYS;
         $statement = $this->pdo->prepare('SELECT * FROM (' . $query . ') ORDER BY date ASC');
         if ($statement === false) {
             throw new RuntimeException('Unable to prepare daily activity report.');

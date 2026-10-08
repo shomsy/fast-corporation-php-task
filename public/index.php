@@ -17,7 +17,7 @@ try {
     // One outermost diagnostic boundary; expected 4xx responses do not throw.
     error_log((string) $error);
 
-    if (!headers_sent()) {
+    if (! headers_sent()) {
         http_response_code(500);
         header('Content-Type: text/plain; charset=UTF-8');
         header('Cache-Control: no-store');

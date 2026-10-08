@@ -21,28 +21,10 @@ use Psr\Clock\ClockInterface;
 
 final class ActivityLogTest extends TestCase
 {
-    private PDO $pdo;
+    private PDO         $pdo;
     private ActivityLog $log;
 
-    protected function setUp(): void
-    {
-        $this->pdo = SqliteConnection::memory();
-
-        (new Migrator($this->pdo, [
-            'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
-        ]))->migrate();
-
-        $clock = new class implements ClockInterface {
-            public function now(): DateTimeImmutable
-            {
-                return new DateTimeImmutable('2026-10-08 12:15:00', new DateTimeZone('Europe/Belgrade'));
-            }
-        };
-
-        $this->log = new ActivityLog($this->pdo, $clock);
-    }
-
-    public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp(): void
+    public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp() : void
     {
         $this->log->recordRegistration(7, 'alice');
         $this->log->recordLogin(7, 'alice');
@@ -76,7 +58,7 @@ final class ActivityLogTest extends TestCase
         }
     }
 
-    public function testDoesNotReadAccountsOrChangeEarlierActorLabels(): void
+    public function testDoesNotReadAccountsOrChangeEarlierActorLabels() : void
     {
         $this->log->recordLogin(14, 'old-label');
         $this->log->recordLogout(14, 'new-label');
@@ -86,28 +68,28 @@ final class ActivityLogTest extends TestCase
         self::assertSame(['old-label', 'new-label'], $statement->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    public function testRejectsInvalidActorBeforeWriting(): void
+    public function testRejectsInvalidActorBeforeWriting() : void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->log->recordLogin(0, 'alice');
     }
 
-    public function testRejectsBlankActorLabelBeforeWriting(): void
+    public function testRejectsBlankActorLabelBeforeWriting() : void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->log->recordLogin(1, '  ');
     }
 
-    public function testDatabaseRejectsInvalidEventTaxonomy(): void
+    public function testDatabaseRejectsInvalidEventTaxonomy() : void
     {
         $this->expectException(PDOException::class);
         $this->pdo->exec("INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'button-click', 'page-a', '2026-10-08T10:15:00+00:00')");
     }
 
-    public function testParticipatesInSameLocalTransactionAndRollsBack(): void
+    public function testParticipatesInSameLocalTransactionAndRollsBack() : void
     {
         try {
-            (new Transaction($this->pdo))->run(function (): void {
+            (new Transaction($this->pdo))->run(function () : void {
                 $this->log->recordRegistration(5, 'alice');
                 $this->pdo->exec("INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (5, 'alice', 'view-page', 'buy-cow', '2026-10-08T10:15:00+00:00')");
             });
@@ -117,5 +99,23 @@ final class ActivityLogTest extends TestCase
         $statement = $this->pdo->query('SELECT COUNT(*) FROM activity_events');
         self::assertNotFalse($statement);
         self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    protected function setUp() : void
+    {
+        $this->pdo = SqliteConnection::memory();
+
+        (new Migrator($this->pdo, [
+            'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
+        ]))->migrate();
+
+        $clock = new class implements ClockInterface {
+            public function now() : DateTimeImmutable
+            {
+                return new DateTimeImmutable('2026-10-08 12:15:00', new DateTimeZone('Europe/Belgrade'));
+            }
+        };
+
+        $this->log = new ActivityLog($this->pdo, $clock);
     }
 }

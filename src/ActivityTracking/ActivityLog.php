@@ -19,41 +19,22 @@ use RuntimeException;
 final readonly class ActivityLog
 {
     public function __construct(
-        private PDO $pdo,
+        private PDO            $pdo,
         private ClockInterface $clock,
     ) {}
 
-    public function recordRegistration(int $actorId, string $actorLabel): void
+    public function recordRegistration(int $actorId, string $actorLabel) : void
     {
         $this->append($actorId, $actorLabel, ActivityAction::Registration, null);
     }
 
-    public function recordLogin(int $actorId, string $actorLabel): void
-    {
-        $this->append($actorId, $actorLabel, ActivityAction::Login, null);
-    }
-
-    public function recordLogout(int $actorId, string $actorLabel): void
-    {
-        $this->append($actorId, $actorLabel, ActivityAction::Logout, null);
-    }
-
-    public function recordPageView(int $actorId, string $actorLabel, TrackedPage $page): void
-    {
-        $this->append($actorId, $actorLabel, ActivityAction::ViewPage, $page->value);
-    }
-
-    public function recordButtonClick(int $actorId, string $actorLabel, TrackedButton $button): void
-    {
-        $this->append($actorId, $actorLabel, ActivityAction::ButtonClick, $button->value);
-    }
-
     private function append(
-        int $actorId,
-        string $actorLabel,
+        int            $actorId,
+        string         $actorLabel,
         ActivityAction $action,
-        ?string $target,
-    ): void {
+        ?string        $target,
+    ) : void
+    {
         if ($actorId < 1) {
             throw new InvalidArgumentException('Actor ID must be positive.');
         }
@@ -72,11 +53,31 @@ final readonly class ActivityLog
         }
 
         $statement->execute([
-            'actor_id' => $actorId,
-            'actor_label' => $actorLabel,
-            'action' => $action->value,
-            'target' => $target,
-            'occurred_at' => $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
-        ]);
+                                'actor_id'    => $actorId,
+                                'actor_label' => $actorLabel,
+                                'action'      => $action->value,
+                                'target'      => $target,
+                                'occurred_at' => $this->clock->now()->setTimezone(new DateTimeZone('UTC'))->format(DATE_ATOM),
+                            ]);
+    }
+
+    public function recordLogin(int $actorId, string $actorLabel) : void
+    {
+        $this->append($actorId, $actorLabel, ActivityAction::Login, null);
+    }
+
+    public function recordLogout(int $actorId, string $actorLabel) : void
+    {
+        $this->append($actorId, $actorLabel, ActivityAction::Logout, null);
+    }
+
+    public function recordPageView(int $actorId, string $actorLabel, TrackedPage $page) : void
+    {
+        $this->append($actorId, $actorLabel, ActivityAction::ViewPage, $page->value);
+    }
+
+    public function recordButtonClick(int $actorId, string $actorLabel, TrackedButton $button) : void
+    {
+        $this->append($actorId, $actorLabel, ActivityAction::ButtonClick, $button->value);
     }
 }

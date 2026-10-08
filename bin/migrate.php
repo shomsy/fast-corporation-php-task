@@ -10,9 +10,9 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 /** @var array{root: string, databasePath: string} $config */
 $config = require dirname(__DIR__) . '/bootstrap/config.php';
 
-$pdo = SqliteConnection::open($config['databasePath']);
+$pdo      = SqliteConnection::open($config['databasePath']);
 $migrator = new Migrator($pdo, [
-    'Accounts' => $config['root'] . '/src/Accounts/migrations',
+    'Accounts'         => $config['root'] . '/src/Accounts/migrations',
     'ActivityTracking' => $config['root'] . '/src/ActivityTracking/migrations',
 ]);
 

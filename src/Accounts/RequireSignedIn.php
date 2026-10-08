@@ -8,7 +8,7 @@ final readonly class RequireSignedIn
 {
     public function __construct(private SessionIdentity $identity) {}
 
-    public function account(): SignedInAccount
+    public function account() : SignedInAccount
     {
         return $this->identity->current()
             ?? throw new AccessDenied('Authentication required.');

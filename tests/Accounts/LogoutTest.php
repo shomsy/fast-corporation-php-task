@@ -9,9 +9,9 @@ use InterviewTask\Accounts\SessionIdentity;
 
 final class LogoutTest extends AccountsTestCase
 {
-    public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity(): void
+    public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity() : void
     {
-        $account = (new Register($this->accounts, $this->clock))->register('alice', 'password');
+        $account  = (new Register($this->accounts, $this->clock))->register('alice', 'password');
         $identity = new SessionIdentity($this->session(), $this->accounts);
         $identity->signIn($account);
 

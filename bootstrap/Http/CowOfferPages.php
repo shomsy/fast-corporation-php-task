@@ -15,13 +15,13 @@ use InterviewTask\Runtime\Http\Response;
 final readonly class CowOfferPages
 {
     public function __construct(
-        private CowOffer $cow,
+        private CowOffer        $cow,
         private RequireSignedIn $signedIn,
-        private Csrf $csrf,
-        private HtmlPage $html,
+        private Csrf            $csrf,
+        private HtmlPage        $html,
     ) {}
 
-    public function pageA(): Response
+    public function pageA() : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {
@@ -35,13 +35,22 @@ final readonly class CowOfferPages
         ]);
     }
 
-    public function buyCow(Request $request): Response
+    private function authorizedUser() : SignedInAccount|Response
+    {
+        try {
+            return $this->signedIn->account();
+        } catch (AccessDenied) {
+            return Response::redirect('/login');
+        }
+    }
+
+    public function buyCow(Request $request) : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {
             return $account;
         }
-        if (!$this->csrf->matches($request->post('csrf_token'))) {
+        if (! $this->csrf->matches($request->post('csrf_token'))) {
             return Response::text('Forbidden', 403);
         }
 
@@ -50,14 +59,5 @@ final readonly class CowOfferPages
         return $this->html->render('src/CowOffer/page-a.php', [
             'csrfToken' => $this->csrf->token(), 'bought' => $result === 'thankYou',
         ]);
-    }
-
-    private function authorizedUser(): SignedInAccount|Response
-    {
-        try {
-            return $this->signedIn->account();
-        } catch (AccessDenied) {
-            return Response::redirect('/login');
-        }
     }
 }

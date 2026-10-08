@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CowOfferTest extends TestCase
 {
-    public function testViewAndBuyProduceExactlyTheRequiredActivity(): void
+    public function testViewAndBuyProduceExactlyTheRequiredActivity() : void
     {
         $pdo = SqliteConnection::memory();
         (new Migrator($pdo, [
@@ -28,8 +28,8 @@ final class CowOfferTest extends TestCase
         $statement = $pdo->query('SELECT actor_id, actor_label, action, target FROM activity_events ORDER BY id');
         self::assertNotFalse($statement);
         self::assertSame([
-            ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'view-page', 'target' => 'page-a'],
-            ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'button-click', 'target' => 'buy-cow'],
-        ], $statement->fetchAll(PDO::FETCH_ASSOC));
+                             ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'view-page', 'target' => 'page-a'],
+                             ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'button-click', 'target' => 'buy-cow'],
+                         ], $statement->fetchAll(PDO::FETCH_ASSOC));
     }
 }

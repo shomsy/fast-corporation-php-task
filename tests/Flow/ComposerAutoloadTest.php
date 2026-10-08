@@ -14,7 +14,7 @@ use ReflectionClass;
 
 final class ComposerAutoloadTest extends TestCase
 {
-    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly(): void
+    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly() : void
     {
         foreach ([AccountPages::class, ActivityPages::class, CowOfferPages::class, DownloadPages::class, HtmlPage::class] as $class) {
             self::assertTrue(class_exists($class), $class);

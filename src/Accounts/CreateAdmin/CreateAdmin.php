@@ -12,11 +12,11 @@ use Psr\Clock\ClockInterface;
 final readonly class CreateAdmin
 {
     public function __construct(
-        private Accounts $accounts,
+        private Accounts       $accounts,
         private ClockInterface $clock,
     ) {}
 
-    public function create(string $username, string $password): Account
+    public function create(string $username, string $password) : Account
     {
         $username = trim($username);
 

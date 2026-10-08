@@ -11,11 +11,11 @@ use InterviewTask\Accounts\SignedInAccount;
 final readonly class Login
 {
     public function __construct(
-        private Accounts $accounts,
+        private Accounts        $accounts,
         private SessionIdentity $identity,
     ) {}
 
-    public function login(string $username, string $password): SignedInAccount
+    public function login(string $username, string $password) : SignedInAccount
     {
         $username = trim($username);
 

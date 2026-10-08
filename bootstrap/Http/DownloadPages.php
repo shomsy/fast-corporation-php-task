@@ -16,13 +16,13 @@ use InterviewTask\Runtime\Http\Response;
 final readonly class DownloadPages
 {
     public function __construct(
-        private DownloadFile $downloads,
+        private DownloadFile    $downloads,
         private RequireSignedIn $signedIn,
-        private Csrf $csrf,
-        private HtmlPage $html,
+        private Csrf            $csrf,
+        private HtmlPage        $html,
     ) {}
 
-    public function pageB(): Response
+    public function pageB() : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {
@@ -36,13 +36,22 @@ final readonly class DownloadPages
         ]);
     }
 
-    public function download(Request $request): Response
+    private function authorizedUser() : SignedInAccount|Response
+    {
+        try {
+            return $this->signedIn->account();
+        } catch (AccessDenied) {
+            return Response::redirect('/login');
+        }
+    }
+
+    public function download(Request $request) : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {
             return $account;
         }
-        if (!$this->csrf->matches($request->post('csrf_token'))) {
+        if (! $this->csrf->matches($request->post('csrf_token'))) {
             return Response::text('Forbidden', 403);
         }
 
@@ -50,23 +59,14 @@ final readonly class DownloadPages
             $body = $this->downloads->read($account->id, $account->username);
 
             return new Response($body, 200, [
-                'Content-Type' => 'application/octet-stream',
-                'Content-Disposition' => 'attachment; filename="sample.exe"',
-                'Content-Length' => (string) strlen($body),
-                'Cache-Control' => 'no-store',
+                'Content-Type'           => 'application/octet-stream',
+                'Content-Disposition'    => 'attachment; filename="sample.exe"',
+                'Content-Length'         => (string) strlen($body),
+                'Cache-Control'          => 'no-store',
                 'X-Content-Type-Options' => 'nosniff',
             ]);
         } catch (ArtifactUnavailable) {
             return Response::text('Download is temporarily unavailable.', 503);
-        }
-    }
-
-    private function authorizedUser(): SignedInAccount|Response
-    {
-        try {
-            return $this->signedIn->account();
-        } catch (AccessDenied) {
-            return Response::redirect('/login');
         }
     }
 }

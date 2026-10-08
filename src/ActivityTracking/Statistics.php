@@ -17,9 +17,10 @@ final readonly class Statistics
     public function __construct(private PDO $pdo) {}
 
     /**
-     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>
+     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at:
+     *                        string}>
      */
-    public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
+    public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1) : array
     {
         return $this->page($date, $user, $action, $page)['events'];
     }
@@ -27,15 +28,16 @@ final readonly class Statistics
     /**
      * One extra row proves whether an older page really exists.
      *
-     * @return array{events: list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>, hasNext: bool}
+     * @return array{events: list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string,
+     *                       occurred_at: string}>, hasNext: bool}
      */
-    public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
+    public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1) : array
     {
         if ($page < 1 || $page > intdiv(PHP_INT_MAX, self::PAGE_SIZE) - 1) {
             throw new InvalidArgumentException('Invalid page.');
         }
 
-        $where = [];
+        $where      = [];
         $parameters = [];
 
         if ($date !== null && $date !== '') {
@@ -45,12 +47,12 @@ final readonly class Statistics
                 throw new InvalidArgumentException('Invalid date. Expected YYYY-MM-DD.');
             }
 
-            $where[] = 'substr(occurred_at, 1, 10) = :date';
+            $where[]            = 'substr(occurred_at, 1, 10) = :date';
             $parameters['date'] = $date;
         }
 
         if ($user !== null && trim($user) !== '') {
-            $where[] = 'actor_label = :user COLLATE NOCASE';
+            $where[]            = 'actor_label = :user COLLATE NOCASE';
             $parameters['user'] = trim($user);
         }
 
@@ -61,7 +63,7 @@ final readonly class Statistics
                 throw new InvalidArgumentException('Unknown activity action.');
             }
 
-            $where[] = 'action = :action';
+            $where[]              = 'action = :action';
             $parameters['action'] = $validated->value;
         }
 
@@ -90,7 +92,7 @@ final readonly class Statistics
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
 
         return [
-            'events' => array_slice($rows, 0, self::PAGE_SIZE),
+            'events'  => array_slice($rows, 0, self::PAGE_SIZE),
             'hasNext' => count($rows) > self::PAGE_SIZE,
         ];
     }

@@ -33,27 +33,27 @@ use InterviewTask\Runtime\Http\Router;
 /** @var array{databasePath: string, sessionCookieSecure: bool, root: string} $config */
 $config = require __DIR__ . '/config.php';
 
-return static function (Router $router) use ($config): void {
-    $pdo = SqliteConnection::open($config['databasePath']);
+return static function (Router $router) use ($config) : void {
+    $pdo      = SqliteConnection::open($config['databasePath']);
     $accounts = new Accounts($pdo);
-    $session = new PhpSession(secureCookie: $config['sessionCookieSecure']);
-    $clock = new SystemClock();
+    $session  = new PhpSession(secureCookie: $config['sessionCookieSecure']);
+    $clock    = new SystemClock();
     $identity = new SessionIdentity($session, $accounts, $clock);
-    $current = new CurrentAccount($identity);
-    $csrf = new Csrf($session);
-    $html = new HtmlPage(new Renderer());
+    $current  = new CurrentAccount($identity);
+    $csrf     = new Csrf($session);
+    $html     = new HtmlPage(new Renderer());
     $activity = new ActivityLog($pdo, $clock);
     $signedIn = new RequireSignedIn($identity);
 
-    $lifecycle = new AccountLifecycle(
+    $lifecycle     = new AccountLifecycle(
         new Register($accounts, $clock),
         new Login($accounts, $identity),
         $identity,
         $activity,
         new Transaction($pdo),
     );
-    $accountPages = new AccountPages($lifecycle, $current, $csrf, $html);
-    $cowPages = new CowOfferPages(new CowOffer($activity), $signedIn, $csrf, $html);
+    $accountPages  = new AccountPages($lifecycle, $current, $csrf, $html);
+    $cowPages      = new CowOfferPages(new CowOffer($activity), $signedIn, $csrf, $html);
     $downloadPages = new DownloadPages(
         new DownloadFile($activity, $config['root'] . '/assets/sample.exe'),
         $signedIn,
@@ -68,16 +68,16 @@ return static function (Router $router) use ($config): void {
         $html,
     );
 
-    $router->add('GET', '/', static fn(): Response => $accountPages->home());
-    $router->add('GET', '/register', static fn(): Response => $accountPages->registerForm());
-    $router->add('POST', '/register', static fn(Request $request): Response => $accountPages->registerSubmit($request));
-    $router->add('GET', '/login', static fn(Request $request): Response => $accountPages->loginForm($request));
-    $router->add('POST', '/login', static fn(Request $request): Response => $accountPages->loginSubmit($request));
-    $router->add('POST', '/logout', static fn(Request $request): Response => $accountPages->logoutSubmit($request));
-    $router->add('GET', '/page-a', static fn(): Response => $cowPages->pageA());
-    $router->add('POST', '/buy-cow', static fn(Request $request): Response => $cowPages->buyCow($request));
-    $router->add('GET', '/page-b', static fn(): Response => $downloadPages->pageB());
-    $router->add('POST', '/download', static fn(Request $request): Response => $downloadPages->download($request));
-    $router->add('GET', '/statistics', static fn(Request $request): Response => $activityPages->statisticsPage($request));
-    $router->add('GET', '/reports', static fn(Request $request): Response => $activityPages->reportsPage($request));
+    $router->add('GET', '/', static fn () : Response => $accountPages->home());
+    $router->add('GET', '/register', static fn () : Response => $accountPages->registerForm());
+    $router->add('POST', '/register', static fn (Request $request) : Response => $accountPages->registerSubmit($request));
+    $router->add('GET', '/login', static fn (Request $request) : Response => $accountPages->loginForm($request));
+    $router->add('POST', '/login', static fn (Request $request) : Response => $accountPages->loginSubmit($request));
+    $router->add('POST', '/logout', static fn (Request $request) : Response => $accountPages->logoutSubmit($request));
+    $router->add('GET', '/page-a', static fn () : Response => $cowPages->pageA());
+    $router->add('POST', '/buy-cow', static fn (Request $request) : Response => $cowPages->buyCow($request));
+    $router->add('GET', '/page-b', static fn () : Response => $downloadPages->pageB());
+    $router->add('POST', '/download', static fn (Request $request) : Response => $downloadPages->download($request));
+    $router->add('GET', '/statistics', static fn (Request $request) : Response => $activityPages->statisticsPage($request));
+    $router->add('GET', '/reports', static fn (Request $request) : Response => $activityPages->reportsPage($request));
 };

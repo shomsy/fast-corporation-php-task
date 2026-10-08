@@ -55,10 +55,10 @@ deptrac:
     Downloads:
       - ActivityTracking
       - Infrastructure
-    Runtime: []
+    Runtime: [ ]
     Infrastructure:
       - PsrClock
-    PsrClock: []
+    PsrClock: [ ]
     Bootstrap:
       - Accounts
       - ActivityTracking

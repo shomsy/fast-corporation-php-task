@@ -16,76 +16,52 @@ use InvalidArgumentException;
 final readonly class ActivityPages
 {
     public function __construct(
-        private Statistics $statistics,
-        private DailyReports $reports,
-        private RequireAdmin $admin,
+        private Statistics     $statistics,
+        private DailyReports   $reports,
+        private RequireAdmin   $admin,
         private CurrentAccount $identity,
-        private HtmlPage $html,
+        private HtmlPage       $html,
     ) {}
 
-    public function statisticsPage(Request $request): Response
+    public function statisticsPage(Request $request) : Response
     {
         $denied = $this->requireAdministrator();
         if ($denied !== null) {
             return $denied;
         }
 
-        $date = $this->optionalInput($request->query('date'));
-        $user = $this->optionalInput($request->query('user'));
-        $action = $this->optionalInput($request->query('action'));
+        $date      = $this->optionalInput($request->query('date'));
+        $user      = $this->optionalInput($request->query('user'));
+        $action    = $this->optionalInput($request->query('action'));
         $pageValue = $this->optionalInput($request->query('page')) ?? '1';
-        $page = 1;
+        $page      = 1;
 
         try {
-            if (!preg_match('/^[1-9][0-9]{0,17}$/', $pageValue)) {
+            if (! preg_match('/^[1-9][0-9]{0,17}$/', $pageValue)) {
                 throw new InvalidArgumentException('Invalid page.');
             }
-            $page = (int) $pageValue;
-            $result = $this->statistics->page($date, $user, $action, $page);
-            $events = $result['events'];
+            $page    = (int) $pageValue;
+            $result  = $this->statistics->page($date, $user, $action, $page);
+            $events  = $result['events'];
             $hasNext = $result['hasNext'];
-            $error = '';
-            $status = 200;
+            $error   = '';
+            $status  = 200;
         } catch (InvalidArgumentException $e) {
-            $events = [];
+            $events  = [];
             $hasNext = false;
-            $error = $e->getMessage();
-            $status = 422;
+            $error   = $e->getMessage();
+            $status  = 422;
         }
 
         return $this->html->render('src/ActivityTracking/statistics.php', [
-            'events' => $events, 'date' => $date ?? '',
-            'user' => $user ?? '', 'action' => $action ?? '',
-            'error' => $error, 'page' => $page,
+            'events'  => $events, 'date' => $date ?? '',
+            'user'    => $user ?? '', 'action' => $action ?? '',
+            'error'   => $error, 'page' => $page,
             'hasNext' => $hasNext,
-        ], $status);
+        ],                         $status);
     }
 
-    public function reportsPage(?Request $request = null): Response
-    {
-        $denied = $this->requireAdministrator();
-        if ($denied !== null) {
-            return $denied;
-        }
-
-        $from = $request === null ? null : $this->optionalInput($request->query('from'));
-        $to = $request === null ? null : $this->optionalInput($request->query('to'));
-        try {
-            $daily = $this->reports->dailyCounts($from, $to);
-            $error = '';
-            $status = 200;
-        } catch (InvalidArgumentException $e) {
-            $daily = [];
-            $error = $e->getMessage();
-            $status = 422;
-        }
-
-        return $this->html->render('src/ActivityTracking/reports.php', [
-            'daily' => $daily, 'from' => $from ?? '', 'to' => $to ?? '', 'error' => $error,
-        ], $status);
-    }
-
-    private function requireAdministrator(): ?Response
+    private function requireAdministrator() : ?Response
     {
         try {
             $this->admin->account();
@@ -98,8 +74,32 @@ final readonly class ActivityPages
         }
     }
 
-    private function optionalInput(mixed $value): ?string
+    private function optionalInput(mixed $value) : ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public function reportsPage(?Request $request = null) : Response
+    {
+        $denied = $this->requireAdministrator();
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $from = $request === null ? null : $this->optionalInput($request->query('from'));
+        $to   = $request === null ? null : $this->optionalInput($request->query('to'));
+        try {
+            $daily  = $this->reports->dailyCounts($from, $to);
+            $error  = '';
+            $status = 200;
+        } catch (InvalidArgumentException $e) {
+            $daily  = [];
+            $error  = $e->getMessage();
+            $status = 422;
+        }
+
+        return $this->html->render('src/ActivityTracking/reports.php', [
+            'daily' => $daily, 'from' => $from ?? '', 'to' => $to ?? '', 'error' => $error,
+        ],                         $status);
     }
 }

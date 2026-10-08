@@ -19,30 +19,30 @@ if (PHP_SAPI !== 'cli') {
 
 $arguments = $_SERVER['argv'] ?? [];
 
-if (!is_array($arguments)) {
+if (! is_array($arguments)) {
     $arguments = [];
 }
 
-$username = $arguments[1] ?? null;
+$username          = $arguments[1] ?? null;
 $passwordFromStdin = ($arguments[2] ?? '') === '--password-stdin';
 
-if (!is_string($username) || $username === '' || (count($arguments) !== 2 && !(count($arguments) === 3 && $passwordFromStdin))) {
+if (! is_string($username) || $username === '' || (count($arguments) !== 2 && ! (count($arguments) === 3 && $passwordFromStdin))) {
     fwrite(STDERR, "Usage: php bin/create-admin.php <username> [--password-stdin]\n");
 
     exit(2);
 }
 
-if (!$passwordFromStdin && !stream_isatty(STDIN)) {
+if (! $passwordFromStdin && ! stream_isatty(STDIN)) {
     fwrite(STDERR, "Use --password-stdin for non-interactive setup.\n");
 
     exit(2);
 }
 
-if (!$passwordFromStdin) {
+if (! $passwordFromStdin) {
     fwrite(STDERR, 'Admin password: ');
     $terminalSettings = shell_exec('stty -g');
 
-    if (!is_string($terminalSettings) || trim($terminalSettings) === '') {
+    if (! is_string($terminalSettings) || trim($terminalSettings) === '') {
         fwrite(STDERR, "Unable to securely read password from terminal.\n");
 
         exit(2);

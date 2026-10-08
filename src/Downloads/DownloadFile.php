@@ -16,10 +16,10 @@ final readonly class DownloadFile
 {
     public function __construct(
         private ActivityLog $activityLog,
-        private string $artifactPath,
+        private string      $artifactPath,
     ) {}
 
-    public function view(int $actorId, string $actorLabel): void
+    public function view(int $actorId, string $actorLabel) : void
     {
         $this->activityLog->recordPageView($actorId, $actorLabel, TrackedPage::PageB);
     }
@@ -27,9 +27,9 @@ final readonly class DownloadFile
     /**
      * @return string Complete contents of the fixed readable artifact.
      */
-    public function read(int $actorId, string $actorLabel): string
+    public function read(int $actorId, string $actorLabel) : string
     {
-        if (!is_file($this->artifactPath) || !is_readable($this->artifactPath)) {
+        if (! is_file($this->artifactPath) || ! is_readable($this->artifactPath)) {
             throw new ArtifactUnavailable('Download is temporarily unavailable.');
         }
 

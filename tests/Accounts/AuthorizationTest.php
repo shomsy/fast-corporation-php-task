@@ -14,10 +14,10 @@ use InterviewTask\Accounts\SessionIdentity;
 
 final class AuthorizationTest extends AccountsTestCase
 {
-    public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount(): void
+    public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount() : void
     {
         $identity = new SessionIdentity($this->session(), $this->accounts);
-        $guard = new RequireSignedIn($identity);
+        $guard    = new RequireSignedIn($identity);
 
         try {
             $guard->account();
@@ -32,11 +32,11 @@ final class AuthorizationTest extends AccountsTestCase
         self::assertSame($account->id, $guard->account()->id);
     }
 
-    public function testAdminGuardRejectsUserAndAcceptsAdmin(): void
+    public function testAdminGuardRejectsUserAndAcceptsAdmin() : void
     {
-        $session = $this->session();
+        $session  = $this->session();
         $identity = new SessionIdentity($session, $this->accounts);
-        $guard = new RequireAdmin($identity);
+        $guard    = new RequireAdmin($identity);
 
         $user = (new Register($this->accounts, $this->clock))->register('alice', 'password');
         $identity->signIn($user);
@@ -55,11 +55,12 @@ final class AuthorizationTest extends AccountsTestCase
 
         self::assertSame(Role::Admin, $guard->account()->role);
     }
-    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession(): void
+
+    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession() : void
     {
         $identity = new SessionIdentity($this->session(), $this->accounts, $this->clock);
-        $guard = new RequireAdmin($identity);
-        $admin = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'password');
+        $guard    = new RequireAdmin($identity);
+        $admin    = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'password');
         $identity->signIn($admin);
         self::assertSame(Role::Admin, $guard->account()->role);
 

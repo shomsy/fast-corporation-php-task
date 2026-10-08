@@ -15,11 +15,11 @@ use PHPUnit\Framework\TestCase;
 
 abstract class AccountsTestCase extends TestCase
 {
-    protected PDO $pdo;
-    protected Accounts $accounts;
+    protected PDO        $pdo;
+    protected Accounts   $accounts;
     protected FixedClock $clock;
 
-    protected function setUp(): void
+    protected function setUp() : void
     {
         parent::setUp();
 
@@ -38,12 +38,12 @@ abstract class AccountsTestCase extends TestCase
         ]))->migrate();
 
         $this->accounts = new Accounts($this->pdo);
-        $this->clock = new FixedClock(
+        $this->clock    = new FixedClock(
             new DateTimeImmutable('2026-10-08T00:00:00+00:00', new DateTimeZone('UTC')),
         );
     }
 
-    protected function tearDown(): void
+    protected function tearDown() : void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
@@ -55,7 +55,7 @@ abstract class AccountsTestCase extends TestCase
         parent::tearDown();
     }
 
-    protected function session(): PhpSession
+    protected function session() : PhpSession
     {
         return new PhpSession('fast_task_test', false);
     }

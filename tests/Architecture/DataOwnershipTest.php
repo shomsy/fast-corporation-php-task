@@ -19,20 +19,21 @@ use SplFileInfo;
 final class DataOwnershipTest extends TestCase
 {
     /** @var array<string, string> */
-    private const array TABLE_OWNERS = [
-        'accounts' => 'Accounts',
-        'activity_events' => 'ActivityTracking',
-    ];
+    private const array TABLE_OWNERS
+        = [
+            'accounts'        => 'Accounts',
+            'activity_events' => 'ActivityTracking',
+        ];
 
-    public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables(): void
+    public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables() : void
     {
-        $root = dirname(__DIR__, 2) . '/src';
+        $root       = dirname(__DIR__, 2) . '/src';
         $violations = [];
         foreach (['Accounts', 'ActivityTracking', 'CowOffer', 'Downloads'] as $owner) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root . '/' . $owner));
             foreach ($iterator as $file) {
-                if (!$file instanceof SplFileInfo || !$file->isFile()
-                    || !in_array($file->getExtension(), ['php', 'sql'], true)) {
+                if (! $file instanceof SplFileInfo || ! $file->isFile()
+                    || ! in_array($file->getExtension(), ['php', 'sql'], true)) {
                     continue;
                 }
                 $contents = file_get_contents($file->getPathname());
@@ -50,30 +51,10 @@ final class DataOwnershipTest extends TestCase
         self::assertSame([], $violations);
     }
 
-    public function testForeignTableReferenceMutationsFailOwnerPolicy(): void
-    {
-        self::assertSame(['activity_events'], self::foreignTables(
-            'Accounts',
-            "INSERT INTO activity_events (actor_id) VALUES (1)",
-        ));
-        self::assertSame(['accounts'], self::foreignTables(
-            'ActivityTracking',
-            'SELECT role FROM accounts WHERE id = :id',
-        ));
-        self::assertSame(['accounts'], self::foreignTables(
-            'CowOffer',
-            'UPDATE accounts SET role = :role WHERE id = :id',
-        ));
-        self::assertSame([], self::foreignTables(
-            'ActivityTracking',
-            'SELECT id FROM activity_events WHERE actor_id = :id',
-        ));
-    }
-
     /**
      * @return list<string>
      */
-    private static function literalStrings(string $source): array
+    private static function literalStrings(string $source) : array
     {
         $parsed = (new ParserFactory())->createForNewestSupportedVersion()->parse($source);
         if ($parsed === null) {
@@ -92,7 +73,7 @@ final class DataOwnershipTest extends TestCase
     /**
      * @return list<string>
      */
-    private static function foreignTables(string $owner, string $sql): array
+    private static function foreignTables(string $owner, string $sql) : array
     {
         preg_match_all(
             '/\b(?:FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE(?:\s+IF\s+NOT\s+EXISTS)?)\s+["\x60]?([a-z][a-z0-9_]*)/i',
@@ -108,5 +89,25 @@ final class DataOwnershipTest extends TestCase
         }
 
         return array_values($violations);
+    }
+
+    public function testForeignTableReferenceMutationsFailOwnerPolicy() : void
+    {
+        self::assertSame(['activity_events'], self::foreignTables(
+            'Accounts',
+            "INSERT INTO activity_events (actor_id) VALUES (1)",
+        ));
+        self::assertSame(['accounts'], self::foreignTables(
+            'ActivityTracking',
+            'SELECT role FROM accounts WHERE id = :id',
+        ));
+        self::assertSame(['accounts'], self::foreignTables(
+            'CowOffer',
+            'UPDATE accounts SET role = :role WHERE id = :id',
+        ));
+        self::assertSame([], self::foreignTables(
+            'ActivityTracking',
+            'SELECT id FROM activity_events WHERE actor_id = :id',
+        ));
     }
 }

@@ -10,7 +10,7 @@ final readonly class Csrf
 
     public function __construct(private PhpSession $session) {}
 
-    public function token(): string
+    public function token() : string
     {
         $stored = $this->session->get(self::SESSION_KEY);
 
@@ -24,7 +24,7 @@ final readonly class Csrf
         return $token;
     }
 
-    public function matches(mixed $submitted): bool
+    public function matches(mixed $submitted) : bool
     {
         $stored = $this->session->get(self::SESSION_KEY);
 

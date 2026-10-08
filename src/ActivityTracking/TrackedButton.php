@@ -6,6 +6,6 @@ namespace InterviewTask\ActivityTracking;
 
 enum TrackedButton: string
 {
-    case BuyCow = 'buy-cow';
+    case BuyCow   = 'buy-cow';
     case Download = 'download';
 }

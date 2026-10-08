@@ -12,7 +12,7 @@ use InterviewTask\Accounts\SessionIdentity;
 
 final class LoginTest extends AccountsTestCase
 {
-    public function testValidCredentialsRegenerateSessionAndEstablishIdentity(): void
+    public function testValidCredentialsRegenerateSessionAndEstablishIdentity() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'correct horse battery staple');
 
@@ -30,7 +30,7 @@ final class LoginTest extends AccountsTestCase
         self::assertEquals($signedIn, $identity->current());
     }
 
-    public function testUnknownUserAndWrongPasswordExposeSameFailure(): void
+    public function testUnknownUserAndWrongPasswordExposeSameFailure() : void
     {
         (new Register($this->accounts, $this->clock))->register('alice', 'correct horse battery staple');
 
@@ -41,7 +41,7 @@ final class LoginTest extends AccountsTestCase
             ] as [$username, $password]
         ) {
             $identity = new SessionIdentity($this->session(), $this->accounts);
-            $login = new Login($this->accounts, $identity);
+            $login    = new Login($this->accounts, $identity);
 
             try {
                 $login->login($username, $password);

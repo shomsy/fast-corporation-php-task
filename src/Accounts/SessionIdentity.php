@@ -10,19 +10,19 @@ use Psr\Clock\ClockInterface;
 
 final readonly class SessionIdentity
 {
-    private const string ACCOUNT_ID = 'account_id';
-    private const string ISSUED_AT = 'authenticated_at';
-    private const string LAST_SEEN_AT = 'last_activity_at';
-    private const int MAX_IDLE_SECONDS = 1800;
-    private const int MAX_LIFETIME_SECONDS = 43200;
+    private const string ACCOUNT_ID           = 'account_id';
+    private const string ISSUED_AT            = 'authenticated_at';
+    private const string LAST_SEEN_AT         = 'last_activity_at';
+    private const int    MAX_IDLE_SECONDS     = 1800;
+    private const int    MAX_LIFETIME_SECONDS = 43200;
 
     public function __construct(
-        private PhpSession $session,
-        private Accounts $accounts,
+        private PhpSession      $session,
+        private Accounts        $accounts,
         private ?ClockInterface $clock = null,
     ) {}
 
-    public function signIn(Account $account): SignedInAccount
+    public function signIn(Account $account) : SignedInAccount
     {
         $this->session->regenerate();
         $this->session->put(self::ACCOUNT_ID, $account->id);
@@ -33,19 +33,24 @@ final readonly class SessionIdentity
         return SignedInAccount::fromAccount($account);
     }
 
-    public function current(): ?SignedInAccount
+    private function now() : int
+    {
+        return ($this->clock ?? new SystemClock())->now()->getTimestamp();
+    }
+
+    public function current() : ?SignedInAccount
     {
         $id = $this->session->get(self::ACCOUNT_ID);
 
-        if (!is_int($id)) {
+        if (! is_int($id)) {
             return null;
         }
 
         $issuedAt = $this->session->get(self::ISSUED_AT);
         $lastSeen = $this->session->get(self::LAST_SEEN_AT);
-        $now = $this->now();
+        $now      = $this->now();
 
-        if (!is_int($issuedAt) || !is_int($lastSeen)
+        if (! is_int($issuedAt) || ! is_int($lastSeen)
             || $issuedAt > $now || $lastSeen > $now || $lastSeen < $issuedAt
             || $now - $issuedAt >= self::MAX_LIFETIME_SECONDS
             || $now - $lastSeen >= self::MAX_IDLE_SECONDS
@@ -68,13 +73,8 @@ final readonly class SessionIdentity
         return SignedInAccount::fromAccount($account);
     }
 
-    public function signOut(): void
+    public function signOut() : void
     {
         $this->session->destroy();
-    }
-
-    private function now(): int
-    {
-        return ($this->clock ?? new SystemClock())->now()->getTimestamp();
     }
 }

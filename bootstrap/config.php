@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$root = dirname(__DIR__);
+$root    = dirname(__DIR__);
 $envFile = $root . '/.env';
 
 if (is_file($envFile)) {
@@ -15,7 +15,7 @@ if (is_file($envFile)) {
     foreach ($lines as $line) {
         $line = trim($line);
 
-        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+        if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, '=')) {
             continue;
         }
 
@@ -35,11 +35,11 @@ if (is_file($envFile)) {
 $dbPath = getenv('DB_PATH');
 $dbPath = is_string($dbPath) && $dbPath !== '' ? $dbPath : 'var/database/app.sqlite';
 
-if (!str_starts_with($dbPath, '/')) {
+if (! str_starts_with($dbPath, '/')) {
     $dbPath = $root . '/' . $dbPath;
 }
 
-$debug = filter_var(getenv('APP_DEBUG') ?: '0', FILTER_VALIDATE_BOOL);
+$debug        = filter_var(getenv('APP_DEBUG') ?: '0', FILTER_VALIDATE_BOOL);
 $secureCookie = filter_var(getenv('SESSION_COOKIE_SECURE') ?: '0', FILTER_VALIDATE_BOOL);
 
 /**
@@ -52,9 +52,9 @@ $secureCookie = filter_var(getenv('SESSION_COOKIE_SECURE') ?: '0', FILTER_VALIDA
  * }
  */
 return [
-    'root' => $root,
-    'environment' => getenv('APP_ENV') ?: 'local',
-    'debug' => $debug,
-    'databasePath' => $dbPath,
+    'root'                => $root,
+    'environment'         => getenv('APP_ENV') ?: 'local',
+    'debug'               => $debug,
+    'databasePath'        => $dbPath,
     'sessionCookieSecure' => $secureCookie,
 ];

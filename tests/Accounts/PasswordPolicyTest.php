@@ -11,7 +11,7 @@ use InterviewTask\Accounts\Register\RegistrationRejected;
 
 final class PasswordPolicyTest extends AccountsTestCase
 {
-    public function testSeventyTwoBytePasswordIsValidButDistinctLongerPasswordCannotAuthenticate(): void
+    public function testSeventyTwoBytePasswordIsValidButDistinctLongerPasswordCannotAuthenticate() : void
     {
         $password = str_repeat('a', 72);
         (new Register($this->accounts, $this->clock))->register('alice', $password);
@@ -20,7 +20,7 @@ final class PasswordPolicyTest extends AccountsTestCase
         self::assertNull($this->accounts->authenticate('alice', $password . 'different suffix'));
     }
 
-    public function testRegistrationRejectsOverlongUtf8PasswordsInBytesWithoutPersistingAccount(): void
+    public function testRegistrationRejectsOverlongUtf8PasswordsInBytesWithoutPersistingAccount() : void
     {
         $password = str_repeat('é', 37); // 74 UTF-8 bytes
         $this->expectException(RegistrationRejected::class);
@@ -35,7 +35,7 @@ final class PasswordPolicyTest extends AccountsTestCase
         }
     }
 
-    public function testNulBytePasswordIsRejectedAcrossRegistrationAndAdminCreation(): void
+    public function testNulBytePasswordIsRejectedAcrossRegistrationAndAdminCreation() : void
     {
         $password = "safe\0unsafe";
 
@@ -62,7 +62,7 @@ final class PasswordPolicyTest extends AccountsTestCase
         self::assertNull($this->accounts->authenticate('alice', $password));
     }
 
-    public function testDirectAccountAndAdminCreationEnforceIdenticalPasswordBoundary(): void
+    public function testDirectAccountAndAdminCreationEnforceIdenticalPasswordBoundary() : void
     {
         $password = str_repeat('b', 73);
 

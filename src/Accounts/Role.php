@@ -6,6 +6,6 @@ namespace InterviewTask\Accounts;
 
 enum Role: string
 {
-    case User = 'user';
+    case User  = 'user';
     case Admin = 'admin';
 }

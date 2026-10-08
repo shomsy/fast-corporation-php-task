@@ -14,7 +14,16 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 final class RegisterTest extends AccountsTestCase
 {
-    public function testRegistrationCreatesUserAndStoresOnlyPasswordHash(): void
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invalidRegistrationProvider() : iterable
+    {
+        yield 'blank username' => ['   ', 'password'];
+        yield 'blank password' => ['alice', ''];
+    }
+
+    public function testRegistrationCreatesUserAndStoresOnlyPasswordHash() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('  Alice  ', 'correct horse battery staple');
 
@@ -34,7 +43,7 @@ final class RegisterTest extends AccountsTestCase
         self::assertTrue(password_verify('correct horse battery staple', $row['password_hash']));
     }
 
-    public function testDuplicateUsernameIsRejectedCaseInsensitively(): void
+    public function testDuplicateUsernameIsRejectedCaseInsensitively() : void
     {
         $register = new Register($this->accounts, $this->clock);
         $register->register('Alice', 'first password');
@@ -43,15 +52,16 @@ final class RegisterTest extends AccountsTestCase
         $register->register('alice', 'second password');
     }
 
-    public function testNonUniqueSQLiteConstraintFailureIsNotReportedAsUsernameTaken(): void
+    public function testNonUniqueSQLiteConstraintFailureIsNotReportedAsUsernameTaken() : void
     {
         $this->pdo->exec(<<<'SQL'
-            CREATE TRIGGER accounts_reject_alice BEFORE INSERT ON accounts
-            WHEN NEW.username = 'alice'
-            BEGIN
-                SELECT RAISE(ABORT, 'simulated CHECK constraint failure');
-            END
-            SQL);
+                             CREATE TRIGGER accounts_reject_alice BEFORE INSERT ON accounts
+                             WHEN NEW.username = 'alice'
+                             BEGIN
+                                 SELECT RAISE(ABORT, 'simulated CHECK constraint failure');
+                             END
+                             SQL
+        );
 
         try {
             (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
@@ -63,19 +73,10 @@ final class RegisterTest extends AccountsTestCase
     }
 
     #[DataProvider('invalidRegistrationProvider')]
-    public function testBlankUsernameOrPasswordIsRejected(string $username, string $password): void
+    public function testBlankUsernameOrPasswordIsRejected(string $username, string $password) : void
     {
         $this->expectException(RegistrationRejected::class);
 
         (new Register($this->accounts, $this->clock))->register($username, $password);
-    }
-
-    /**
-     * @return iterable<string, array{string, string}>
-     */
-    public static function invalidRegistrationProvider(): iterable
-    {
-        yield 'blank username' => ['   ', 'password'];
-        yield 'blank password' => ['alice', ''];
     }
 }

@@ -21,7 +21,7 @@ final class Router
     /**
      * @param callable(Request): Response $handler
      */
-    public function add(string $method, string $path, callable $handler): void
+    public function add(string $method, string $path, callable $handler) : void
     {
         $method = strtoupper(trim($method));
 
@@ -29,14 +29,14 @@ final class Router
             throw new InvalidArgumentException('HTTP method cannot be empty.');
         }
 
-        if ($path === '' || !str_starts_with($path, '/')) {
+        if ($path === '' || ! str_starts_with($path, '/')) {
             throw new InvalidArgumentException('Route path must start with "/".');
         }
 
         $this->routes[$method][$path] = Closure::fromCallable($handler);
     }
 
-    public function dispatch(Request $request): Response
+    public function dispatch(Request $request) : Response
     {
         $handler = $this->routes[$request->method()][$request->path()] ?? null;
 
@@ -54,7 +54,7 @@ final class Router
         if ($allowed !== []) {
             return new Response('Method Not Allowed', 405, [
                 'Content-Type' => 'text/plain; charset=UTF-8',
-                'Allow' => implode(', ', $allowed),
+                'Allow'        => implode(', ', $allowed),
             ]);
         }
 

@@ -14,22 +14,22 @@ use Throwable;
 final readonly class AccountLifecycle
 {
     public function __construct(
-        private Register $register,
-        private Login $login,
+        private Register        $register,
+        private Login           $login,
         private SessionIdentity $identity,
-        private ActivityLog $activity,
-        private Transaction $transaction,
+        private ActivityLog     $activity,
+        private Transaction     $transaction,
     ) {}
 
-    public function register(string $username, string $password): void
+    public function register(string $username, string $password) : void
     {
-        $this->transaction->run(function () use ($username, $password): void {
+        $this->transaction->run(function () use ($username, $password) : void {
             $account = $this->register->register($username, $password);
             $this->activity->recordRegistration($account->id, $account->username);
         });
     }
 
-    public function login(string $username, string $password): SignedInAccount
+    public function login(string $username, string $password) : SignedInAccount
     {
         $account = $this->login->login($username, $password);
 
@@ -43,7 +43,7 @@ final readonly class AccountLifecycle
         return $account;
     }
 
-    public function logout(): void
+    public function logout() : void
     {
         try {
             $account = $this->identity->current();

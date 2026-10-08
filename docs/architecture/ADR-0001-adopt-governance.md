@@ -9,7 +9,8 @@ Decider: Project owner / accountable human
 
 Adopt `docs/ARCHITECTURE-GOVERNANCE.md` as the project's version-controlled Architecture Governance 1.7.1 authority.
 
-The project is still pre-business-code, so the old proposed 1.3.2 architecture may be rewritten rather than preserved for compatibility. Tooling and Git history remain; structure is re-derived under 1.7.1 before Phase 2.
+The project is still pre-business-code, so the old proposed 1.3.2 architecture may be rewritten rather than preserved
+for compatibility. Tooling and Git history remain; structure is re-derived under 1.7.1 before Phase 2.
 
 Future MINOR/MAJOR governance adoption is recorded explicitly.
 

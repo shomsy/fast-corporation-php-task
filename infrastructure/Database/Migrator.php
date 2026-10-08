@@ -13,19 +13,19 @@ final class Migrator
      * @param array<string, string> $migrationDirectories owner => absolute directory
      */
     public function __construct(
-        private readonly PDO $pdo,
+        private readonly PDO   $pdo,
         private readonly array $migrationDirectories,
     ) {}
 
     /**
      * @return list<string> migration identifiers applied by this run
      */
-    public function migrate(): array
+    public function migrate() : array
     {
         $this->ensureMetadataTable();
 
-        $applied = array_fill_keys($this->appliedMigrationIds(), true);
-        $migrations = $this->discoverMigrations();
+        $applied      = array_fill_keys($this->appliedMigrationIds(), true);
+        $migrations   = $this->discoverMigrations();
         $newlyApplied = [];
 
         foreach ($migrations as $identifier => $file) {
@@ -40,22 +40,22 @@ final class Migrator
         return $newlyApplied;
     }
 
-    private function ensureMetadataTable(): void
+    private function ensureMetadataTable() : void
     {
         $this->pdo->exec(
             <<<'SQL'
-            CREATE TABLE IF NOT EXISTS schema_migrations (
-                migration TEXT PRIMARY KEY,
-                applied_at TEXT NOT NULL
-            )
-            SQL,
+                CREATE TABLE IF NOT EXISTS schema_migrations (
+                    migration TEXT PRIMARY KEY,
+                    applied_at TEXT NOT NULL
+                )
+                SQL,
         );
     }
 
     /**
      * @return list<string>
      */
-    private function appliedMigrationIds(): array
+    private function appliedMigrationIds() : array
     {
         $statement = $this->pdo->query('SELECT migration FROM schema_migrations ORDER BY migration');
 
@@ -63,11 +63,11 @@ final class Migrator
             throw new RuntimeException('Unable to read applied migrations.');
         }
 
-        $rows = $statement->fetchAll(PDO::FETCH_COLUMN);
+        $rows       = $statement->fetchAll(PDO::FETCH_COLUMN);
         $migrations = [];
 
         foreach ($rows as $row) {
-            if (!is_string($row)) {
+            if (! is_string($row)) {
                 throw new RuntimeException('Migration identifier must be a string.');
             }
 
@@ -80,12 +80,12 @@ final class Migrator
     /**
      * @return array<string, string> migration identifier => file path
      */
-    private function discoverMigrations(): array
+    private function discoverMigrations() : array
     {
         $migrations = [];
 
         foreach ($this->migrationDirectories as $owner => $directory) {
-            if (!is_dir($directory)) {
+            if (! is_dir($directory)) {
                 throw new RuntimeException(sprintf('Migration directory for %s does not exist: %s', $owner, $directory));
             }
 
@@ -96,7 +96,7 @@ final class Migrator
             }
 
             foreach ($files as $file) {
-                $identifier = $owner . ':' . basename($file);
+                $identifier              = $owner . ':' . basename($file);
                 $migrations[$identifier] = $file;
             }
         }
@@ -106,7 +106,7 @@ final class Migrator
         return $migrations;
     }
 
-    private function apply(string $identifier, string $file): void
+    private function apply(string $identifier, string $file) : void
     {
         $sql = file_get_contents($file);
 
@@ -114,7 +114,7 @@ final class Migrator
             throw new RuntimeException('Migration is empty or unreadable: ' . $file);
         }
 
-        (new Transaction($this->pdo))->run(function () use ($identifier, $sql): void {
+        (new Transaction($this->pdo))->run(function () use ($identifier, $sql) : void {
             $this->pdo->exec($sql);
 
             $statement = $this->pdo->prepare(
@@ -122,9 +122,9 @@ final class Migrator
             );
 
             $statement->execute([
-                'migration' => $identifier,
-                'applied_at' => gmdate('c'),
-            ]);
+                                    'migration'  => $identifier,
+                                    'applied_at' => gmdate('c'),
+                                ]);
         });
     }
 }

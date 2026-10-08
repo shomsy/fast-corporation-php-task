@@ -16,16 +16,17 @@ final readonly class Request
     public function __construct(
         private string $method,
         private string $path,
-        private array $query = [],
-        private array $post = [],
-        private array $server = [],
-    ) {
-        if ($path === '' || !str_starts_with($path, '/')) {
+        private array  $query = [],
+        private array  $post = [],
+        private array  $server = [],
+    )
+    {
+        if ($path === '' || ! str_starts_with($path, '/')) {
             throw new InvalidArgumentException('Request path must start with "/".');
         }
     }
 
-    public static function fromGlobals(): self
+    public static function fromGlobals() : self
     {
         $uri = is_string($_SERVER['REQUEST_URI'] ?? null)
             ? $_SERVER['REQUEST_URI']
@@ -35,36 +36,11 @@ final readonly class Request
 
         return new self(
             method: is_string($_SERVER['REQUEST_METHOD'] ?? null) ? $_SERVER['REQUEST_METHOD'] : 'GET',
-            path: is_string($path) && $path !== '' ? $path : '/',
-            query: self::stringKeyed($_GET),
-            post: self::stringKeyed($_POST),
+            path  : is_string($path) && $path !== '' ? $path : '/',
+            query : self::stringKeyed($_GET),
+            post  : self::stringKeyed($_POST),
             server: self::stringKeyed($_SERVER),
         );
-    }
-
-    public function method(): string
-    {
-        return strtoupper($this->method);
-    }
-
-    public function path(): string
-    {
-        return $this->path;
-    }
-
-    public function query(string $key): mixed
-    {
-        return $this->query[$key] ?? null;
-    }
-
-    public function post(string $key): mixed
-    {
-        return $this->post[$key] ?? null;
-    }
-
-    public function server(string $key): mixed
-    {
-        return $this->server[$key] ?? null;
     }
 
     /**
@@ -72,7 +48,7 @@ final readonly class Request
      *
      * @return array<string, mixed>
      */
-    private static function stringKeyed(array $values): array
+    private static function stringKeyed(array $values) : array
     {
         $result = [];
 
@@ -83,5 +59,30 @@ final readonly class Request
         }
 
         return $result;
+    }
+
+    public function method() : string
+    {
+        return strtoupper($this->method);
+    }
+
+    public function path() : string
+    {
+        return $this->path;
+    }
+
+    public function query(string $key) : mixed
+    {
+        return $this->query[$key] ?? null;
+    }
+
+    public function post(string $key) : mixed
+    {
+        return $this->post[$key] ?? null;
+    }
+
+    public function server(string $key) : mixed
+    {
+        return $this->server[$key] ?? null;
     }
 }
