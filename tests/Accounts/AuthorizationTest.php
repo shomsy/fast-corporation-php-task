@@ -12,8 +12,18 @@ use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\Role;
 use InterviewTask\Accounts\SessionIdentity;
 
+/**
+ * Regression checks for Authorization test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 final class AuthorizationTest extends AccountsTestCase
 {
+    /**
+     * Verify signed in guard rejects anonymous and returns authenticated account through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount(): void
     {
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);
@@ -32,6 +42,11 @@ final class AuthorizationTest extends AccountsTestCase
         self::assertSame($account->id, $guard->account()->id);
     }
 
+    /**
+     * Verify admin guard rejects user and accepts admin through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAdminGuardRejectsUserAndAcceptsAdmin(): void
     {
         $session  = $this->session();
@@ -56,6 +71,11 @@ final class AuthorizationTest extends AccountsTestCase
         self::assertSame(Role::Admin, $guard->account()->role);
     }
 
+    /**
+     * Verify revoked admin role immediately fails authorization with existing session through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession(): void
     {
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);

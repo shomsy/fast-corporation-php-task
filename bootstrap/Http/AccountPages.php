@@ -13,9 +13,21 @@ use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 
-/** HTTP adaptation for the Accounts owner's authentication lifecycle. */
+/**
+ * HTTP adaptation for the Accounts owner's authentication lifecycle.
+ *
+ * @package InterviewTask\Bootstrap\Http
+ */
 final readonly class AccountPages
 {
+    /**
+     * Receive the Accounts lifecycle, current identity, CSRF guard and HTML renderer.
+     *
+     * @param AccountLifecycle $lifecycle Input value for lifecycle.
+     * @param CurrentAccount $identity Server-side authenticated identity access boundary.
+     * @param Csrf $csrf CSRF token generation and verification component.
+     * @param HtmlPage $html Trusted HTML response adapter.
+     */
     public function __construct(
         private AccountLifecycle $lifecycle,
         private CurrentAccount   $identity,
@@ -23,6 +35,11 @@ final readonly class AccountPages
         private HtmlPage         $html,
     ) {}
 
+    /**
+     * Render the registration form with a session CSRF token.
+     *
+     * @return Response Result described by the native PHP return type.
+     */
     public function registerForm(): Response
     {
         return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
@@ -30,6 +47,12 @@ final readonly class AccountPages
         ]);
     }
 
+    /**
+     * Validate CSRF and registration input, translating known business outcomes into HTTP.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Result described by the native PHP return type.
+     */
     public function registerSubmit(Request $request): Response
     {
         if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
@@ -56,11 +79,23 @@ final readonly class AccountPages
         }
     }
 
+    /**
+     * Convert only scalar string form input, rejecting submitted arrays.
+     *
+     * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
+     * @return string Result described by the native PHP return type.
+     */
     private function stringInput(mixed $value): string
     {
         return is_string(value: $value) ? $value : '';
     }
 
+    /**
+     * Render the login form and optional post-registration notice.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Result described by the native PHP return type.
+     */
     public function loginForm(Request $request): Response
     {
         return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
@@ -69,6 +104,12 @@ final readonly class AccountPages
         ]);
     }
 
+    /**
+     * Validate CSRF and sign-in credentials, translating failure to HTTP 401.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Result described by the native PHP return type.
+     */
     public function loginSubmit(Request $request): Response
     {
         if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
@@ -90,6 +131,12 @@ final readonly class AccountPages
         return Response::redirect(location: '/');
     }
 
+    /**
+     * Validate CSRF, revoke authentication and redirect to the login page.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Result described by the native PHP return type.
+     */
     public function logoutSubmit(Request $request): Response
     {
         if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
@@ -101,6 +148,11 @@ final readonly class AccountPages
         return Response::redirect(location: '/login');
     }
 
+    /**
+     * Render the home page for the current verified account.
+     *
+     * @return Response Result described by the native PHP return type.
+     */
     public function home(): Response
     {
         $account = $this->identity->current();

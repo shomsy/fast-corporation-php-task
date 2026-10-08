@@ -87,7 +87,7 @@ boundary and is logged on the server. Only the specific SQLite username UNIQUE v
 ```bash
 composer test                 # complete PHPUnit suite
 python3 tests/Flow/live_smoke.py  # fresh DB, CLI admin, local PHP server, user/admin HTTP journeys
-composer quality              # strict PSR-4, composer validation, audit, style, PHPStan, Deptrac, PHPUnit
+composer quality              # strict PSR-4, audit, style, PHPDoc, PHPStan, Deptrac, PHPUnit
 ```
 
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
@@ -113,6 +113,8 @@ Time-dependent use cases accept the standard `Psr\Clock\ClockInterface` (PSR-20)
 implemented locally by `Infrastructure\Time\SystemClock` in UTC. Tests inject fixed clocks;
 no bespoke clock interface or extra clock implementation package is needed.
 See `docs/PHP-STANDARDS-VNEXT.md` for the decision and acceptance evidence.
+
+For complete PHPDoc contracts (classes, constructors, parameters, returns, exceptions, properties, typed arrays and test methods), see `docs/PHPDOC-STANDARD.md`. Run `composer docs:check` to enforce structural DocBlock coverage.
 
 ## Deployment scope and remaining hardening
 

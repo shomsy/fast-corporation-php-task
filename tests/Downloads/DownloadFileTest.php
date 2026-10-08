@@ -14,10 +14,25 @@ use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Download file test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Downloads
+ */
 final class DownloadFileTest extends TestCase
 {
+    /**
+     * Internal state or dependency owned by DownloadFileTest.
+     *
+     * @var PDO
+     */
     private PDO $pdo;
 
+    /**
+     * Verify fixed readable artifact is tracked and returned through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testFixedReadableArtifactIsTrackedAndReturned(): void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-download-');
@@ -40,6 +55,11 @@ final class DownloadFileTest extends TestCase
         }
     }
 
+    /**
+     * Verify activity database failure does not become artifact unavailable through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testActivityDatabaseFailureDoesNotBecomeArtifactUnavailable(): void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-download-');
@@ -57,6 +77,11 @@ final class DownloadFileTest extends TestCase
         }
     }
 
+    /**
+     * Verify missing artifact does not claim successful download through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testMissingArtifactDoesNotClaimSuccessfulDownload(): void
     {
         $path     = sys_get_temp_dir() . '/fast-task-absent-artifact-does-not-exist.exe';
@@ -75,6 +100,11 @@ final class DownloadFileTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Build isolated fixtures for this test case.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function setUp(): void

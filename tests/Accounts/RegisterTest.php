@@ -12,9 +12,16 @@ use PDO;
 use PDOException;
 use PHPUnit\Framework\Attributes\DataProvider;
 
+/**
+ * Regression checks for Register test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 final class RegisterTest extends AccountsTestCase
 {
     /**
+     * Invalid registration provider according to the RegisterTest contract.
+     *
      * @return iterable<string, array{string, string}>
      */
     public static function invalidRegistrationProvider(): iterable
@@ -23,6 +30,11 @@ final class RegisterTest extends AccountsTestCase
         yield 'blank password' => ['alice', ''];
     }
 
+    /**
+     * Verify registration creates user and stores only password hash through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRegistrationCreatesUserAndStoresOnlyPasswordHash(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: '  Alice  ', password: 'correct horse battery staple');
@@ -43,6 +55,11 @@ final class RegisterTest extends AccountsTestCase
         self::assertTrue(password_verify(password: 'correct horse battery staple', hash: $row['password_hash']));
     }
 
+    /**
+     * Verify duplicate username is rejected case insensitively through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDuplicateUsernameIsRejectedCaseInsensitively(): void
     {
         $register = new Register(accounts: $this->accounts, clock: $this->clock);
@@ -52,6 +69,11 @@ final class RegisterTest extends AccountsTestCase
         $register->register(username: 'alice', password: 'second password');
     }
 
+    /**
+     * Verify non unique s q lite constraint failure is not reported as username taken through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testNonUniqueSQLiteConstraintFailureIsNotReportedAsUsernameTaken(): void
     {
         $this->pdo->exec(
@@ -73,6 +95,13 @@ final class RegisterTest extends AccountsTestCase
         }
     }
 
+    /**
+     * Verify blank username or password is rejected through the public behavior.
+     *
+     * @param string $username Username submitted or persisted for the account.
+     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @return void No return value.
+     */
     #[DataProvider('invalidRegistrationProvider')]
     public function testBlankUsernameOrPasswordIsRejected(string $username, string $password): void
     {

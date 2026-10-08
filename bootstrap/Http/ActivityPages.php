@@ -13,8 +13,22 @@ use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 use InvalidArgumentException;
 
+/**
+ * Adapt administrator-only statistics and reports to HTTP.
+ *
+ * @package InterviewTask\Bootstrap\Http
+ */
 final readonly class ActivityPages
 {
+    /**
+     * Receive query capabilities, the admin authorization guard and HTML adapter.
+     *
+     * @param Statistics $statistics Activity-history read model.
+     * @param DailyReports $reports Daily activity report read model.
+     * @param RequireAdmin $admin Administrator authorization gate.
+     * @param CurrentAccount $identity Server-side authenticated identity access boundary.
+     * @param HtmlPage $html Trusted HTML response adapter.
+     */
     public function __construct(
         private Statistics     $statistics,
         private DailyReports   $reports,
@@ -23,6 +37,12 @@ final readonly class ActivityPages
         private HtmlPage       $html,
     ) {}
 
+    /**
+     * Authorize the caller, parse filters, and render one paginated activity page.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Authorized statistics response or a redirect/forbidden response.
+     */
     public function statisticsPage(Request $request): Response
     {
         $denied = $this->requireAdministrator();
@@ -61,6 +81,11 @@ final readonly class ActivityPages
         ], status: $status);
     }
 
+    /**
+     * Return a redirect or forbidden response when administrator access is absent.
+     *
+     * @return Response|null Denial response, or null when the user is an administrator.
+     */
     private function requireAdministrator(): ?Response
     {
         try {
@@ -74,11 +99,23 @@ final readonly class ActivityPages
         }
     }
 
+    /**
+     * Preserve a non-empty string input, otherwise treat it as missing.
+     *
+     * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
+     * @return string|null The non-empty string provided, otherwise null.
+     */
     private function optionalInput(mixed $value): ?string
     {
         return is_string(value: $value) && $value !== '' ? $value : null;
     }
 
+    /**
+     * Authorize and render the bounded daily report for optional UTC dates.
+     *
+     * @param Request|null $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Authorized report response or a redirect/forbidden response.
+     */
     public function reportsPage(?Request $request = null): Response
     {
         $denied = $this->requireAdministrator();

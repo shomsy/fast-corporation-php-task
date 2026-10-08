@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Authenticated user landing page.
+ *
+ * Display only verified username, current role, and the session CSRF token for logout.
+ *
+ * @package InterviewTask\Accounts
+ */
+
 /** @var array{username: string, role: string, csrfToken: string} $data */
 /** @var callable(mixed $value): string $escape */
 ?>

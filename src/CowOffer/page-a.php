@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * Page A buy-cow interaction view.
+ *
+ * Render either the CSRF-protected button or the transient thankYou result, never persisted purchase state.
+ *
+ * @package InterviewTask\CowOffer
+ */
 /** @var array{csrfToken: string, bought: bool} $data */
 /** @var callable(mixed $value): string $escape */
 ?>

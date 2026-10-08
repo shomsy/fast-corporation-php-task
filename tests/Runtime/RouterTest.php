@@ -9,8 +9,18 @@ use InterviewTask\Runtime\Http\Response;
 use InterviewTask\Runtime\Http\Router;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Router test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Runtime
+ */
 final class RouterTest extends TestCase
 {
+    /**
+     * Verify dispatches exact route through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDispatchesExactRoute(): void
     {
         $router = new Router();
@@ -24,6 +34,11 @@ final class RouterTest extends TestCase
         self::assertSame('hello:/hello', $response->body());
     }
 
+    /**
+     * Verify returns method not allowed when path exists for another method through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReturnsMethodNotAllowedWhenPathExistsForAnotherMethod(): void
     {
         $router = new Router();
@@ -35,6 +50,11 @@ final class RouterTest extends TestCase
         self::assertSame('POST', $response->headers()['Allow']);
     }
 
+    /**
+     * Verify allow lists all registered methods through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAllowListsAllRegisteredMethods(): void
     {
         $router = new Router();
@@ -47,6 +67,11 @@ final class RouterTest extends TestCase
         self::assertSame('POST, GET', $response->headers()['Allow']);
     }
 
+    /**
+     * Verify returns not found for unknown path through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReturnsNotFoundForUnknownPath(): void
     {
         $response = (new Router())->dispatch(request: new Request(method: 'GET', path: '/missing'));

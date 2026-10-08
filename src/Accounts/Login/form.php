@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Server-rendered sign-in form.
+ *
+ * The caller supplies a session CSRF token, optional registration notice, and non-revealing login error.
+ *
+ * @package InterviewTask\Accounts\Login
+ */
+
 /** @var array{csrfToken: string, error: string, registered: bool} $data */
 /** @var callable(mixed $value): string $escape */
 ?>

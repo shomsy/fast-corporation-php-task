@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Trusted command-line administrator-account bootstrap.
+ *
+ * Reject invalid credentials through the shared password policy; no admin creation route exists in HTTP.
+ *
+ * @package InterviewTask\Accounts
+ */
+
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\PasswordRejected;

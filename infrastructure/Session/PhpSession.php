@@ -6,13 +6,30 @@ namespace InterviewTask\Infrastructure\Session;
 
 use RuntimeException;
 
+/**
+ * Adapt native PHP sessions with strict IDs and hardened browser-cookie settings.
+ *
+ * @package InterviewTask\Infrastructure\Session
+ */
 final readonly class PhpSession
 {
+    /**
+     * Configure a named PHP session and whether its cookie requires HTTPS.
+     *
+     * @param string $name Configured session name or lookup name.
+     * @param bool $secureCookie Whether PHP cookies require HTTPS.
+     */
     public function __construct(
         private string $name = 'fast_task',
         private bool   $secureCookie = false,
     ) {}
 
+    /**
+     * Read a server-session entry after safely initializing the session.
+     *
+     * @param string $key Name of a session or HTTP input value.
+     * @return mixed Result described by the native PHP return type.
+     */
     public function get(string $key): mixed
     {
         $this->start();
@@ -20,6 +37,12 @@ final readonly class PhpSession
         return $_SESSION[$key] ?? null;
     }
 
+    /**
+     * Start a strict-ID PHP session with HttpOnly and SameSite cookie parameters.
+     *
+     * @return void No return value.
+     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     */
     public function start(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
@@ -45,18 +68,37 @@ final readonly class PhpSession
         }
     }
 
+    /**
+     * Store a trusted server-side session value.
+     *
+     * @param string $key Name of a session or HTTP input value.
+     * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
+     * @return void No return value.
+     */
     public function put(string $key, mixed $value): void
     {
         $this->start();
         $_SESSION[$key] = $value;
     }
 
+    /**
+     * Delete a named session entry.
+     *
+     * @param string $key Name of a session or HTTP input value.
+     * @return void No return value.
+     */
     public function remove(string $key): void
     {
         $this->start();
         unset($_SESSION[$key]);
     }
 
+    /**
+     * Rotate the session identifier and invalidate the old session.
+     *
+     * @return void No return value.
+     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     */
     public function regenerate(): void
     {
         $this->start();
@@ -66,6 +108,12 @@ final readonly class PhpSession
         }
     }
 
+    /**
+     * Clear server state, expire the cookie and terminate the PHP session.
+     *
+     * @return void No return value.
+     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     */
     public function destroy(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {

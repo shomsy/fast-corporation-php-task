@@ -9,12 +9,21 @@ use RuntimeException;
 use Stringable;
 use Throwable;
 
+/**
+ * Render trusted PHP templates with an explicit escaping callback and cleaned output buffers.
+ *
+ * @package InterviewTask\Infrastructure\Templating
+ */
 final class Renderer
 {
     /**
      * Templates receive $data and an $escape callable.
      *
+     * @param string $template Trusted local PHP template file path.
      * @param array<string, mixed> $data
+     * @return string Complete escaped server-rendered HTML.
+     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function render(string $template, array $data = []): string
     {

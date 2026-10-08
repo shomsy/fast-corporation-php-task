@@ -8,8 +8,18 @@ use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Infrastructure\Session\PhpSession;
 
+/**
+ * Regression checks for Session expiry test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 final class SessionExpiryTest extends AccountsTestCase
 {
+    /**
+     * Verify strict mode and sign out destroy session through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStrictModeAndSignOutDestroySession(): void
     {
         $session = $this->session();
@@ -25,6 +35,11 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertNull($identity->current());
     }
 
+    /**
+     * Verify sign in rotates the anonymous session identifier through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testSignInRotatesTheAnonymousSessionIdentifier(): void
     {
         $session = $this->session();
@@ -40,6 +55,11 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame('alice', $identity->current()?->username);
     }
 
+    /**
+     * Verify attacker provided unknown session id is rejected through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAttackerProvidedUnknownSessionIdIsRejected(): void
     {
         $attackerId = str_repeat(string: 'a', times: 32);
@@ -51,6 +71,11 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame([], $_SESSION);
     }
 
+    /**
+     * Verify cookie configuration requires secure http only and same site lax through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testCookieConfigurationRequiresSecureHttpOnlyAndSameSiteLax(): void
     {
         ini_set(option: 'session.use_cookies', value: '1');
@@ -64,6 +89,11 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame('/', $params['path']);
     }
 
+    /**
+     * Verify idle timeout revokes previously valid authentication through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testIdleTimeoutRevokesPreviouslyValidAuthentication(): void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
@@ -76,6 +106,11 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame([], $_SESSION);
     }
 
+    /**
+     * Verify absolute timeout revokes session even when recently active through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAbsoluteTimeoutRevokesSessionEvenWhenRecentlyActive(): void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
@@ -87,6 +122,11 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertNull($identity->current());
     }
 
+    /**
+     * Verify unknown session metadata does not authenticate through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testUnknownSessionMetadataDoesNotAuthenticate(): void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');

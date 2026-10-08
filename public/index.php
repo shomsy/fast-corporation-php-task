@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * HTTP entry point for the Fast Corporation interview application.
+ *
+ * Create the route graph and dispatch a request; unexpected exceptions become a safe HTTP 500 and a server diagnostic.
+ *
+ * @package InterviewTask\Runtime\Http
+ */
+
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Router;
 

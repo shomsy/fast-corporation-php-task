@@ -9,15 +9,47 @@ use PDO;
 use PDOException;
 use RuntimeException;
 
+/**
+ * Owns credential storage, password policy and account reconstruction.
+ *
+ * @package InterviewTask\Accounts
+ */
 final readonly class Accounts
 {
+    /**
+     * Bind account persistence to a configured PDO connection.
+     *
+     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     */
     public function __construct(private PDO $pdo) {}
 
+    /**
+     * Persist a regular user with a bcrypt hash, never a plaintext password.
+     *
+     * @param string $username Username submitted or persisted for the account.
+     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     * @return Account The created user account with authoritative identifier and role.
+     * @throws PasswordRejected When the password violates the bcrypt input policy.
+     * @throws UsernameTaken When the persisted username already exists.
+     */
     public function createUser(string $username, #[\SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
         return $this->create(username: $username, password: $password, role: Role::User, createdAt: $createdAt);
     }
 
+    /**
+     * Enforce the one account-creation path for both user and administrator roles. Reject bcrypt's silent truncation of input beyond 72 bytes.
+     *
+     * @param string $username Username submitted or persisted for the account.
+     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @param Role $role Explicit business role assigned to the account.
+     * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     * @return Account The newly persisted account snapshot.
+     * @throws PasswordRejected When the password violates the bcrypt input policy.
+     * @throws UsernameTaken When the persisted username already exists.
+     * @throws \PDOException When the underlying SQLite operation fails.
+     */
     private function create(
         string            $username,
         #[\SensitiveParameter]
@@ -74,11 +106,29 @@ final readonly class Accounts
         return new Account(id: $id, username: $username, role: $role, createdAt: $createdAt);
     }
 
+    /**
+     * Create a privileged account through the same credential policy as users. This capability is invoked by the trusted CLI, not public registration.
+     *
+     * @param string $username Username submitted or persisted for the account.
+     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     * @return Account The created administrator account with authoritative identifier and role.
+     * @throws PasswordRejected When the password violates the bcrypt input policy.
+     * @throws UsernameTaken When the persisted username already exists.
+     */
     public function createAdmin(string $username, #[\SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
         return $this->create(username: $username, password: $password, role: Role::Admin, createdAt: $createdAt);
     }
 
+    /**
+     * Return null on invalid credentials; malformed stored account data is an error. Password hashes may be transparently upgraded after successful verification.
+     *
+     * @param string $username Username submitted or persisted for the account.
+     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @return Account|null The verified account, or null for invalid credentials.
+     * @throws \PDOException When credential lookup or hash upgrade persistence fails.
+     */
     public function authenticate(string $username, #[\SensitiveParameter] string $password): ?Account
     {
         if (strlen(string: $password) > 72 || str_contains(haystack: $password, needle: "\0")) {
@@ -114,7 +164,11 @@ final readonly class Accounts
     }
 
     /**
-     * @param array<array-key, mixed> $row
+     * Validate untrusted database fields before constructing an Account.
+     *
+     * @param array<array-key, mixed> $row Raw SQLite result with unchecked values.
+     * @return Account Reconstructed typed account from persisted fields.
+     * @throws \RuntimeException When a required external resource or stored value is invalid.
      */
     private function accountFromRow(array $row): Account
     {
@@ -140,6 +194,12 @@ final readonly class Accounts
         );
     }
 
+    /**
+     * Resolve the current account from authoritative storage, or null if deleted.
+     *
+     * @param int $id Input value for id.
+     * @return Account|null The stored account, or null when no such account exists.
+     */
     public function findById(int $id): ?Account
     {
         $statement = $this->pdo->prepare(

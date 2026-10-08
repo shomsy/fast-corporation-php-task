@@ -19,11 +19,31 @@ use PDOException;
 use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 
+/**
+ * Regression checks for Activity log test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\ActivityTracking
+ */
 final class ActivityLogTest extends TestCase
 {
+    /**
+     * Internal state or dependency owned by ActivityLogTest.
+     *
+     * @var PDO
+     */
     private PDO         $pdo;
+    /**
+     * Internal state or dependency owned by ActivityLogTest.
+     *
+     * @var ActivityLog
+     */
     private ActivityLog $log;
 
+    /**
+     * Verify records all required events with historical actor and utc timestamp through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp(): void
     {
         $this->log->recordRegistration(actorId: 7, actorLabel: 'alice');
@@ -58,6 +78,11 @@ final class ActivityLogTest extends TestCase
         }
     }
 
+    /**
+     * Verify does not read accounts or change earlier actor labels through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDoesNotReadAccountsOrChangeEarlierActorLabels(): void
     {
         $this->log->recordLogin(actorId: 14, actorLabel: 'old-label');
@@ -68,24 +93,44 @@ final class ActivityLogTest extends TestCase
         self::assertSame(['old-label', 'new-label'], $statement->fetchAll(mode: PDO::FETCH_COLUMN));
     }
 
+    /**
+     * Verify rejects invalid actor before writing through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRejectsInvalidActorBeforeWriting(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->log->recordLogin(actorId: 0, actorLabel: 'alice');
     }
 
+    /**
+     * Verify rejects blank actor label before writing through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRejectsBlankActorLabelBeforeWriting(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->log->recordLogin(actorId: 1, actorLabel: '  ');
     }
 
+    /**
+     * Verify database rejects invalid event taxonomy through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDatabaseRejectsInvalidEventTaxonomy(): void
     {
         $this->expectException(PDOException::class);
         $this->pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'button-click', 'page-a', '2026-10-08T10:15:00+00:00')");
     }
 
+    /**
+     * Verify participates in same local transaction and rolls back through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testParticipatesInSameLocalTransactionAndRollsBack(): void
     {
         try {
@@ -101,6 +146,11 @@ final class ActivityLogTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Build isolated fixtures for this test case.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function setUp(): void
@@ -111,7 +161,13 @@ final class ActivityLogTest extends TestCase
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
+        /** Deterministic fixture clock for UTC-normalization tests. */
         $clock = new class implements ClockInterface {
+            /**
+             * Now according to the AnonymousClass contract.
+             *
+             * @return DateTimeImmutable Result described by the native PHP return type.
+             */
             #[\Override]
             public function now(): DateTimeImmutable
             {

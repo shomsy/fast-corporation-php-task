@@ -13,18 +13,28 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Checks owner SQL literals (PHP strings and owner-local .sql migrations).
- * Computed identifiers and dynamically generated SQL remain REVIEW-ENFORCED.
+ * Checks owner SQL literals (PHP strings and owner-local .sql migrations). Computed identifiers and dynamically generated SQL remain REVIEW-ENFORCED.
+ *
+ * @package InterviewTask\Tests\Architecture
  */
 final class DataOwnershipTest extends TestCase
 {
-    /** @var array<string, string> */
+    /**
+     * Authoritative database table name to owning business module.
+     *
+     * @var array<string, string>
+     */
     private const array TABLE_OWNERS
         = [
             'accounts'        => 'Accounts',
             'activity_events' => 'ActivityTracking',
         ];
 
+    /**
+     * Verify business modules do not directly reference another owners tables through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables(): void
     {
         $root       = dirname(path: __DIR__, levels: 2) . '/src';
@@ -52,6 +62,9 @@ final class DataOwnershipTest extends TestCase
     }
 
     /**
+     * Literal strings according to the DataOwnershipTest contract.
+     *
+     * @param string $source Input value for source.
      * @return list<string>
      */
     private static function literalStrings(string $source): array
@@ -71,6 +84,10 @@ final class DataOwnershipTest extends TestCase
     }
 
     /**
+     * Foreign tables according to the DataOwnershipTest contract.
+     *
+     * @param string $owner Input value for owner.
+     * @param string $sql Input value for sql.
      * @return list<string>
      */
     private static function foreignTables(string $owner, string $sql): array
@@ -91,6 +108,11 @@ final class DataOwnershipTest extends TestCase
         return array_values(array: $violations);
     }
 
+    /**
+     * Verify foreign table reference mutations fail owner policy through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testForeignTableReferenceMutationsFailOwnerPolicy(): void
     {
         self::assertSame(['activity_events'], self::foreignTables(

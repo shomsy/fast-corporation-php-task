@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Command-line database migration entry point.
+ *
+ * Apply the owner migrations to the configured database; command failures must be visible to the operator.
+ *
+ * @package InterviewTask\Infrastructure\Database
+ */
+
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 

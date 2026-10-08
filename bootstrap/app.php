@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Application composition root, connecting business owners to shared infrastructure.
+ *
+ * Construct the PDO connection, migration-independent runtime services, session security, and HTTP route wiring.
+ *
+ * @package InterviewTask\Bootstrap
+ */
+
 use InterviewTask\Runtime\Http\Router;
 
 require dirname(path: __DIR__) . '/vendor/autoload.php';

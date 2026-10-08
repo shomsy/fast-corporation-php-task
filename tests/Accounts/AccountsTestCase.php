@@ -13,12 +13,37 @@ use InterviewTask\Infrastructure\Session\PhpSession;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Shared Accounts test fixture with isolated SQLite and reset session state.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 abstract class AccountsTestCase extends TestCase
 {
+    /**
+     * Internal state or dependency owned by AccountsTestCase.
+     *
+     * @var PDO
+     */
     protected PDO        $pdo;
+    /**
+     * Internal state or dependency owned by AccountsTestCase.
+     *
+     * @var Accounts
+     */
     protected Accounts   $accounts;
+    /**
+     * Internal state or dependency owned by AccountsTestCase.
+     *
+     * @var FixedClock
+     */
     protected FixedClock $clock;
 
+    /**
+     * Build isolated fixtures for this test case.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function setUp(): void
@@ -45,6 +70,11 @@ abstract class AccountsTestCase extends TestCase
         );
     }
 
+    /**
+     * Release or reset test resources without leaking state.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function tearDown(): void
@@ -59,6 +89,11 @@ abstract class AccountsTestCase extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * Session according to the AccountsTestCase contract.
+     *
+     * @return PhpSession Result described by the native PHP return type.
+     */
     protected function session(): PhpSession
     {
         return new PhpSession(name: 'fast_task_test', secureCookie: false);

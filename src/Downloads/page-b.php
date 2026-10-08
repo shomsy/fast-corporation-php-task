@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * Page B fixed-sample download form.
+ *
+ * Submit a CSRF-protected request without exposing the server artifact path.
+ *
+ * @package InterviewTask\Downloads
+ */
 /** @var array{csrfToken: string} $data */
 /** @var callable(mixed $value): string $escape */
 ?>

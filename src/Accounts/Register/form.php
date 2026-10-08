@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Server-rendered registration form.
+ *
+ * The caller supplies csrfToken, username, and validation error; every HTML value is escaped.
+ *
+ * @package InterviewTask\Accounts\Register
+ */
+
 /** @var array{csrfToken: string, username: string, error: string} $data */
 /** @var callable(mixed $value): string $escape */
 ?>

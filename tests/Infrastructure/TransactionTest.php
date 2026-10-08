@@ -9,8 +9,18 @@ use InterviewTask\Infrastructure\Database\Transaction;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Transaction test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Infrastructure
+ */
 final class TransactionTest extends TestCase
 {
+    /**
+     * Verify rolls back when operation fails through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRollsBackWhenOperationFails(): void
     {
         $pdo = SqliteConnection::memory();

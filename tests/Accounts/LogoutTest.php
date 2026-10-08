@@ -7,8 +7,18 @@ namespace InterviewTask\Tests\Accounts;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\SessionIdentity;
 
+/**
+ * Regression checks for Logout test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 final class LogoutTest extends AccountsTestCase
 {
+    /**
+     * Verify session sign out destroys authenticated session and identity through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity(): void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'password');

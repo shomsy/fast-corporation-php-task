@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * Administrator daily activity report chart and table view.
+ *
+ * Use exactly one DailyReports dataset for the SVG series and tabular metric totals.
+ *
+ * @package InterviewTask\ActivityTracking
+ */
 /** @var array{daily: list<array{date:string,page_a_views:int,page_b_views:int,buy_cow_clicks:int,download_clicks:int}>,from:string,to:string,error:string} $data */
 /** @var callable(mixed $value): string $escape */
 $daily  = $data['daily'];

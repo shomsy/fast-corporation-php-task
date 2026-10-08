@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Authoritative machine-readable exported surface of the Accounts owner.
+ *
+ * Only listed PHP types are public across business boundaries; enforcement compares static references to this manifest.
+ *
+ * @package InterviewTask\Accounts
+ */
+
 use InterviewTask\Accounts\AccessDenied;
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\CurrentAccount;

@@ -21,15 +21,24 @@ use ReflectionNamedType;
 use SplFileInfo;
 
 /**
- * AST-based owner export enforcement for statically named PHP class references.
- * Explicit composition root bootstrap/routes.php and test code are excluded.
- * Runtime class-string/reflection construction is an independently reviewed risk.
+ * AST-based owner export enforcement for statically named PHP class references. Explicit composition root bootstrap/routes.php and test code are excluded. Runtime class-string/reflection construction is an independently reviewed risk.
+ *
+ * @package InterviewTask\Tests\Architecture
  */
 final class PublicSurfaceTest extends TestCase
 {
-    /** @var list<string> */
+    /**
+     * Business owners checked by the architecture contract test.
+     *
+     * @var list<string>
+     */
     private const array OWNERS = ['Accounts', 'ActivityTracking', 'CowOffer', 'Downloads'];
 
+    /**
+     * Verify every cross owner and http adapter class reference uses declared surface through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface(): void
     {
         $root     = dirname(path: __DIR__, levels: 2);
@@ -67,6 +76,9 @@ final class PublicSurfaceTest extends TestCase
     }
 
     /**
+     * Exports according to the PublicSurfaceTest contract.
+     *
+     * @param string $root Project root directory.
      * @return array<string, list<string>>
      */
     private static function exports(string $root): array
@@ -85,6 +97,9 @@ final class PublicSurfaceTest extends TestCase
     }
 
     /**
+     * Referenced owner types according to the PublicSurfaceTest contract.
+     *
+     * @param string $source Input value for source.
      * @return list<array{string, string}>
      */
     private static function referencedOwnerTypes(string $source): array
@@ -141,6 +156,11 @@ final class PublicSurfaceTest extends TestCase
         return array_values(array: $found);
     }
 
+    /**
+     * Verify only the tracked account lifecycle is publicly exposed for authentication changes through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges(): void
     {
         $exports = self::exports(root: dirname(path: __DIR__, levels: 2));
@@ -163,6 +183,11 @@ final class PublicSurfaceTest extends TestCase
         self::assertFalse($view->hasMethod(name: 'signOut'));
     }
 
+    /**
+     * Verify exported lifecycle does not leak internal account in public method returns through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns(): void
     {
         $exports   = self::exports(root: dirname(path: __DIR__, levels: 2));
@@ -183,6 +208,11 @@ final class PublicSurfaceTest extends TestCase
         self::assertSame('void', $registerReturn->getName());
     }
 
+    /**
+     * Verify forbidden mutation is detected for all static reference shapes through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes(): void
     {
         $cases   = [

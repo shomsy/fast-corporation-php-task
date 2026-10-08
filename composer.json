@@ -38,6 +38,7 @@
     "security:audit": "composer audit --locked --no-interaction",
     "test": "phpunit",
     "stan": "phpstan analyse --no-progress",
+    "docs:check": "php tools/check-phpdocs.php",
     "cs": "php-cs-fixer check --diff",
     "cs:fix": "php-cs-fixer fix",
     "architecture": "deptrac analyse --config-file=tools/architecture.yaml --fail-on-uncovered",
@@ -46,6 +47,7 @@
       "@check:psr4",
       "@security:audit",
       "@cs",
+      "@docs:check",
       "@stan",
       "@architecture",
       "@test"

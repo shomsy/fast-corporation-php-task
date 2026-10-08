@@ -9,15 +9,40 @@ use InvalidArgumentException;
 use PDO;
 use RuntimeException;
 
-/** Stable, bounded and newest-first activity history. */
+/**
+ * Stable, bounded and newest-first activity history.
+ *
+ * @phpstan-type ActivityEventRow array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}
+ * @phpstan-type ActivityPageResult array{events: list<ActivityEventRow>, hasNext: bool}
+ * @api
+ * @package InterviewTask\ActivityTracking
+ * @see \InterviewTask\ActivityTracking\DailyReports
+ */
 final readonly class Statistics
 {
+    /**
+     * Maximum number of event rows displayed on one statistics page.
+     *
+     * @var int
+     */
     public const int PAGE_SIZE = 50;
 
+    /**
+     * Use the ActivityTracking owner database for read-only history queries.
+     *
+     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     */
     public function __construct(private PDO $pdo) {}
 
     /**
-     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>
+     * Return one 1-based page of event rows, excluding pagination metadata.
+     *
+     * @param ?string $date Exact UTC calendar date (YYYY-MM-DD); null means all dates.
+     * @param ?string $user Case-insensitive exact actor label, not a substring.
+     * @param ?string $action Canonical action value; invalid values are rejected.
+     * @param int $page 1-based page number.
+     * @return list<ActivityEventRow>
+     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
     {
@@ -25,9 +50,16 @@ final readonly class Statistics
     }
 
     /**
-     * One extra row proves whether an older page really exists.
+     * Return a 1-based page sorted by UTC timestamp then event ID descending. One extra row establishes hasNext without an approximate count.
      *
-     * @return array{events: list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>, hasNext: bool}
+     * @param ?string $date Exact UTC date (YYYY-MM-DD), or null for all dates.
+     * @param ?string $user Case-insensitive exact actor label, or null.
+     * @param ?string $action Canonical ActivityAction value, or null.
+     * @param int $page 1-based page number.
+     * @return ActivityPageResult
+     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws \PDOException When the underlying SQLite operation fails.
+     * @throws \RuntimeException When the query cannot be prepared.
      */
     public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
     {
@@ -86,7 +118,7 @@ final readonly class Statistics
         $statement->bindValue(param: ':offset', value: ($page - 1) * self::PAGE_SIZE, type: PDO::PARAM_INT);
         $statement->execute();
 
-        /** @var list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}> $rows */
+        /** @var list<ActivityEventRow> $rows */
         $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
 
         return [

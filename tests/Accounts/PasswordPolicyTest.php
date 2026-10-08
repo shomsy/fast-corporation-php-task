@@ -9,8 +9,18 @@ use InterviewTask\Accounts\PasswordRejected;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 
+/**
+ * Regression checks for Password policy test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 final class PasswordPolicyTest extends AccountsTestCase
 {
+    /**
+     * Verify seventy two byte password is valid but distinct longer password cannot authenticate through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testSeventyTwoBytePasswordIsValidButDistinctLongerPasswordCannotAuthenticate(): void
     {
         $password = str_repeat(string: 'a', times: 72);
@@ -20,6 +30,11 @@ final class PasswordPolicyTest extends AccountsTestCase
         self::assertNull($this->accounts->authenticate(username: 'alice', password: $password . 'different suffix'));
     }
 
+    /**
+     * Verify registration rejects overlong utf8 passwords in bytes without persisting account through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRegistrationRejectsOverlongUtf8PasswordsInBytesWithoutPersistingAccount(): void
     {
         $password = str_repeat(string: 'é', times: 37); // 74 UTF-8 bytes
@@ -35,6 +50,11 @@ final class PasswordPolicyTest extends AccountsTestCase
         }
     }
 
+    /**
+     * Verify nul byte password is rejected across registration and admin creation through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testNulBytePasswordIsRejectedAcrossRegistrationAndAdminCreation(): void
     {
         $password = "safe\0unsafe";
@@ -62,6 +82,11 @@ final class PasswordPolicyTest extends AccountsTestCase
         self::assertNull($this->accounts->authenticate(username: 'alice', password: $password));
     }
 
+    /**
+     * Verify direct account and admin creation enforce identical password boundary through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDirectAccountAndAdminCreationEnforceIdenticalPasswordBoundary(): void
     {
         $password = str_repeat(string: 'b', times: 73);

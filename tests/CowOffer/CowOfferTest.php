@@ -12,8 +12,18 @@ use InterviewTask\Infrastructure\Time\SystemClock;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Cow offer test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\CowOffer
+ */
 final class CowOfferTest extends TestCase
 {
+    /**
+     * Verify view and buy produce exactly the required activity through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testViewAndBuyProduceExactlyTheRequiredActivity(): void
     {
         $pdo = SqliteConnection::memory();

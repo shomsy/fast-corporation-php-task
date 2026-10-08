@@ -7,13 +7,27 @@ namespace InterviewTask\Bootstrap\Http;
 use InterviewTask\Infrastructure\Templating\Renderer;
 use InterviewTask\Runtime\Http\Response;
 
-/** Shared neutral HTTP response mechanism; no application policy. */
+/**
+ * Shared neutral HTTP response mechanism; no application policy.
+ *
+ * @package InterviewTask\Bootstrap\Http
+ */
 final readonly class HtmlPage
 {
+    /**
+     * Use the trusted local PHP template renderer.
+     *
+     * @param Renderer $renderer Trusted PHP template renderer.
+     */
     public function __construct(private Renderer $renderer) {}
 
     /**
+     * Render a private view and attach browser security and cache-control headers.
+     *
+     * @param string $path Absolute route, request path, or trusted local filesystem path.
      * @param array<string, mixed> $data
+     * @param int $status HTTP response status code.
+     * @return Response HTTP response with rendered HTML and security headers.
      */
     public function render(string $path, array $data, int $status = 200): Response
     {

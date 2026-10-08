@@ -7,9 +7,17 @@ namespace InterviewTask\Infrastructure\Database;
 use PDO;
 use RuntimeException;
 
+/**
+ * Discover, apply and record owner SQL migrations with transactional bookkeeping.
+ *
+ * @package InterviewTask\Infrastructure\Database
+ */
 final class Migrator
 {
     /**
+     * Register the configured database and owner-to-directory migration mapping.
+     *
+     * @param PDO $pdo SQLite PDO connection with configured driver settings.
      * @param array<string, string> $migrationDirectories owner => absolute directory
      */
     public function __construct(
@@ -18,6 +26,8 @@ final class Migrator
     ) {}
 
     /**
+     * Apply new owner migrations once and return their identifiers.
+     *
      * @return list<string> migration identifiers applied by this run
      */
     public function migrate(): array
@@ -40,6 +50,11 @@ final class Migrator
         return $newlyApplied;
     }
 
+    /**
+     * Create the migration ledger without changing owner schema.
+     *
+     * @return void No return value.
+     */
     private function ensureMetadataTable(): void
     {
         $this->pdo->exec(
@@ -53,6 +68,8 @@ final class Migrator
     }
 
     /**
+     * Read the migration ledger and validate every recorded identifier.
+     *
      * @return list<string>
      */
     private function appliedMigrationIds(): array
@@ -78,6 +95,8 @@ final class Migrator
     }
 
     /**
+     * Discover SQL files under each owner and order identifiers deterministically.
+     *
      * @return array<string, string> migration identifier => file path
      */
     private function discoverMigrations(): array
@@ -106,6 +125,14 @@ final class Migrator
         return $migrations;
     }
 
+    /**
+     * Execute one migration together with its ledger entry as one transaction.
+     *
+     * @param string $identifier Unique, owner-qualified migration identifier.
+     * @param string $file Trusted SQL migration file path.
+     * @return void No return value.
+     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     */
     private function apply(string $identifier, string $file): void
     {
         $sql = file_get_contents(filename: $file);

@@ -9,15 +9,39 @@ use InvalidArgumentException;
 use PDO;
 use RuntimeException;
 
-/** One bounded UTC daily dataset for both chart and table. */
+/**
+ * One bounded UTC daily dataset for both chart and table.
+ *
+ * @phpstan-type DailyActivityRow array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}
+ * @api
+ * @package InterviewTask\ActivityTracking
+ * @see \InterviewTask\ActivityTracking\Statistics
+ */
 final readonly class DailyReports
 {
+    /**
+     * Maximum number of active UTC dates returned in one report.
+     *
+     * @var int
+     */
     public const int MAX_DAYS = 30;
 
+    /**
+     * Bind the daily reporting query to the activity database.
+     *
+     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     */
     public function __construct(private PDO $pdo) {}
 
     /**
-     * @return list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}>
+     * Aggregate the last 30 days with qualifying events, ascending by UTC date. The optional inclusive bounds filter before the 30-row limit is applied. Dates without tracked events are not filled with synthetic zero rows.
+     *
+     * @param ?string $from Inclusive YYYY-MM-DD UTC lower bound.
+     * @param ?string $to Inclusive YYYY-MM-DD UTC upper bound.
+     * @return list<DailyActivityRow> The same counts feed the chart and table.
+     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws \PDOException When the underlying SQLite operation fails.
+     * @throws \RuntimeException When the query cannot be prepared.
      */
     public function dailyCounts(?string $from = null, ?string $to = null): array
     {
@@ -61,7 +85,7 @@ final readonly class DailyReports
         }
         $statement->execute(params: $parameters);
 
-        /** @var list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}> $rows */
+        /** @var list<DailyActivityRow> $rows */
         $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
 
         return $rows;

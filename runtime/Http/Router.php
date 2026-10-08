@@ -8,18 +8,29 @@ use Closure;
 use InvalidArgumentException;
 
 /**
- * Exact-path router. Dynamic route matching is intentionally deferred until a
- * real behavior requires it.
+ * Exact-path router. Dynamic route matching is intentionally deferred until a real behavior requires it.
+ *
+ * @package InterviewTask\Runtime\Http
+ * @see \InterviewTask\Runtime\Http\Request
+ * @see \InterviewTask\Runtime\Http\Response
  */
 final class Router
 {
     /**
+     * Internal state or dependency owned by Router.
+     *
      * @var array<string, array<string, Closure(Request): Response>>
      */
     private array $routes = [];
 
     /**
+     * Register or replace an exact HTTP method-and-path handler.
+     *
+     * @param string $method HTTP request method or route verb.
+     * @param string $path Absolute route, request path, or trusted local filesystem path.
      * @param callable(Request): Response $handler
+     * @return void No return value.
+     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function add(string $method, string $path, callable $handler): void
     {
@@ -36,6 +47,12 @@ final class Router
         $this->routes[$method][$path] = Closure::fromCallable(callback: $handler);
     }
 
+    /**
+     * Invoke a matching handler or return 404/405 with an Allow header.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Matched response, or 404/405 without invoking an invalid handler.
+     */
     public function dispatch(Request $request): Response
     {
         $handler = $this->routes[$request->method()][$request->path()] ?? null;

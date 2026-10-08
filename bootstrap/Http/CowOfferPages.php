@@ -12,8 +12,21 @@ use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 
+/**
+ * Authorize Page A access and protect the buy-cow action with CSRF validation.
+ *
+ * @package InterviewTask\Bootstrap\Http
+ */
 final readonly class CowOfferPages
 {
+    /**
+     * Bind Page A behavior to login authorization, CSRF and HTML rendering.
+     *
+     * @param CowOffer $cow Page A business interaction owner.
+     * @param RequireSignedIn $signedIn Authorization gate for authenticated accounts.
+     * @param Csrf $csrf CSRF token generation and verification component.
+     * @param HtmlPage $html Trusted HTML response adapter.
+     */
     public function __construct(
         private CowOffer        $cow,
         private RequireSignedIn $signedIn,
@@ -21,6 +34,11 @@ final readonly class CowOfferPages
         private HtmlPage        $html,
     ) {}
 
+    /**
+     * Authorize Page A, record the view and return its initial form.
+     *
+     * @return Response Result described by the native PHP return type.
+     */
     public function pageA(): Response
     {
         $account = $this->authorizedUser();
@@ -35,6 +53,11 @@ final readonly class CowOfferPages
         ]);
     }
 
+    /**
+     * Return an authorized user or an HTTP login redirect.
+     *
+     * @return SignedInAccount|Response Verified user identity or redirect to the login page.
+     */
     private function authorizedUser(): SignedInAccount|Response
     {
         try {
@@ -44,6 +67,12 @@ final readonly class CowOfferPages
         }
     }
 
+    /**
+     * Validate login and CSRF, record the click, then render the thank-you view.
+     *
+     * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     * @return Response Result described by the native PHP return type.
+     */
     public function buyCow(Request $request): Response
     {
         $account = $this->authorizedUser();

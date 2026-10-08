@@ -9,13 +9,34 @@ use InterviewTask\Accounts\Accounts;
 use InvalidArgumentException;
 use Psr\Clock\ClockInterface;
 
+/**
+ * Trusted administrative account creation; not exposed as an HTTP endpoint.
+ *
+ * @package InterviewTask\Accounts\CreateAdmin
+ */
 final readonly class CreateAdmin
 {
+    /**
+     * Use the shared Accounts writer and deterministic account creation time.
+     *
+     * @param Accounts $accounts Authoritative Accounts owner persistence API.
+     * @param ClockInterface $clock Wall-clock source used for deterministic timestamps.
+     */
     public function __construct(
         private Accounts       $accounts,
         private ClockInterface $clock,
     ) {}
 
+    /**
+     * Apply standard password policy while intentionally granting the Admin role.
+     *
+     * @param string $username Username submitted or persisted for the account.
+     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @return Account The newly persisted administrator account.
+     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws \InterviewTask\Accounts\PasswordRejected When the password violates the bcrypt input policy.
+     * @throws \InterviewTask\Accounts\UsernameTaken When the persisted username already exists.
+     */
     public function create(string $username, #[\SensitiveParameter] string $password): Account
     {
         $username = trim(string: $username);

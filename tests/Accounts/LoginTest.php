@@ -10,8 +10,18 @@ use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Role;
 use InterviewTask\Accounts\SessionIdentity;
 
+/**
+ * Regression checks for Login test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Accounts
+ */
 final class LoginTest extends AccountsTestCase
 {
+    /**
+     * Verify valid credentials regenerate session and establish identity through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testValidCredentialsRegenerateSessionAndEstablishIdentity(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'correct horse battery staple');
@@ -30,6 +40,11 @@ final class LoginTest extends AccountsTestCase
         self::assertEquals($signedIn, $identity->current());
     }
 
+    /**
+     * Verify unknown user and wrong password expose same failure through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testUnknownUserAndWrongPasswordExposeSameFailure(): void
     {
         (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'correct horse battery staple');

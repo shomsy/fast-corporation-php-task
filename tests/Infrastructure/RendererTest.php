@@ -8,8 +8,18 @@ use InterviewTask\Infrastructure\Templating\Renderer;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+/**
+ * Regression checks for Renderer test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Infrastructure
+ */
 final class RendererTest extends TestCase
 {
+    /**
+     * Verify provides central escaping helper to template through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testProvidesCentralEscapingHelperToTemplate(): void
     {
         $template = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-task-template-');

@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Trusted configuration and deployment boundary.
+ *
+ * Resolve paths and cookie security requirements without taking authority from browser input.
+ *
+ * @package InterviewTask\Bootstrap
+ */
+
 $root    = dirname(path: __DIR__);
 $envFile = $root . '/.env';
 

@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+/**
+ * Canonical HTTP routes for all requested user and administrator workflows.
+ *
+ * Only trusted handlers are registered; authentication and CSRF guards remain inside their adapters.
+ *
+ * @package InterviewTask\Bootstrap
+ */
+
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CurrentAccount;

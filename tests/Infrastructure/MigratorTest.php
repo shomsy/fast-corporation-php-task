@@ -10,8 +10,18 @@ use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Migrator test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Infrastructure
+ */
 final class MigratorTest extends TestCase
 {
+    /**
+     * Verify applies owner local migrations once through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAppliesOwnerLocalMigrationsOnce(): void
     {
         $root     = dirname(path: __DIR__, levels: 2);
@@ -42,6 +52,11 @@ final class MigratorTest extends TestCase
         self::assertSame(['accounts', 'activity_events'], $statement->fetchAll(mode: PDO::FETCH_COLUMN));
     }
 
+    /**
+     * Verify accounts username uniqueness is case insensitive through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAccountsUsernameUniquenessIsCaseInsensitive(): void
     {
         $pdo = $this->migratedDatabase();
@@ -56,6 +71,11 @@ final class MigratorTest extends TestCase
         $statement->execute(params: ['alice', 'hash', 'user', '2026-10-07T00:00:01+00:00']);
     }
 
+    /**
+     * Migrated database according to the MigratorTest contract.
+     *
+     * @return PDO Result described by the native PHP return type.
+     */
     private function migratedDatabase(): PDO
     {
         $root = dirname(path: __DIR__, levels: 2);
@@ -69,6 +89,11 @@ final class MigratorTest extends TestCase
         return $pdo;
     }
 
+    /**
+     * Verify activity schema rejects invalid action target combination through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testActivitySchemaRejectsInvalidActionTargetCombination(): void
     {
         $pdo = $this->migratedDatabase();

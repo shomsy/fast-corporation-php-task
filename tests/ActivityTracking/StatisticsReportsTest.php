@@ -13,12 +13,37 @@ use InvalidArgumentException;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Statistics reports test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\ActivityTracking
+ */
 final class StatisticsReportsTest extends TestCase
 {
+    /**
+     * Internal state or dependency owned by StatisticsReportsTest.
+     *
+     * @var PDO
+     */
     private PDO          $pdo;
+    /**
+     * Internal state or dependency owned by StatisticsReportsTest.
+     *
+     * @var Statistics
+     */
     private Statistics   $statistics;
+    /**
+     * Internal state or dependency owned by StatisticsReportsTest.
+     *
+     * @var DailyReports
+     */
     private DailyReports $reports;
 
+    /**
+     * Verify statistics returns history in stable newest first order through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsReturnsHistoryInStableNewestFirstOrder(): void
     {
         $events = $this->statistics->events();
@@ -31,6 +56,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertSame('alice', $events[9]['actor_label']);
     }
 
+    /**
+     * Verify statistics combines date user and action filters through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsCombinesDateUserAndActionFilters(): void
     {
         $events = $this->statistics->events(date: '2026-10-07', user: 'ALICE', action: 'view-page');
@@ -40,11 +70,21 @@ final class StatisticsReportsTest extends TestCase
         self::assertSame('page-a', $events[1]['target']);
     }
 
+    /**
+     * Verify statistics returns empty for unknown user through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsReturnsEmptyForUnknownUser(): void
     {
         self::assertSame([], $this->statistics->events(user: 'missing'));
     }
 
+    /**
+     * Verify statistics rejects malformed or invalid date through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsRejectsMalformedOrInvalidDate(): void
     {
         foreach (['2026-02-30', '2026-8-1', "2026-10-07' OR 1=1 --"] as $date) {
@@ -57,17 +97,32 @@ final class StatisticsReportsTest extends TestCase
         }
     }
 
+    /**
+     * Verify statistics rejects unknown action through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsRejectsUnknownAction(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->statistics->events(action: 'delete-account');
     }
 
+    /**
+     * Verify statistics uses prepared statements for user filter through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsUsesPreparedStatementsForUserFilter(): void
     {
         self::assertSame([], $this->statistics->events(user: "' OR 1=1 --"));
     }
 
+    /**
+     * Verify reports have exact four daily counts through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReportsHaveExactFourDailyCounts(): void
     {
         self::assertSame([
@@ -76,6 +131,11 @@ final class StatisticsReportsTest extends TestCase
         ], $this->reports->dailyCounts());
     }
 
+    /**
+     * Verify reports ignore login only dates through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReportsIgnoreLoginOnlyDates(): void
     {
         $statement = $this->pdo->prepare(
@@ -87,12 +147,22 @@ final class StatisticsReportsTest extends TestCase
         self::assertCount(2, $this->reports->dailyCounts());
     }
 
+    /**
+     * Verify reports return empty for no activity through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReportsReturnEmptyForNoActivity(): void
     {
         $this->pdo->exec(statement: 'DELETE FROM activity_events');
         self::assertSame([], $this->reports->dailyCounts());
     }
 
+    /**
+     * Verify same timestamp uses event id as tie breaker through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testSameTimestampUsesEventIdAsTieBreaker(): void
     {
         $events = $this->statistics->events(date: '2026-10-07', action: 'view-page');
@@ -102,6 +172,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertSame(1, $events[2]['actor_id']);
     }
 
+    /**
+     * Verify statistics pagination bounds rows and uses stable ordering through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsPaginationBoundsRowsAndUsesStableOrdering(): void
     {
         $insert = $this->pdo->prepare(
@@ -122,6 +197,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertGreaterThan($third[0]['id'], $second[49]['id']);
     }
 
+    /**
+     * Verify statistics has no arbitrary fifty thousand event access ceiling through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsHasNoArbitraryFiftyThousandEventAccessCeiling(): void
     {
         self::assertSame([], $this->statistics->events(page: 1001));
@@ -129,6 +209,11 @@ final class StatisticsReportsTest extends TestCase
         $this->statistics->events(page: 0);
     }
 
+    /**
+     * Verify has next is false at exactly fifty and true at fifty one through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testHasNextIsFalseAtExactlyFiftyAndTrueAtFiftyOne(): void
     {
         $this->pdo->exec(statement: 'DELETE FROM activity_events');
@@ -153,6 +238,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertFalse($last['hasNext']);
     }
 
+    /**
+     * Verify reports date range limits dataset through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReportsDateRangeLimitsDataset(): void
     {
         self::assertSame([
@@ -160,12 +250,22 @@ final class StatisticsReportsTest extends TestCase
         ], $this->reports->dailyCounts(from: '2026-10-08', to: '2026-10-08'));
     }
 
+    /**
+     * Verify reports reject invalid date range through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReportsRejectInvalidDateRange(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->reports->dailyCounts(from: '2026-10-09', to: '2026-10-08');
     }
 
+    /**
+     * Verify reports bound number of days through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testReportsBoundNumberOfDays(): void
     {
         $stmt = $this->pdo->prepare(
@@ -179,6 +279,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertLessThanOrEqual(DailyReports::MAX_DAYS, count(value: $this->reports->dailyCounts()));
     }
 
+    /**
+     * Verify representative five thousand event report is bounded and indexed through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRepresentativeFiveThousandEventReportIsBoundedAndIndexed(): void
     {
         $this->pdo->beginTransaction();
@@ -211,6 +316,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertStringContainsString('idx_activity_day', $details);
     }
 
+    /**
+     * Verify measured activity indexes support newest first and daily group plans through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testMeasuredActivityIndexesSupportNewestFirstAndDailyGroupPlans(): void
     {
         $recentPlan = $this->pdo->query(
@@ -228,6 +338,11 @@ final class StatisticsReportsTest extends TestCase
         self::assertStringContainsString('idx_activity_day', $dailyDetails);
     }
 
+    /**
+     * Build isolated fixtures for this test case.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function setUp(): void

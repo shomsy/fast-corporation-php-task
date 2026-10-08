@@ -36,18 +36,73 @@ use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Regression checks for Http flow test, covering observable behavior and failure paths.
+ *
+ * @package InterviewTask\Tests\Flow
+ */
 final class HttpFlowTest extends TestCase
 {
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var PDO
+     */
     private PDO             $pdo;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var Accounts
+     */
     private Accounts        $accounts;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var SessionIdentity
+     */
     private SessionIdentity $identity;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var Csrf
+     */
     private Csrf            $csrf;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var AccountPages
+     */
     private AccountPages    $accountPages;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var CowOfferPages
+     */
     private CowOfferPages   $cowPages;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var DownloadPages
+     */
     private DownloadPages   $downloadPages;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var ActivityPages
+     */
     private ActivityPages   $activityPages;
+    /**
+     * Internal state or dependency owned by HttpFlowTest.
+     *
+     * @var SystemClock
+     */
     private SystemClock     $clock;
 
+    /**
+     * Verify end to end browser flow records every required user event through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testEndToEndBrowserFlowRecordsEveryRequiredUserEvent(): void
     {
         self::assertSame(200, $this->accountPages->registerForm()->status());
@@ -107,6 +162,11 @@ final class HttpFlowTest extends TestCase
         ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
     }
 
+    /**
+     * Verify statistics next link only appears when another event exists through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists(): void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'safe-pass');
@@ -136,6 +196,11 @@ final class HttpFlowTest extends TestCase
         self::assertStringNotContainsString('Next →', $oldPage->body());
     }
 
+    /**
+     * Verify anonymous and regular users cannot read admin pages through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAnonymousAndRegularUsersCannotReadAdminPages(): void
     {
         self::assertSame('/login', $this->cowPages->pageA()->headers()['Location']);
@@ -149,6 +214,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(403, $this->activityPages->reportsPage()->status());
     }
 
+    /**
+     * Verify csrf rejects every state changing route and does not write events through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -168,6 +238,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Verify admin statistics and reports show correct data and escape untrusted labels through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAdminStatisticsAndReportsShowCorrectDataAndEscapeUntrustedLabels(): void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'root', password: 'safe-pass');
@@ -200,6 +275,11 @@ final class HttpFlowTest extends TestCase
         self::assertStringContainsString('Daily totals', $report->body());
     }
 
+    /**
+     * Verify missing artifact fails without download activity through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testMissingArtifactFailsWithoutDownloadActivity(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -212,6 +292,12 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Download pages according to the HttpFlowTest contract.
+     *
+     * @param string $artifact Input value for artifact.
+     * @return DownloadPages Result described by the native PHP return type.
+     */
     private function downloadPages(string $artifact): DownloadPages
     {
         return new DownloadPages(
@@ -222,6 +308,11 @@ final class HttpFlowTest extends TestCase
         );
     }
 
+    /**
+     * Verify download audit failure propagates database exception through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDownloadAuditFailurePropagatesDatabaseException(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -235,6 +326,11 @@ final class HttpFlowTest extends TestCase
         ]));
     }
 
+    /**
+     * Verify missing download artifact keeps503 even if audit database is unavailable through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -247,6 +343,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(503, $response->status());
     }
 
+    /**
+     * Verify registration tracking failure rolls back account creation through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRegistrationTrackingFailureRollsBackAccountCreation(): void
     {
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
@@ -263,6 +364,11 @@ final class HttpFlowTest extends TestCase
         }
     }
 
+    /**
+     * Verify logout revokes session even when account lookup fails through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testLogoutRevokesSessionEvenWhenAccountLookupFails(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -281,6 +387,11 @@ final class HttpFlowTest extends TestCase
         }
     }
 
+    /**
+     * Verify logout always revokes identity when activity write fails through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -296,6 +407,11 @@ final class HttpFlowTest extends TestCase
         }
     }
 
+    /**
+     * Verify html responses carry no store and browser security headers through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testHtmlResponsesCarryNoStoreAndBrowserSecurityHeaders(): void
     {
         $response = $this->accountPages->registerForm();
@@ -307,6 +423,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame('no-referrer', $response->headers()['Referrer-Policy']);
     }
 
+    /**
+     * Verify registration rejects case insensitive duplicate without additional event through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent(): void
     {
         $first = $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register', post: [
@@ -327,6 +448,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(1, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Verify login tracking failure revokes session and propagates failure through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testLoginTrackingFailureRevokesSessionAndPropagatesFailure(): void
     {
         (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -343,6 +469,11 @@ final class HttpFlowTest extends TestCase
         }
     }
 
+    /**
+     * Verify download never uses user supplied file path through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testDownloadNeverUsesUserSuppliedFilePath(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -357,6 +488,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame('no-store', $response->headers()['Cache-Control']);
     }
 
+    /**
+     * Verify anonymous cannot trigger signed in actions even with valid csrf token through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testAnonymousCannotTriggerSignedInActionsEvenWithValidCsrfToken(): void
     {
         $csrf     = $this->csrf->token();
@@ -374,6 +510,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Verify expired authentication cannot trigger protected views or actions through the public behavior.
+     *
+     * @return void No return value.
+     */
     public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions(): void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'safe-pass');
@@ -396,6 +537,11 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    /**
+     * Build isolated fixtures for this test case.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function setUp(): void
@@ -445,6 +591,11 @@ final class HttpFlowTest extends TestCase
         );
     }
 
+    /**
+     * Release or reset test resources without leaking state.
+     *
+     * @return void No return value.
+     */
     #[\Override]
 
     protected function tearDown(): void
