@@ -101,6 +101,8 @@ Separate **[LLD design & code review](docs/reviews/LLD-CODE-REVIEW-2026-10-08.md
 
 New independent **[ClaudeCode LLD review — original 26 TODOs](docs/reviews/CLAUDE-CODE-LLD-REVIEW-2026-10-08.md)** and its **[LLD findings index](docs/reviews/CLAUDE-CODE-LLD-REVIEW-INDEX.md)** (8 high, 10 medium, 8 low). Kept verbatim, unmerged and unimplemented pending cross-review reconciliation.
 
+Additional independent **[Gemini review — original 10 findings](docs/reviews/GEMINI-REVIEW-2026-10-08.md)** and **[fact-check index](docs/reviews/GEMINI-REVIEW-INDEX.md)** (4 high, 4 medium, 2 low). Original preserved verbatim; several findings are contradicted by the current source. **Five reports, 142 source items before deduplication; none merged or implemented by archiving.**
+
 For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the
 pinned Architecture Governance 1.7.1 document. The architecture tests use `nikic/php-parser` to verify statically named
 cross-owner references (normal/grouped imports, fully-qualified names, type hints, static calls), and inspect literal
