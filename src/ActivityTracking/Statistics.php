@@ -7,6 +7,7 @@ namespace InterviewTask\ActivityTracking;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PDO;
+use PDOException;
 use RuntimeException;
 
 /**
@@ -16,7 +17,7 @@ use RuntimeException;
  * @phpstan-type ActivityPageResult array{events: list<ActivityEventRow>, hasNext: bool}
  * @api
  * @package InterviewTask\ActivityTracking
- * @see \InterviewTask\ActivityTracking\DailyReports
+ * @see DailyReports
  */
 final readonly class Statistics
 {
@@ -42,7 +43,7 @@ final readonly class Statistics
      * @param ?string $action Canonical action value; invalid values are rejected.
      * @param int $page 1-based page number.
      * @return list<ActivityEventRow>
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
     {
@@ -57,9 +58,9 @@ final readonly class Statistics
      * @param ?string $action Canonical ActivityAction value, or null.
      * @param int $page 1-based page number.
      * @return ActivityPageResult
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
-     * @throws \PDOException When the underlying SQLite operation fails.
-     * @throws \RuntimeException When the query cannot be prepared.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws PDOException When the underlying SQLite operation fails.
+     * @throws RuntimeException When the query cannot be prepared.
      */
     public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
     {

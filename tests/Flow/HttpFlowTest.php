@@ -32,6 +32,7 @@ use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Templating\Renderer;
 use InterviewTask\Infrastructure\Time\SystemClock;
 use InterviewTask\Runtime\Http\Request;
+use Override;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
@@ -542,7 +543,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function setUp(): void
     {
@@ -596,7 +597,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function tearDown(): void
     {

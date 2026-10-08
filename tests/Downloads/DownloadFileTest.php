@@ -10,6 +10,7 @@ use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Time\SystemClock;
+use Override;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
@@ -105,7 +106,7 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function setUp(): void
     {

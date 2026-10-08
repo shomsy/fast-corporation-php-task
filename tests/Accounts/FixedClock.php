@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Accounts;
 
 use DateTimeImmutable;
+use Override;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -26,7 +27,7 @@ final readonly class FixedClock implements ClockInterface
      *
      * @return DateTimeImmutable Result described by the native PHP return type.
      */
-    #[\Override]
+    #[Override]
 
     public function now(): DateTimeImmutable
     {

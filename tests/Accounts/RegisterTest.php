@@ -11,6 +11,7 @@ use InterviewTask\Accounts\UsernameTaken;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use SensitiveParameter;
 
 /**
  * Regression checks for Register test, covering observable behavior and failure paths.
@@ -103,7 +104,7 @@ final class RegisterTest extends AccountsTestCase
      * @return void No return value.
      */
     #[DataProvider('invalidRegistrationProvider')]
-    public function testBlankUsernameOrPasswordIsRejected(string $username, #[\SensitiveParameter] string $password): void
+    public function testBlankUsernameOrPasswordIsRejected(string $username, #[SensitiveParameter] string $password): void
     {
         $this->expectException(RegistrationRejected::class);
 

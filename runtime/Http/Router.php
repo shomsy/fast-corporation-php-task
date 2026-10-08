@@ -11,8 +11,8 @@ use InvalidArgumentException;
  * Exact-path router. Dynamic route matching is intentionally deferred until a real behavior requires it.
  *
  * @package InterviewTask\Runtime\Http
- * @see \InterviewTask\Runtime\Http\Request
- * @see \InterviewTask\Runtime\Http\Response
+ * @see Request
+ * @see Response
  */
 final class Router
 {
@@ -30,7 +30,7 @@ final class Router
      * @param string $path Absolute route, request path, or trusted local filesystem path.
      * @param callable(Request): Response $handler
      * @return void No return value.
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function add(string $method, string $path, callable $handler): void
     {

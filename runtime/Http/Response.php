@@ -19,7 +19,7 @@ final readonly class Response
      * @param string $body HTTP response payload.
      * @param int $status HTTP response status code.
      * @param array<string, string> $headers
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function __construct(
         private string $body = '',

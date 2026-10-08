@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace InterviewTask\Infrastructure\Session;
 
+use Random\RandomException;
+
 /**
  * Generate and verify a session-scoped CSRF token for state-changing requests.
  *
@@ -29,7 +31,7 @@ final readonly class Csrf
      * Return the session token or create 256 cryptographically random bits.
      *
      * @return string A persisted session token encoded as hexadecimal.
-     * @throws \Random\RandomException If the cryptographically secure random source fails.
+     * @throws RandomException If the cryptographically secure random source fails.
      */
     public function token(): string
     {

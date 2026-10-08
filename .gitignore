@@ -20,3 +20,6 @@
 
 # Local backups of pre-existing IDE changes
 /var/manual-backups/
+
+# Rector dry-run reports (local review evidence)
+/var/rector/

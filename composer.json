@@ -15,7 +15,8 @@
     "friendsofphp/php-cs-fixer": "^3.95",
     "nikic/php-parser": "^5.9",
     "phpstan/phpstan": "^2.3",
-    "phpunit/phpunit": "^12.5"
+    "phpunit/phpunit": "^12.5",
+    "rector/rector": "^2.7"
   },
   "autoload": {
     "psr-4": {
@@ -41,6 +42,7 @@
     "docs:check": "php tools/check-phpdocs.php",
     "cs": "php-cs-fixer check --diff",
     "cs:fix": "php-cs-fixer fix",
+    "rector:scan": "rector process --dry-run --no-progress-bar --memory-limit=1G",
     "architecture": "deptrac analyse --config-file=tools/architecture.yaml --fail-on-uncovered",
     "quality": [
       "@check:composer",

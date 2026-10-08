@@ -58,6 +58,31 @@ public function run(callable $operation): mixed
 
 These tags express structure the PHP native `array` and `callable` types cannot supply.
 
+## Namespaces and imports — mandatory
+
+Use **short class, interface, trait, enum, exception and attribute names** with explicit `use` imports at file level, in native PHP code and simple PHPDoc annotations (`@throws`, `@see`, `@param`, `@return`, `@var`). Do not retain `\Vendor\Package\ClassName` inline when an unambiguous import can be generated.
+
+For example, prefer:
+
+```php
+use PDOException;
+use SensitiveParameter;
+
+/** @throws PDOException If storage fails. */
+function changePassword(#[SensitiveParameter] string $password): void
+{
+    // Application behavior belongs here.
+}
+```
+
+rather than repeating fully qualified class names such as `\PDOException` or `\SensitiveParameter` at each use site.
+
+The **mandatory, machine-enforced** rule is `fully_qualified_strict_types: {import_symbols: true}` and `global_namespace_import: {import_classes: true}`, with `ordered_imports` and `no_unused_imports` in `.php-cs-fixer.dist.php`. These cover project PHP sources **and tooling** via `composer quality`.
+
+**Exceptions:** string values and executable PHP source fixtures whose precise FQCN literal is under test; deliberate alias/name collisions; language syntax, functions and constants that are not classes; advanced PHPStan shape aliases not understood by the simple PHPDoc tag fixer. Never rename an identifier merely for the appearance of a shorter spelling, and never change runtime behavior.
+
+This is a **project policy**, not a PHP-FIG requirement that fully qualified names be banned. The active PhpStorm MOI style should match it.
+
 ## What must **not** be added artificially
 
 - `@property`, `@property-read`, `@property-write`, `@method`: use only for real magic accessors/methods. This project uses native declarations, not Eloquent-style dynamic models.

@@ -10,8 +10,10 @@ use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InvalidArgumentException;
+use Override;
 use PDO;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 /**
  * Regression checks for Statistics reports test, covering observable behavior and failure paths.
@@ -298,7 +300,7 @@ final class StatisticsReportsTest extends TestCase
                 self::assertTrue($insert->execute(params: [$date->format(format: 'c')]));
             }
             $this->pdo->commit();
-        } catch (\Throwable $error) {
+        } catch (Throwable $error) {
             $this->pdo->rollBack();
             throw $error;
         }
@@ -343,7 +345,7 @@ final class StatisticsReportsTest extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function setUp(): void
     {

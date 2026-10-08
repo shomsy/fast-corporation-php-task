@@ -14,6 +14,7 @@ use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
 use InvalidArgumentException;
+use Override;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
@@ -151,7 +152,7 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function setUp(): void
     {
@@ -168,7 +169,7 @@ final class ActivityLogTest extends TestCase
              *
              * @return DateTimeImmutable Result described by the native PHP return type.
              */
-            #[\Override]
+            #[Override]
             public function now(): DateTimeImmutable
             {
                 return new DateTimeImmutable(datetime: '2026-10-08 12:15:00', timezone: new DateTimeZone(timezone: 'Europe/Belgrade'));

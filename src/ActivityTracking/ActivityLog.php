@@ -7,6 +7,7 @@ namespace InterviewTask\ActivityTracking;
 use DateTimeZone;
 use InvalidArgumentException;
 use PDO;
+use PDOException;
 use Psr\Clock\ClockInterface;
 use RuntimeException;
 
@@ -49,9 +50,9 @@ final readonly class ActivityLog
      * @param ActivityAction $action Canonical activity action used for validation and filtering.
      * @param string|null $target Canonical optional action target; null where not applicable.
      * @return void No return value.
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
-     * @throws \PDOException When the underlying SQLite operation fails.
-     * @throws \RuntimeException When insertion SQL cannot be prepared.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws PDOException When the underlying SQLite operation fails.
+     * @throws RuntimeException When insertion SQL cannot be prepared.
      */
     private function append(
         int            $actorId,

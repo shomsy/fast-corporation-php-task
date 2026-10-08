@@ -6,6 +6,7 @@ namespace InterviewTask\Infrastructure\Time;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Override;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -20,7 +21,7 @@ final class SystemClock implements ClockInterface
      *
      * @return DateTimeImmutable The current UTC timestamp.
      */
-    #[\Override]
+    #[Override]
     public function now(): DateTimeImmutable
     {
         return new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'UTC'));

@@ -11,7 +11,7 @@ use Throwable;
  * Own a PDO transaction and roll back failed operations without swallowing their cause.
  *
  * @package InterviewTask\Infrastructure\Database
- * @see \PDO
+ * @see PDO
  */
 final readonly class Transaction
 {
@@ -28,7 +28,7 @@ final readonly class Transaction
      * @template T
      * @param callable(): T $operation
      * @return T
-     * @throws \Throwable When the transaction callback fails; the original failure is rethrown after rollback.
+     * @throws Throwable When the transaction callback fails; the original failure is rethrown after rollback.
      */
     public function run(callable $operation): mixed
     {

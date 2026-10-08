@@ -1,5 +1,7 @@
 <?php
 
+use InterviewTask\ActivityTracking\DailyReports;
+
 /**
  * Administrator daily activity report chart and table view.
  *
@@ -80,7 +82,7 @@ $yFor  = static fn(int $value): float => 265 - $value * 215 / $max;
 <main><p><a href="/">← Home</a> · <a href="/statistics">Statistics</a></p>
     <h1>Daily activity reports</h1>
     <p>All dates are UTC. The chart and table use the same daily dataset (up
-        to <?= \InterviewTask\ActivityTracking\DailyReports::MAX_DAYS ?> recent active dates).</p>
+        to <?= DailyReports::MAX_DAYS ?> recent active dates).</p>
     <form method="get" action="/reports">
         <label>From (UTC) <input name="from" placeholder="YYYY-MM-DD" value="<?= $escape(value: $data['from']) ?>"></label>
         <label>To (UTC) <input name="to" placeholder="YYYY-MM-DD" value="<?= $escape(value: $data['to']) ?>"></label>

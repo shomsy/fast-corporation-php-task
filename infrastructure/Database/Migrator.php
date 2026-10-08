@@ -131,7 +131,7 @@ final readonly class Migrator
      * @param string $identifier Unique, owner-qualified migration identifier.
      * @param string $file Trusted SQL migration file path.
      * @return void No return value.
-     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     * @throws RuntimeException When a required external resource or stored value is invalid.
      */
     private function apply(string $identifier, string $file): void
     {

@@ -7,6 +7,7 @@ namespace InterviewTask\Accounts\Login;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Accounts\SignedInAccount;
+use SensitiveParameter;
 
 /**
  * Authenticate credentials and establish a server-side identity.
@@ -34,7 +35,7 @@ final readonly class Login
      * @return SignedInAccount The authenticated account snapshot, after session establishment.
      * @throws InvalidCredentials When the submitted credentials cannot authenticate an account.
      */
-    public function login(string $username, #[\SensitiveParameter] string $password): SignedInAccount
+    public function login(string $username, #[SensitiveParameter] string $password): SignedInAccount
     {
         $username = trim(string: $username);
 

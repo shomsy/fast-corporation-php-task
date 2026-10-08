@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Infrastructure\Database;
 
 use PDO;
+use PDOException;
 use RuntimeException;
 
 /**
@@ -19,8 +20,8 @@ final class SqliteConnection
      *
      * @param string $path Absolute route, request path, or trusted local filesystem path.
      * @return PDO Configured PDO connection to the requested SQLite file.
-     * @throws \RuntimeException If the parent database directory cannot be created.
-     * @throws \PDOException If SQLite cannot be opened.
+     * @throws RuntimeException If the parent database directory cannot be created.
+     * @throws PDOException If SQLite cannot be opened.
      */
     public static function open(string $path): PDO
     {

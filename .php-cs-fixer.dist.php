@@ -11,6 +11,7 @@ $finder = PhpCsFixer\Finder::create()
              __DIR__ . '/bin',
              __DIR__ . '/public',
              __DIR__ . '/tests',
+             __DIR__ . '/tools',
          ])
     ->name('*.php')
     ->ignoreDotFiles(true)
@@ -23,6 +24,14 @@ return (new PhpCsFixer\Config())
                    'declare_strict_types' => true,
                    'no_unused_imports'    => true,
                    'ordered_imports'      => true,
+                   'fully_qualified_strict_types' => [
+                       'import_symbols' => true,
+                   ],
+                   'global_namespace_import' => [
+                       'import_classes' => true,
+                       'import_functions' => null,
+                       'import_constants' => null,
+                   ],
                    'strict_param'         => true,
                ])
     ->setFinder($finder);

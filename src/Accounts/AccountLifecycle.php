@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace InterviewTask\Accounts;
 
+use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
+use InterviewTask\Accounts\Register\RegistrationRejected;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\Infrastructure\Database\Transaction;
+use PDOException;
+use SensitiveParameter;
 use Throwable;
 
 /**
@@ -15,8 +19,8 @@ use Throwable;
  *
  * @api
  * @package InterviewTask\Accounts
- * @see \InterviewTask\ActivityTracking\ActivityLog
- * @see \InterviewTask\Infrastructure\Database\Transaction
+ * @see ActivityLog
+ * @see Transaction
  */
 final readonly class AccountLifecycle
 {
@@ -43,11 +47,11 @@ final readonly class AccountLifecycle
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
      * @return void No return value.
-     * @throws \InterviewTask\Accounts\Register\RegistrationRejected When registration input or password policy is rejected.
+     * @throws RegistrationRejected When registration input or password policy is rejected.
      * @throws UsernameTaken When the persisted username already exists.
-     * @throws \PDOException When account creation or audit persistence fails; the transaction rolls back.
+     * @throws PDOException When account creation or audit persistence fails; the transaction rolls back.
      */
-    public function register(string $username, #[\SensitiveParameter] string $password): void
+    public function register(string $username, #[SensitiveParameter] string $password): void
     {
         $this->transaction->run(operation: function () use ($username, $password): void {
             $account = $this->register->register(username: $username, password: $password);
@@ -61,10 +65,10 @@ final readonly class AccountLifecycle
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
      * @return SignedInAccount The verified account identity exposed to the caller.
-     * @throws \InterviewTask\Accounts\Login\InvalidCredentials When the submitted credentials cannot authenticate an account.
-     * @throws \PDOException When login activity persistence fails; the new session is revoked.
+     * @throws InvalidCredentials When the submitted credentials cannot authenticate an account.
+     * @throws PDOException When login activity persistence fails; the new session is revoked.
      */
-    public function login(string $username, #[\SensitiveParameter] string $password): SignedInAccount
+    public function login(string $username, #[SensitiveParameter] string $password): SignedInAccount
     {
         $account = $this->login->login(username: $username, password: $password);
 
@@ -82,7 +86,7 @@ final readonly class AccountLifecycle
      * Revoke the session even if account lookup or logout auditing fails. An operational failure is still propagated to the HTTP error boundary.
      *
      * @return void No return value.
-     * @throws \PDOException When account reloading or logout activity persistence fails; session revocation still occurs.
+     * @throws PDOException When account reloading or logout activity persistence fails; session revocation still occurs.
      */
     public function logout(): void
     {

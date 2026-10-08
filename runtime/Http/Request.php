@@ -21,7 +21,7 @@ final readonly class Request
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, mixed> $server
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function __construct(
         private string $method,

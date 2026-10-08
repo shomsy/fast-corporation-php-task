@@ -10,6 +10,7 @@ use InterviewTask\Accounts\Accounts;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Session\PhpSession;
+use Override;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -44,7 +45,7 @@ abstract class AccountsTestCase extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function setUp(): void
     {
@@ -75,7 +76,7 @@ abstract class AccountsTestCase extends TestCase
      *
      * @return void No return value.
      */
-    #[\Override]
+    #[Override]
 
     protected function tearDown(): void
     {

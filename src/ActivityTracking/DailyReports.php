@@ -7,6 +7,7 @@ namespace InterviewTask\ActivityTracking;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use PDO;
+use PDOException;
 use RuntimeException;
 
 /**
@@ -15,7 +16,7 @@ use RuntimeException;
  * @phpstan-type DailyActivityRow array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}
  * @api
  * @package InterviewTask\ActivityTracking
- * @see \InterviewTask\ActivityTracking\Statistics
+ * @see Statistics
  */
 final readonly class DailyReports
 {
@@ -39,9 +40,9 @@ final readonly class DailyReports
      * @param ?string $from Inclusive YYYY-MM-DD UTC lower bound.
      * @param ?string $to Inclusive YYYY-MM-DD UTC upper bound.
      * @return list<DailyActivityRow> The same counts feed the chart and table.
-     * @throws \InvalidArgumentException When a submitted value or filter violates the documented precondition.
-     * @throws \PDOException When the underlying SQLite operation fails.
-     * @throws \RuntimeException When the query cannot be prepared.
+     * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
+     * @throws PDOException When the underlying SQLite operation fails.
+     * @throws RuntimeException When the query cannot be prepared.
      */
     public function dailyCounts(?string $from = null, ?string $to = null): array
     {

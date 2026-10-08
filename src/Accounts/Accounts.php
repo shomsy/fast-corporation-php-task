@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PDO;
 use PDOException;
 use RuntimeException;
+use SensitiveParameter;
 
 /**
  * Owns credential storage, password policy and account reconstruction.
@@ -33,7 +34,7 @@ final readonly class Accounts
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
      */
-    public function createUser(string $username, #[\SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
+    public function createUser(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
         return $this->create(username: $username, password: $password, role: Role::User, createdAt: $createdAt);
     }
@@ -48,11 +49,11 @@ final readonly class Accounts
      * @return Account The newly persisted account snapshot.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
-     * @throws \PDOException When the underlying SQLite operation fails.
+     * @throws PDOException When the underlying SQLite operation fails.
      */
     private function create(
         string            $username,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $password,
         Role              $role,
         DateTimeImmutable $createdAt,
@@ -116,7 +117,7 @@ final readonly class Accounts
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
      */
-    public function createAdmin(string $username, #[\SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
+    public function createAdmin(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
     {
         return $this->create(username: $username, password: $password, role: Role::Admin, createdAt: $createdAt);
     }
@@ -127,9 +128,9 @@ final readonly class Accounts
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
      * @return Account|null The verified account, or null for invalid credentials.
-     * @throws \PDOException When credential lookup or hash upgrade persistence fails.
+     * @throws PDOException When credential lookup or hash upgrade persistence fails.
      */
-    public function authenticate(string $username, #[\SensitiveParameter] string $password): ?Account
+    public function authenticate(string $username, #[SensitiveParameter] string $password): ?Account
     {
         if (strlen(string: $password) > 72 || str_contains(haystack: $password, needle: "\0")) {
             return null;
@@ -168,7 +169,7 @@ final readonly class Accounts
      *
      * @param array<array-key, mixed> $row Raw SQLite result with unchecked values.
      * @return Account Reconstructed typed account from persisted fields.
-     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     * @throws RuntimeException When a required external resource or stored value is invalid.
      */
     private function accountFromRow(array $row): Account
     {

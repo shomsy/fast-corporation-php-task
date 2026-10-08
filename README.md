@@ -109,12 +109,30 @@ Every `composer quality` run verifies PSR-4 namespaces and duplicate class defin
 
 PHP-CS-Fixer uses `@PER-CS3x0` (PER Coding Style 3.0), plus project-specific strict
 rules. This does **not** assert complete PER Coding Style 3.1 verification.
+Class and attribute references use file-level `use` imports, including simple PHPDoc
+annotations (`@throws`, `@see`). Automatic importing, import ordering and removing
+unused imports are enforced by `composer quality` for project code and tooling.
 Time-dependent use cases accept the standard `Psr\Clock\ClockInterface` (PSR-20),
 implemented locally by `Infrastructure\Time\SystemClock` in UTC. Tests inject fixed clocks;
 no bespoke clock interface or extra clock implementation package is needed.
 See `docs/PHP-STANDARDS-VNEXT.md` for the decision and acceptance evidence.
 
 For complete PHPDoc contracts (classes, constructors, parameters, returns, exceptions, properties, typed arrays and test methods), see `docs/PHPDOC-STANDARD.md`. Run `composer docs:check` to enforce structural DocBlock coverage.
+
+## Automated refactoring (Rector)
+
+Rector 2.7 uses the maximum relevant PHP 8.3 and PHPUnit refactoring presets.
+Run `composer rector:scan` to see its **dry-run suggestions**.
+
+Identifier naming is **manual**: type-derived renaming rules for properties,
+constructor parameters, local and catch variables are disabled in `rector.php`.
+This protects business vocabulary and the public contracts of PHP named arguments.
+Review remaining suggestions against PHPDoc, module boundaries, existing behavior
+and tests. The evidence is in `docs/RECTOR-MAX-PHP83-REPORT.md`.
+
+The active global PhpStorm `MOI` code style is aligned with
+`.editorconfig` and PHP-CS-Fixer's PER Coding Style rules.
+`composer quality` is the mandatory code/style gate; Rector is advisory.
 
 ## Deployment scope and remaining hardening
 

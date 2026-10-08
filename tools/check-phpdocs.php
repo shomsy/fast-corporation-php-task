@@ -26,13 +26,13 @@ use PhpParser\ParserFactory;
  * Exception and deprecation annotations must correspond to real behavior;
  * narrative contracts and error semantics require human review.
  *
- * @param list<Node\Stmt> $ast Parsed PHP statements.
+ * @param list<Stmt> $ast Parsed PHP statements.
  * @param string $path Path used in diagnostic messages.
  * @return list<string> Missing contract annotations.
  */
 function inspectDocContracts(array $ast, string $path): array
 {
-    $visitor = new class($path) extends NodeVisitorAbstract {
+    $visitor = new class ($path) extends NodeVisitorAbstract {
         /** @var list<string> */
         public array $issues = [];
 
@@ -47,7 +47,7 @@ function inspectDocContracts(array $ast, string $path): array
          * @param Node $node Node visited by PhpParser.
          * @return Node|null No AST changes; the visitor may return null.
          */
-        #[\Override]
+        #[Override]
         public function enterNode(Node $node): ?Node
         {
             if (!$node instanceof Stmt\ClassLike
@@ -84,7 +84,7 @@ function inspectDocContracts(array $ast, string $path): array
                         continue;
                     }
                     $name = preg_quote($param->var->name, '/');
-                    if (!preg_match('/@param\s+[^\r\n]*\s+\$'.$name.'\b/', $text)) {
+                    if (!preg_match('/@param\s+[^\r\n]*\s+\$' . $name . '\b/', $text)) {
                         $this->issues[] = "{$this->path}:{$line} missing @param \${$param->var->name}";
                     }
                 }
@@ -116,7 +116,7 @@ $roots = ['src', 'runtime', 'infrastructure', 'bootstrap', 'tests'];
 
 foreach ($roots as $root) {
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-        dirname(__DIR__).'/'.$root,
+        dirname(__DIR__) . '/' . $root,
         FilesystemIterator::SKIP_DOTS,
     ));
 
@@ -128,7 +128,7 @@ foreach ($roots as $root) {
         $path = $file->getPathname();
         $source = file_get_contents($path);
         if ($source === false) {
-            $errors[] = $path.' is unreadable';
+            $errors[] = $path . ' is unreadable';
             continue;
         }
 
@@ -140,7 +140,7 @@ foreach ($roots as $root) {
         $fileCount++;
         foreach (inspectDocContracts(
             ast: $statements,
-            path: str_replace(dirname(__DIR__).'/', '', $path),
+            path: str_replace(dirname(__DIR__) . '/', '', $path),
         ) as $error) {
             $errors[] = $error;
         }
@@ -149,10 +149,10 @@ foreach ($roots as $root) {
 
 if ($errors !== []) {
     foreach ($errors as $error) {
-        fwrite(STDERR, $error.PHP_EOL);
+        fwrite(STDERR, $error . PHP_EOL);
     }
 
     exit(1);
 }
 
-echo "PHPDoc structural coverage: PASS ({$fileCount} PHP files inspected)".PHP_EOL;
+echo "PHPDoc structural coverage: PASS ({$fileCount} PHP files inspected)" . PHP_EOL;
