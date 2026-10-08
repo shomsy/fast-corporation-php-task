@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Active
+Status: Release candidate — all local acceptance gates PASS; remote CI pending
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
@@ -87,20 +87,30 @@ Statistics is admin-only with date/user/action filters. Reports is admin-only as
 
 The project is executed as a sequence of small, independently reviewable delivery units. Do not accumulate several phases into one large commit.
 
-For every phase or consequential fix:
+### Temporary delivery validation order — operator instruction 2026-10-08
 
-1. inspect the current clean `main` state and the latest accepted governance/ADR/plan;
-2. implement only the smallest coherent behavior or foundation required by the active phase;
-3. run targeted tests while developing;
-4. run `composer quality` before commit;
-5. run any phase-specific smoke check (for example migrations, HTTP flow, authorization or download behavior);
-6. update plan/evidence documentation only when project status materially changes;
-7. create one coherent human-style commit;
-8. push `main` to `origin/main`;
-9. verify the GitHub Actions push workflow for that exact commit;
-10. proceed only after the local gate and remote CI are green.
+**Scope:** This Fast Corporation interview task, until final submission acceptance.
+**Reason:** Prioritize complete business behavior before running repeated project-wide static and style checks.
+**Authorizing instruction:** The accountable human explicitly changed the execution order in this conversation. This temporarily supersedes the earlier per-phase `composer quality` gate and its matching delivery-loop wording. It does not weaken any quality rule, disable any tool, waive security or permit calling the project submission-ready without final proof.
+**Expiry:** After the final project-wide validation and submission readiness checkpoint, this sequencing exception expires.
 
-If a local or remote gate fails, fix that failure before starting new scope. Do not hide failures with ignores, weakened static-analysis levels or removed tests unless an explicit evidence-backed governance decision justifies it.
+For each coherent implementation scope:
+
+1. Inspect the current repository state and do not overwrite prior work.
+2. **Write the functional code first**, including only the smallest justified architecture.
+3. **Then write and run the unit tests for that scope**, fixing actual failures.
+4. **Then run the entire PHPUnit suite**, fixing regressions before continuing.
+5. Record factual test results in the workstream; continue with the next scope.
+
+Only **after the complete task's implementation and functional tests**:
+
+6. Run PHPStan max, Deptrac, PHP-CS-Fixer, Composer validation/security audit and remaining full quality gates.
+7. Fix every issue at its actual owner, without suppressions or weakening architecture constraints; rerun all quality gates until green.
+8. Run security, clean-install, user/admin browser journeys and download acceptance.
+9. Review the final diff, update documentation/evidence, commit coherent changes and push `origin/main`; verify the exact commit's GitHub Actions result.
+10. Declare `SUBMISSION READY` only after all final acceptance conditions pass.
+
+Do not make unverified intermediate commits merely to meet a clock-driven cadence. The earlier per-phase commit cadence is deferred during this temporary sequencing exception to keep `main` deployable.
 
 Commit cadence:
 
@@ -112,19 +122,30 @@ Commit cadence:
 
 Remote `main` is the delivery source of truth. Each loop iteration resumes from the latest synchronized clean checkpoint rather than relying on uncommitted local memory.
 
+## Acceptance evidence — local final gates (2026-10-08)
+
+- Functional task coverage: registration/login/logout; authenticated Page A, Buy a cow -> `thankYou`; authenticated Page B -> fixed `assets/sample.exe`; admin Statistics date/user/action filters; admin Reports SVG and table from one UTC daily aggregate.
+- Owner boundaries: Accounts, ActivityTracking, CowOffer, Downloads. Technical HTTP transport mapping belongs to `bootstrap/WebPages.php`; no business owner imports Runtime HTTP types.
+- Security: password hashing, generic invalid login, regeneration on sign-in, CSRF for POST actions, server-side authorization, escaped HTML, prepared queries, session destruction on logout, fixed download path, failure-visible activity logging and transaction rollback.
+- Scoped HTTP tests: **PASS, 12 tests / 77 assertions**.
+- Complete PHPUnit: **PASS, 50 tests / 400 assertions** (PHP 8.5.5). Superseded Accounts HTTP adapter test was replaced by actual composition-boundary Flow coverage.
+- `composer quality`: **PASS**. Composer validation PASS, dependency security audit PASS (no advisories), PHP-CS-Fixer PASS, PHPStan max PASS (0 errors), Deptrac PASS (0 violations, 0 skipped), PHPUnit PASS.
+- Isolated live HTTP smoke: **PASS** for fresh and idempotent SQLite migrations, CLI admin bootstrap, complete user registration/login/cow/download/logout and admin Statistics/filters/Reports using actual local HTTP server.
+- Release gate: final Git commit, origin/main synchronization and GitHub Actions CI for exact SHA must still be independently confirmed before declaring submission-ready.
+
 ## Delivery phases
 
 - Phase 0 — Planning / architecture — DONE (`113e2d4`)
 - Phase 1 — Tooling / quality / CI — DONE (`59e327f`)
 - Architecture alignment — Governance 1.7.1 — DONE (`2c3b2e5`)
 - Phase 2 — Runtime + persistence — DONE
-- Phase 3 — Accounts — NEXT
-- Phase 4 — ActivityTracking
-- Phase 5 — CowOffer + Downloads
-- Phase 6 — Statistics
-- Phase 7 — Reports
-- Phase 8 — Security + failure hardening
-- Phase 9 — Acceptance + reviewer experience
+- Phase 3 — Accounts and browser authentication — DONE locally
+- Phase 4 — ActivityTracking with registration/login/logout integration — DONE locally
+- Phase 5 — CowOffer + Downloads — DONE locally
+- Phase 6 — Statistics — DONE locally
+- Phase 7 — Reports — DONE locally
+- Phase 8 — Security and failure hardening — DONE locally, quality PASS
+- Phase 9 — Acceptance and reviewer experience — local live smoke PASS; GitHub release CI pending
 
 ### Alignment exit
 
