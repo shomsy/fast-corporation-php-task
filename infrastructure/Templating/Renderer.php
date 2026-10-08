@@ -7,7 +7,6 @@ namespace InterviewTask\Infrastructure\Templating;
 use InvalidArgumentException;
 use RuntimeException;
 use Stringable;
-use Throwable;
 
 /**
  * Render trusted PHP templates with an explicit escaping callback and cleaned output buffers.
@@ -44,10 +43,20 @@ final class Renderer
             return htmlspecialchars(string: $text, flags: ENT_QUOTES | ENT_SUBSTITUTE, encoding: 'UTF-8');
         };
 
+        $entryLevel = ob_get_level();
         ob_start();
 
         try {
             require $template;
+
+            if (ob_get_level() > $entryLevel + 1) {
+                throw new RuntimeException(message: 'Template left output buffers open.');
+            }
+
+            if (ob_get_level() < $entryLevel + 1) {
+                throw new RuntimeException(message: 'Template closed the renderer output buffer.');
+            }
+
             $output = ob_get_clean();
 
             if ($output === false) {
@@ -55,12 +64,12 @@ final class Renderer
             }
 
             return $output;
-        } catch (Throwable $throwable) {
-            if (ob_get_level() > 0) {
-                ob_end_clean();
+        } finally {
+            while (ob_get_level() > $entryLevel) {
+                if (! ob_end_clean()) {
+                    break;
+                }
             }
-
-            throw $throwable;
         }
     }
 }
