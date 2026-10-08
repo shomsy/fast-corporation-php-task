@@ -95,6 +95,8 @@ starts the same PHP version with explicit database environment and mapped tempor
 
 For the prioritized remediation work, see **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 tracked items; review findings, not implemented fixes).
 
+Independent review pending reconciliation: **[ClaudeCode original text](docs/reviews/CLAUDE-CODE-REVIEW-2026-10-08.txt)** and its **[62-finding index](docs/reviews/CLAUDE-CODE-REVIEW-INDEX.md)**. These are archived claims, not yet merged into the canonical remediation TODO.
+
 For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the
 pinned Architecture Governance 1.7.1 document. The architecture tests use `nikic/php-parser` to verify statically named
 cross-owner references (normal/grouped imports, fully-qualified names, type hints, static calls), and inspect literal

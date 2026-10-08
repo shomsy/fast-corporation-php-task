@@ -5,6 +5,8 @@ Review basis: `main` at `f4136f4` (2026-10-08); Compass Engineering and local bo
 Scope: Fast Corporation vanilla PHP technical task, **not** an assumed internet-scale product.
 Rule: **MOI is the sole PHP visual formatter.** Do not edit the user's personal MOI preferences or re-enable PHP-CS-Fixer as a formatting gate. Rector remains a reviewed dry-run tool; identifier names are author-owned.
 
+**Parallel independent review, not yet consolidated:** [ClaudeCode verbatim review](reviews/CLAUDE-CODE-REVIEW-2026-10-08.txt) and [its 62-item source index](reviews/CLAUDE-CODE-REVIEW-INDEX.md). Preserve original Claude IDs and evidence labels until a deliberate reconciliation pass; existing tasks are not superseded.
+
 ## 0. How to use this plan
 
 - [ ] Work in priority/dependency order. Mark a task complete **only** after its acceptance checks pass.
