@@ -100,11 +100,16 @@ def main():
             cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=server_log_stream)
         try:
             user = client()
-            for _ in range(70):
+            for attempt in range(70):
                 try:
                     status, _, body = request(user, base, "/register")
                     break
-                except (URLError, TimeoutError):
+                except (URLError, TimeoutError, ConnectionResetError, ConnectionAbortedError):
+                    if attempt == 69 or server.poll() is not None:
+                        raise AssertionError(
+                            "Web server was not ready; diagnostics: "
+                            + server_log.read_text(errors="replace")
+                        )
                     time.sleep(0.08)
             assert status == 200
             status, headers, _ = request(user, base, "/register", {

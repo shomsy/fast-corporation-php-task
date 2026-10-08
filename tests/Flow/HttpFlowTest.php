@@ -277,6 +277,38 @@ final class HttpFlowTest extends TestCase
     }
 
     /**
+     * Verify malformed dates and array query inputs return 422 instead of 500 or an unfiltered response.
+     *
+     * @return void No return value.
+     */
+    public function testAdministratorDateFiltersRejectNulAndArrayInputs(): void
+    {
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(
+            username: 'date-admin',
+            password: 'safe-pass',
+        );
+        $this->identity->signIn(account: $admin);
+
+        foreach (["2026-10-07\0", ['2026-10-07']] as $invalidDate) {
+            $statistics = $this->activityPages->statisticsPage(request: new Request(
+                method: 'GET',
+                path: '/statistics',
+                query: ['date' => $invalidDate],
+            ));
+            self::assertSame(422, $statistics->status());
+
+            foreach (['from', 'to'] as $filter) {
+                $reports = $this->activityPages->reportsPage(request: new Request(
+                    method: 'GET',
+                    path: '/reports',
+                    query: [$filter => $invalidDate],
+                ));
+                self::assertSame(422, $reports->status());
+            }
+        }
+    }
+
+    /**
      * Verify missing artifact fails without download activity through the public behavior.
      *
      * @return void No return value.

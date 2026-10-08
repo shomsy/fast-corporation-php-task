@@ -72,6 +72,10 @@ final readonly class Statistics
         $parameters = [];
 
         if ($date !== null && $date !== '') {
+            if (preg_match(pattern: '/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', subject: $date) !== 1) {
+                throw new InvalidArgumentException(message: 'Invalid date. Expected YYYY-MM-DD.');
+            }
+
             $parsed = DateTimeImmutable::createFromFormat(format: '!Y-m-d', datetime: $date);
 
             if ($parsed === false || $parsed->format(format: 'Y-m-d') !== $date) {

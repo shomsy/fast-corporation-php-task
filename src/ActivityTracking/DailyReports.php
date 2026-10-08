@@ -52,6 +52,10 @@ final readonly class DailyReports
                 continue;
             }
 
+            if (preg_match(pattern: '/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', subject: $value) !== 1) {
+                throw new InvalidArgumentException(message: 'Invalid report date.');
+            }
+
             $parsed = DateTimeImmutable::createFromFormat(format: '!Y-m-d', datetime: $value);
             if ($parsed === false || $parsed->format(format: 'Y-m-d') !== $value) {
                 throw new InvalidArgumentException(message: 'Invalid report date.');

@@ -50,13 +50,17 @@ final readonly class ActivityPages
             return $denied;
         }
 
-        $date      = $this->optionalInput(value: $request->query(key: 'date'));
-        $user      = $this->optionalInput(value: $request->query(key: 'user'));
-        $action    = $this->optionalInput(value: $request->query(key: 'action'));
-        $pageValue = $this->optionalInput(value: $request->query(key: 'page')) ?? '1';
-        $page      = 1;
+        $date   = null;
+        $user   = null;
+        $action = null;
+        $page   = 1;
 
         try {
+            $date      = $this->optionalInput(value: $request->query(key: 'date'));
+            $user      = $this->optionalInput(value: $request->query(key: 'user'));
+            $action    = $this->optionalInput(value: $request->query(key: 'action'));
+            $pageValue = $this->optionalInput(value: $request->query(key: 'page')) ?? '1';
+
             if (! preg_match(pattern: '/^[1-9][0-9]{0,17}$/', subject: $pageValue)) {
                 throw new InvalidArgumentException(message: 'Invalid page.');
             }
@@ -107,7 +111,15 @@ final readonly class ActivityPages
      */
     private function optionalInput(mixed $value): ?string
     {
-        return is_string(value: $value) && $value !== '' ? $value : null;
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (! is_string(value: $value)) {
+            throw new InvalidArgumentException(message: 'Invalid query parameter.');
+        }
+
+        return $value;
     }
 
     /**
@@ -123,9 +135,12 @@ final readonly class ActivityPages
             return $denied;
         }
 
-        $from = $request === null ? null : $this->optionalInput(value: $request->query(key: 'from'));
-        $to   = $request === null ? null : $this->optionalInput(value: $request->query(key: 'to'));
+        $from = null;
+        $to   = null;
+
         try {
+            $from   = $request === null ? null : $this->optionalInput(value: $request->query(key: 'from'));
+            $to     = $request === null ? null : $this->optionalInput(value: $request->query(key: 'to'));
             $daily  = $this->reports->dailyCounts(from: $from, to: $to);
             $error  = '';
             $status = 200;

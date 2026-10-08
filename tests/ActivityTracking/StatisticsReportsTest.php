@@ -100,6 +100,37 @@ final class StatisticsReportsTest extends TestCase
     }
 
     /**
+     * Verify an embedded NUL in a statistics date fails as expected input validation.
+     *
+     * @return void No return value.
+     */
+    public function testStatisticsRejectsNulDateAsInvalidInput(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->statistics->events(date: "2026-10-07\0");
+    }
+
+    /**
+     * Verify both report date bounds reject embedded NUL as client input.
+     *
+     * @return void No return value.
+     */
+    public function testReportsRejectNulDateBoundsAsInvalidInput(): void
+    {
+        foreach (['from', 'to'] as $bound) {
+            try {
+                $this->reports->dailyCounts(
+                    from: $bound === 'from' ? "2026-10-07\0" : null,
+                    to: $bound === 'to' ? "2026-10-08\0" : null,
+                );
+                self::fail('A NUL-containing report date was accepted.');
+            } catch (InvalidArgumentException $exception) {
+                self::assertStringContainsString('Invalid report date', $exception->getMessage());
+            }
+        }
+    }
+
+    /**
      * Verify statistics rejects unknown action through the public behavior.
      *
      * @return void No return value.
