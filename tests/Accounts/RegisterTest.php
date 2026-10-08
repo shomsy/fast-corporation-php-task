@@ -103,7 +103,7 @@ final class RegisterTest extends AccountsTestCase
      * @return void No return value.
      */
     #[DataProvider('invalidRegistrationProvider')]
-    public function testBlankUsernameOrPasswordIsRejected(string $username, string $password): void
+    public function testBlankUsernameOrPasswordIsRejected(string $username, #[\SensitiveParameter] string $password): void
     {
         $this->expectException(RegistrationRejected::class);
 

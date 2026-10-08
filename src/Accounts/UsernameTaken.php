@@ -18,7 +18,7 @@ final class UsernameTaken extends DomainException
     /**
      * Initialize dependencies required by this component.
      *
-     * @param Throwable|null $previous Input value for previous.
+     * @param Throwable|null $previous Original SQLite UNIQUE-constraint failure, if available.
      */
     public function __construct(?Throwable $previous = null)
     {

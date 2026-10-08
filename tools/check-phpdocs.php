@@ -23,8 +23,8 @@ use PhpParser\ParserFactory;
 /**
  * Scan one AST and report incomplete structural documentation.
  *
- * The checker deliberately does not demand artificial @throws or @deprecated
- * tags: these must correspond to real behavior and are reviewed semantically.
+ * Exception and deprecation annotations must correspond to real behavior;
+ * narrative contracts and error semantics require human review.
  *
  * @param list<Node\Stmt> $ast Parsed PHP statements.
  * @param string $path Path used in diagnostic messages.
@@ -39,14 +39,15 @@ function inspectDocContracts(array $ast, string $path): array
         /**
          * @param string $path Relative PHP source path.
          */
-        public function __construct(private string $path) {}
+        public function __construct(private readonly string $path) {}
 
         /**
          * Check type declarations and callable member contracts.
          *
          * @param Node $node Node visited by PhpParser.
-         * @return null No AST modifications.
+         * @return Node|null No AST changes; the visitor may return null.
          */
+        #[\Override]
         public function enterNode(Node $node): ?Node
         {
             if (!$node instanceof Stmt\ClassLike
@@ -73,7 +74,7 @@ function inspectDocContracts(array $ast, string $path): array
             }
 
             $text = $doc->getText();
-            if (!preg_match('/\/\*\*\s*\*\s*\S/s', $text)) {
+            if (!preg_match('/\/\*\*\s*\*\s*\S/', $text)) {
                 $this->issues[] = "{$this->path}:{$line} missing meaningful summary";
             }
 
@@ -137,10 +138,12 @@ foreach ($roots as $root) {
         }
 
         $fileCount++;
-        $errors = array_merge($errors, inspectDocContracts(
+        foreach (inspectDocContracts(
             ast: $statements,
             path: str_replace(dirname(__DIR__).'/', '', $path),
-        ));
+        ) as $error) {
+            $errors[] = $error;
+        }
     }
 }
 

@@ -60,7 +60,7 @@ final readonly class Request
     /**
      * Discard non-string top-level input keys without changing values.
      *
-     * @param array<mixed> $values
+     * @param array<array-key, mixed> $values
      * @return array<string, mixed>
      */
     private static function stringKeyed(array $values): array

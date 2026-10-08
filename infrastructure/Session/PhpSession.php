@@ -16,8 +16,8 @@ final readonly class PhpSession
     /**
      * Configure a named PHP session and whether its cookie requires HTTPS.
      *
-     * @param string $name Configured session name or lookup name.
-     * @param bool $secureCookie Whether PHP cookies require HTTPS.
+     * @param string $name         Configured session name or lookup name.
+     * @param bool   $secureCookie Whether PHP cookies require HTTPS.
      */
     public function __construct(
         private string $name = 'fast_task',
@@ -28,6 +28,7 @@ final readonly class PhpSession
      * Read a server-session entry after safely initializing the session.
      *
      * @param string $key Name of a session or HTTP input value.
+     *
      * @return mixed Result described by the native PHP return type.
      */
     public function get(string $key): mixed
@@ -41,7 +42,7 @@ final readonly class PhpSession
      * Start a strict-ID PHP session with HttpOnly and SameSite cookie parameters.
      *
      * @return void No return value.
-     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     * @throws RuntimeException When a required external resource or stored value is invalid.
      */
     public function start(): void
     {
@@ -54,8 +55,8 @@ final readonly class PhpSession
         }
         session_name(name: $this->name);
 
-        if ((bool) ini_get(option: 'session.use_cookies')) {
-            session_set_cookie_params(lifetime_or_options: [
+        if (ini_get(option: 'session.use_cookies')) {
+            session_set_cookie_params([
                 'httponly' => true,
                 'secure'   => $this->secureCookie,
                 'samesite' => 'Lax',
@@ -71,8 +72,9 @@ final readonly class PhpSession
     /**
      * Store a trusted server-side session value.
      *
-     * @param string $key Name of a session or HTTP input value.
-     * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
+     * @param string $key   Name of a session or HTTP input value.
+     * @param mixed  $value Value to store, format, or validate, as appropriate for this operation.
+     *
      * @return void No return value.
      */
     public function put(string $key, mixed $value): void
@@ -85,6 +87,7 @@ final readonly class PhpSession
      * Delete a named session entry.
      *
      * @param string $key Name of a session or HTTP input value.
+     *
      * @return void No return value.
      */
     public function remove(string $key): void
@@ -97,7 +100,7 @@ final readonly class PhpSession
      * Rotate the session identifier and invalidate the old session.
      *
      * @return void No return value.
-     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     * @throws RuntimeException When a required external resource or stored value is invalid.
      */
     public function regenerate(): void
     {
@@ -112,7 +115,7 @@ final readonly class PhpSession
      * Clear server state, expire the cookie and terminate the PHP session.
      *
      * @return void No return value.
-     * @throws \RuntimeException When a required external resource or stored value is invalid.
+     * @throws RuntimeException When a required external resource or stored value is invalid.
      */
     public function destroy(): void
     {
@@ -124,9 +127,9 @@ final readonly class PhpSession
 
         $_SESSION = [];
 
-        if ((bool) ini_get(option: 'session.use_cookies') && ! headers_sent()) {
+        if (ini_get(option: 'session.use_cookies') && ! headers_sent()) {
             $parameters = session_get_cookie_params();
-            setcookie(name: $this->name, value: '', expires_or_options: [
+            setcookie($this->name, '', [
                 'expires'  => time() - 3600,
                 'path'     => $parameters['path'],
                 'domain'   => $parameters['domain'],

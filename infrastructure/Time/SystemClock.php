@@ -16,9 +16,9 @@ use Psr\Clock\ClockInterface;
 final class SystemClock implements ClockInterface
 {
     /**
-     * Now according to the SystemClock contract.
+     * Read the current UTC instant from the system clock.
      *
-     * @return DateTimeImmutable Result described by the native PHP return type.
+     * @return DateTimeImmutable The current UTC timestamp.
      */
     #[\Override]
     public function now(): DateTimeImmutable

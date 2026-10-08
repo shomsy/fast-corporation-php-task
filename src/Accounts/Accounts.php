@@ -91,9 +91,9 @@ final readonly class Accounts
             $driverCode    = $exception->errorInfo[1] ?? null;
             $driverMessage = $exception->errorInfo[2] ?? null;
             if (
-                $this->pdo->getAttribute(attribute: PDO::ATTR_DRIVER_NAME) === 'sqlite'
+                $driverMessage === 'UNIQUE constraint failed: accounts.username'
                 && in_array(needle: $driverCode, haystack: [19, 2067, '19', '2067'], strict: true)
-                && $driverMessage === 'UNIQUE constraint failed: accounts.username'
+                && $this->pdo->getAttribute(attribute: PDO::ATTR_DRIVER_NAME) === 'sqlite'
             ) {
                 throw new UsernameTaken(previous: $exception);
             }

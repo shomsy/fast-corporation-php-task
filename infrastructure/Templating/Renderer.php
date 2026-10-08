@@ -37,7 +37,7 @@ final class Renderer
                 is_int(value: $value), is_float(value: $value) => (string) $value,
                 is_bool(value: $value)                  => $value ? '1' : '',
                 $value === null                  => '',
-                $value instanceof Stringable     => $value->__toString(),
+                $value instanceof Stringable     => (string) $value,
                 default                          => throw new InvalidArgumentException(message: 'Template value is not safely stringable.'),
             };
 

@@ -29,6 +29,7 @@ final readonly class Csrf
      * Return the session token or create 256 cryptographically random bits.
      *
      * @return string A persisted session token encoded as hexadecimal.
+     * @throws \Random\RandomException If the cryptographically secure random source fails.
      */
     public function token(): string
     {

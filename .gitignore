@@ -14,3 +14,9 @@
 # Local editor state
 /.idea/
 /.gigaide/
+
+# Locally exported PhpStorm inspection reports (retain outside Git)
+/var/phpstorm-inspections/
+
+# Local backups of pre-existing IDE changes
+/var/manual-backups/

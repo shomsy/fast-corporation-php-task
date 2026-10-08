@@ -12,7 +12,7 @@ use RuntimeException;
  *
  * @package InterviewTask\Infrastructure\Database
  */
-final class Migrator
+final readonly class Migrator
 {
     /**
      * Register the configured database and owner-to-directory migration mapping.
@@ -141,7 +141,7 @@ final class Migrator
             throw new RuntimeException(message: 'Migration is empty or unreadable: ' . $file);
         }
 
-        (new Transaction(pdo: $this->pdo))->run(operation: function () use ($identifier, $sql): void {
+        (new Transaction(pdo: $this->pdo))->run(operation: function () use ($sql, $identifier): void {
             $this->pdo->exec(statement: $sql);
 
             $statement = $this->pdo->prepare(
