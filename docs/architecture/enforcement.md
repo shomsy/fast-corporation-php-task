@@ -16,3 +16,6 @@ Project governance evidence status: **PILOT**. This is not a claim of Governance
 - Auth public return-contract: **MACHINE-ENFORCED** by `PublicSurfaceTest` reflection of lifecycle method returns; unexported Account cannot leak from the exported register() API.
 - Failure classification: **BEHAVIOR-ENFORCED** by real SQLite constraint regression and both in-process and live HTTP missing-audit-table download tests; only expected ArtifactUnavailable is converted to 503.
 - Proportional OOP decision: redundant Logout forwarding class removed; CowOffer's business meaning and DailyReports four-field array shape retained until measured change pressure justifies restructuring.
+
+- Account lifecycle failure safety: **BEHAVIOR-ENFORCED** by `HttpFlowTest` using a real SQLite account lookup failure; logout still invalidates the session even when recording cannot begin.
+- Password policy: **BEHAVIOR-ENFORCED** by `PasswordPolicyTest` (bcrypt byte limit and NUL-byte rejection) and live CLI acceptance (invalid admin passwords exit cleanly rather than producing uncaught bcrypt exceptions).

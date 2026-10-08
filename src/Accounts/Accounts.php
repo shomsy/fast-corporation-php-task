@@ -25,7 +25,7 @@ final readonly class Accounts
 
     public function authenticate(string $username, string $password): ?Account
     {
-        if (strlen($password) > 72) {
+        if (strlen($password) > 72 || str_contains($password, "\0")) {
             return null;
         }
 
@@ -82,6 +82,10 @@ final readonly class Accounts
         // Bcrypt silently ignores bytes after 72. Reject rather than truncate credentials.
         if (strlen($password) > 72) {
             throw new PasswordRejected('Password must not exceed 72 bytes.');
+        }
+
+        if (str_contains($password, "\0")) {
+            throw new PasswordRejected('Password must not contain NUL bytes.');
         }
 
         $passwordHash = password_hash($password, PASSWORD_BCRYPT);

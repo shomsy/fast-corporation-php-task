@@ -78,6 +78,16 @@ def main():
             input="review-secret\n", cwd=ROOT, env=env,
             capture_output=True, text=True)
         assert admin.returncode == 0, "Admin CLI failed: " + admin.stderr
+        for username, invalid_password, explanation in [
+            ("nul-password-admin", "safe\0unsafe", "NUL"),
+            ("long-password-admin", "a" * 73, "72 bytes"),
+        ]:
+            rejected = subprocess.run(
+                php_command(tmp, ["bin/create-admin.php", username, "--password-stdin"]),
+                input=invalid_password + "\n", cwd=ROOT, env=env,
+                capture_output=True, text=True)
+            assert rejected.returncode == 2, "Invalid CLI password must fail cleanly"
+            assert explanation in rejected.stderr and "Fatal error" not in rejected.stderr
         sock = socket.socket()
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]

@@ -45,13 +45,14 @@ final readonly class AccountLifecycle
 
     public function logout(): void
     {
-        $account = $this->identity->current();
-
         try {
+            $account = $this->identity->current();
+
             if ($account !== null) {
                 $this->activity->recordLogout($account->id, $account->username);
             }
         } finally {
+            // Session revocation must not depend on account lookup or audit availability.
             $this->identity->signOut();
         }
     }

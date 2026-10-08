@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
+use InterviewTask\Accounts\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Time\SystemClock;
@@ -77,6 +78,10 @@ try {
     fwrite(STDERR, "Username is already taken.\n");
 
     exit(1);
+} catch (PasswordRejected $error) {
+    fwrite(STDERR, $error->getMessage() . PHP_EOL);
+
+    exit(2);
 }
 
 fwrite(STDOUT, "Admin created.\n");

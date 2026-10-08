@@ -309,6 +309,24 @@ final class HttpFlowTest extends TestCase
         }
     }
 
+    public function testLogoutRevokesSessionEvenWhenAccountLookupFails(): void
+    {
+        $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
+        $this->identity->signIn($account);
+        $token = $this->csrf->token();
+        $this->pdo->exec('DROP TABLE accounts');
+
+        try {
+            $this->accountPages->logoutSubmit(new Request('POST', '/logout', post: [
+                'csrf_token' => $token,
+            ]));
+            self::fail('Account lookup failure must remain visible to the HTTP error boundary.');
+        } catch (PDOException) {
+            self::assertSame([], $_SESSION);
+            self::assertNotSame(PHP_SESSION_ACTIVE, session_status());
+        }
+    }
+
     public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails(): void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');

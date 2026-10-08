@@ -35,6 +35,33 @@ final class PasswordPolicyTest extends AccountsTestCase
         }
     }
 
+    public function testNulBytePasswordIsRejectedAcrossRegistrationAndAdminCreation(): void
+    {
+        $password = "safe\0unsafe";
+
+        try {
+            (new Register($this->accounts, $this->clock))->register('alice', $password);
+            self::fail('Registration must reject NUL bytes before bcrypt receives the password.');
+        } catch (RegistrationRejected $exception) {
+            self::assertStringContainsString('NUL', $exception->getMessage());
+        }
+
+        try {
+            (new CreateAdmin($this->accounts, $this->clock))->create('admin', $password);
+            self::fail('Admin creation must apply the same password policy.');
+        } catch (PasswordRejected $exception) {
+            self::assertStringContainsString('NUL', $exception->getMessage());
+        }
+
+        self::assertNull($this->accounts->authenticate('alice', $password));
+        $count = $this->pdo->query('SELECT count(*) FROM accounts');
+        self::assertNotFalse($count);
+        self::assertSame(0, (int) $count->fetchColumn());
+
+        (new Register($this->accounts, $this->clock))->register('alice', 'valid-password');
+        self::assertNull($this->accounts->authenticate('alice', $password));
+    }
+
     public function testDirectAccountAndAdminCreationEnforceIdenticalPasswordBoundary(): void
     {
         $password = str_repeat('b', 73);
