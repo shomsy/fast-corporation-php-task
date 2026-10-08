@@ -1,10 +1,47 @@
 # Implementation Plan
 
-Status: SUBMISSION READY — all local acceptance gates and exact-commit remote CI PASS
+Status: RELEASE CANDIDATE — local functional/security/quality gates PASS; exact-final-SHA GitHub CI required before submission
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
 Repository language: English only
+
+## Local release-candidate verification (2026-10-08)
+
+Earlier acceptance entries below are historical and describe earlier commits; do not
+reuse that CI result as proof for this hardening candidate.
+
+- Source base before hardening: local/remote `main` at `4233b83`.
+- Original user task: registration, login/logout, CowOffer, Downloads,
+  administrator Statistics and Reports are implemented.
+- Session security: explicit bcrypt 72-byte upper limit; sign-in session ID
+  rotation; strict rejection of unknown IDs; server-side idle/absolute expiry;
+  logout cookie invalidation; live role-downgrade authorization enforcement;
+  Secure/HttpOnly/SameSite-Lax cookie configuration tests.
+- Account lifecycle orchestration owns registration+activity transaction,
+  failure-safe login recording, and irrevocable logout even if logging fails.
+- Unexpected HTTP/PDO failure: safe generic 500 response, underlying exception
+  retained in server log, real HTTP failure injected and tested.
+- 405 response includes correct Allow header; UI copy updated.
+- Bounded Statistics (50/page) and Reports (30 active UTC dates); SQLite query
+  plan tests verify index use on the relevant queries.
+- Owner-local views, module exports, statically enforced public surface and
+  Deptrac rules remain under **Governance PILOT**, not globally validated.
+- Negative mutation proof: insert an unexported Accounts type import into a
+  temporary CowOffer source copy; PHPUnit fails as required (exit 1).
+- Final local `composer quality`: **PASS** — strict PSR-4, Composer validation,
+  dependency audit (no advisories), PHP-CS-Fixer, PHPStan max (0 errors),
+  Deptrac (0 violations, 0 uncovered) and **PHPUnit 73 tests/644 assertions**.
+- Live PHP HTTP/CLI acceptance: **PASS** including fresh/idempotent migrations,
+  admin CLI, user/admin journeys, HTTP 405 and deliberately failed PDO startup.
+- GitHub Actions is configured to execute `tests/Flow/live_smoke.py` for
+  PHP 8.3, 8.4 and 8.5; **remote CI for the new final commit remains to be verified**.
+- Internet-facing deployment is *outside* the interview demo's accepted scope.
+  It requires real HTTPS, `SESSION_COOKIE_SECURE=1`, reverse-proxy/edge login
+  rate limiting, request-size bounds and operational log routing. These are
+  explicit residual deployment risks, not claimed PASS.
+- Submission-ready declaration requires remote CI on the exact delivered SHA
+  and clean/synchronized `main` after the push; local PASS alone is insufficient.
 
 ## Goal
 

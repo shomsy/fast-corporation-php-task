@@ -6,6 +6,7 @@ namespace InterviewTask\Accounts\Register;
 
 use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\PasswordRejected;
 use Psr\Clock\ClockInterface;
 
 final readonly class Register
@@ -23,6 +24,10 @@ final readonly class Register
             throw new RegistrationRejected('Username and password are required.');
         }
 
-        return $this->accounts->createUser($username, $password, $this->clock->now());
+        try {
+            return $this->accounts->createUser($username, $password, $this->clock->now());
+        } catch (PasswordRejected $e) {
+            throw new RegistrationRejected($e->getMessage(), previous: $e);
+        }
     }
 }

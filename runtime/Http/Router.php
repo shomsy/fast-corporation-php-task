@@ -44,10 +44,18 @@ final class Router
             return $handler($request);
         }
 
-        foreach ($this->routes as $routesForMethod) {
+        $allowed = [];
+        foreach ($this->routes as $method => $routesForMethod) {
             if (array_key_exists($request->path(), $routesForMethod)) {
-                return Response::text('Method Not Allowed', 405);
+                $allowed[] = $method;
             }
+        }
+
+        if ($allowed !== []) {
+            return new Response('Method Not Allowed', 405, [
+                'Content-Type' => 'text/plain; charset=UTF-8',
+                'Allow' => implode(', ', $allowed),
+            ]);
         }
 
         return Response::text('Not Found', 404);

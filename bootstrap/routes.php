@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\Login\Login;
+use InterviewTask\Accounts\Logout\Logout;
+use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
@@ -17,6 +21,7 @@ use InterviewTask\Bootstrap\Http\HtmlPage;
 use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
+use InterviewTask\Infrastructure\Database\Transaction;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Templating\Renderer;
@@ -32,14 +37,22 @@ return static function (Router $router) use ($config): void {
     $pdo = SqliteConnection::open($config['databasePath']);
     $accounts = new Accounts($pdo);
     $session = new PhpSession(secureCookie: $config['sessionCookieSecure']);
-    $identity = new SessionIdentity($session, $accounts);
-    $csrf = new Csrf($session);
     $clock = new SystemClock();
+    $identity = new SessionIdentity($session, $accounts, $clock);
+    $csrf = new Csrf($session);
     $html = new HtmlPage(new Renderer());
     $activity = new ActivityLog($pdo, $clock);
     $signedIn = new RequireSignedIn($identity);
 
-    $accountPages = new AccountPages($pdo, $accounts, $identity, $csrf, $html, $clock, $activity);
+    $lifecycle = new AccountLifecycle(
+        new Register($accounts, $clock),
+        new Login($accounts, $identity),
+        new Logout($identity),
+        $identity,
+        $activity,
+        new Transaction($pdo),
+    );
+    $accountPages = new AccountPages($lifecycle, $identity, $csrf, $html);
     $cowPages = new CowOfferPages(new CowOffer($activity), $signedIn, $csrf, $html);
     $downloadPages = new DownloadPages(
         new DownloadFile($activity, $config['root'] . '/assets/sample.exe'),
@@ -66,5 +79,5 @@ return static function (Router $router) use ($config): void {
     $router->add('GET', '/page-b', static fn(): Response => $downloadPages->pageB());
     $router->add('POST', '/download', static fn(Request $request): Response => $downloadPages->download($request));
     $router->add('GET', '/statistics', static fn(Request $request): Response => $activityPages->statisticsPage($request));
-    $router->add('GET', '/reports', static fn(): Response => $activityPages->reportsPage());
+    $router->add('GET', '/reports', static fn(Request $request): Response => $activityPages->reportsPage($request));
 };

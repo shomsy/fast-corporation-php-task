@@ -1,5 +1,5 @@
 <?php
-/** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target:?string,occurred_at:string}>,date:string,user:string,action:string,error:string} $data */
+/** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target:?string,occurred_at:string}>,date:string,user:string,action:string,error:string,page:int,hasNext:bool} $data */
 /** @var callable(mixed): string $escape */
 ?>
 <!doctype html>
@@ -25,4 +25,12 @@
 <tr><td><?= $escape($event['occurred_at']) ?></td><td><?= $escape($event['actor_label']) ?></td><td><?= $escape($event['action']) ?></td><td><?= $escape($event['target']) ?></td></tr>
 <?php endforeach; ?>
 <?php if ($data['events'] === []): ?><tr><td colspan="4">No matching activity events.</td></tr><?php endif; ?>
-</tbody></table></div></main></body></html>
+</tbody></table></div>
+<?php
+$filters = array_filter(['date' => $data['date'], 'user' => $data['user'], 'action' => $data['action']], static fn(string $value): bool => $value !== '');
+?>
+<nav aria-label="Activity pages">
+<?php if ($data['page'] > 1): ?><a href="/statistics?<?= $escape(http_build_query($filters + ['page' => $data['page'] - 1])) ?>">← Previous</a><?php endif; ?>
+<span>Page <?= $escape($data['page']) ?></span>
+<?php if ($data['hasNext']): ?><a href="/statistics?<?= $escape(http_build_query($filters + ['page' => $data['page'] + 1])) ?>">Next →</a><?php endif; ?>
+</nav></main></body></html>

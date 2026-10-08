@@ -33,9 +33,15 @@ final readonly class ActivityPages
         $date = $this->optionalInput($request->query('date'));
         $user = $this->optionalInput($request->query('user'));
         $action = $this->optionalInput($request->query('action'));
+        $pageValue = $this->optionalInput($request->query('page')) ?? '1';
+        $page = 1;
 
         try {
-            $events = $this->statistics->events($date, $user, $action);
+            if (!preg_match('/^[1-9][0-9]{0,3}$/', $pageValue)) {
+                throw new InvalidArgumentException('Invalid page.');
+            }
+            $page = (int) $pageValue;
+            $events = $this->statistics->events($date, $user, $action, $page);
             $error = '';
             $status = 200;
         } catch (InvalidArgumentException $e) {
@@ -44,23 +50,36 @@ final readonly class ActivityPages
             $status = 422;
         }
 
-        return $this->html->render('bootstrap/views/statistics.php', [
+        return $this->html->render('src/ActivityTracking/statistics.php', [
             'events' => $events, 'date' => $date ?? '',
             'user' => $user ?? '', 'action' => $action ?? '',
-            'error' => $error,
+            'error' => $error, 'page' => $page,
+            'hasNext' => count($events) === Statistics::PAGE_SIZE,
         ], $status);
     }
 
-    public function reportsPage(): Response
+    public function reportsPage(?Request $request = null): Response
     {
         $denied = $this->requireAdministrator();
         if ($denied !== null) {
             return $denied;
         }
 
-        return $this->html->render('bootstrap/views/reports.php', [
-            'daily' => $this->reports->dailyCounts(),
-        ]);
+        $from = $request === null ? null : $this->optionalInput($request->query('from'));
+        $to = $request === null ? null : $this->optionalInput($request->query('to'));
+        try {
+            $daily = $this->reports->dailyCounts($from, $to);
+            $error = '';
+            $status = 200;
+        } catch (InvalidArgumentException $e) {
+            $daily = [];
+            $error = $e->getMessage();
+            $status = 422;
+        }
+
+        return $this->html->render('src/ActivityTracking/reports.php', [
+            'daily' => $daily, 'from' => $from ?? '', 'to' => $to ?? '', 'error' => $error,
+        ], $status);
     }
 
     private function requireAdministrator(): ?Response

@@ -9,19 +9,22 @@ use InvalidArgumentException;
 use PDO;
 use RuntimeException;
 
-/**
- * Filtered, newest-first activity history. The label is a historical snapshot,
- * not a join against Accounts' private storage.
- */
+/** Stable, bounded and newest-first activity history. */
 final readonly class Statistics
 {
+    public const int PAGE_SIZE = 50;
+
     public function __construct(private PDO $pdo) {}
 
     /**
      * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>
      */
-    public function events(?string $date = null, ?string $user = null, ?string $action = null): array
+    public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
     {
+        if ($page < 1 || $page > 1000) {
+            throw new InvalidArgumentException('Invalid page.');
+        }
+
         $where = [];
         $parameters = [];
 
@@ -32,8 +35,7 @@ final readonly class Statistics
                 throw new InvalidArgumentException('Invalid date. Expected YYYY-MM-DD.');
             }
 
-            // Timestamps are persisted as UTC ISO 8601 strings.
-            $where[] = "substr(occurred_at, 1, 10) = :date";
+            $where[] = 'substr(occurred_at, 1, 10) = :date';
             $parameters['date'] = $date;
         }
 
@@ -59,7 +61,7 @@ final readonly class Statistics
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
 
-        $sql .= ' ORDER BY occurred_at DESC, id DESC';
+        $sql .= ' ORDER BY occurred_at DESC, id DESC LIMIT :limit OFFSET :offset';
 
         $statement = $this->pdo->prepare($sql);
 
@@ -67,7 +69,12 @@ final readonly class Statistics
             throw new RuntimeException('Unable to prepare activity statistics query.');
         }
 
-        $statement->execute($parameters);
+        foreach ($parameters as $key => $value) {
+            $statement->bindValue(':' . $key, $value, PDO::PARAM_STR);
+        }
+        $statement->bindValue(':limit', self::PAGE_SIZE, PDO::PARAM_INT);
+        $statement->bindValue(':offset', ($page - 1) * self::PAGE_SIZE, PDO::PARAM_INT);
+        $statement->execute();
 
         /** @var list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);

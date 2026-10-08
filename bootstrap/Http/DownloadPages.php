@@ -31,7 +31,7 @@ final readonly class DownloadPages
 
         $this->downloads->view($account->id, $account->username);
 
-        return $this->html->render('bootstrap/views/page-b.php', [
+        return $this->html->render('src/Downloads/page-b.php', [
             'csrfToken' => $this->csrf->token(),
         ]);
     }

@@ -55,4 +55,20 @@ final class AuthorizationTest extends AccountsTestCase
 
         self::assertSame(Role::Admin, $guard->account()->role);
     }
+    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession(): void
+    {
+        $identity = new SessionIdentity($this->session(), $this->accounts, $this->clock);
+        $guard = new RequireAdmin($identity);
+        $admin = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'password');
+        $identity->signIn($admin);
+        self::assertSame(Role::Admin, $guard->account()->role);
+
+        $update = $this->pdo->prepare('UPDATE accounts SET role = :role WHERE id = :id');
+        self::assertNotFalse($update);
+        self::assertTrue($update->execute(['role' => Role::User->value, 'id' => $admin->id]));
+
+        self::assertSame(Role::User, $identity->current()?->role);
+        $this->expectException(AccessDenied::class);
+        $guard->account();
+    }
 }

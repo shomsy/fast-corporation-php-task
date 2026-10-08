@@ -30,7 +30,7 @@ final readonly class CowOfferPages
 
         $this->cow->view($account->id, $account->username);
 
-        return $this->html->render('bootstrap/views/page-a.php', [
+        return $this->html->render('src/CowOffer/page-a.php', [
             'csrfToken' => $this->csrf->token(), 'bought' => false,
         ]);
     }
@@ -47,7 +47,7 @@ final readonly class CowOfferPages
 
         $result = $this->cow->buy($account->id, $account->username);
 
-        return $this->html->render('bootstrap/views/page-a.php', [
+        return $this->html->render('src/CowOffer/page-a.php', [
             'csrfToken' => $this->csrf->token(), 'bought' => $result === 'thankYou',
         ]);
     }

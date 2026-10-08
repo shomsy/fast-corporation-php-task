@@ -19,6 +19,9 @@ final readonly class PhpSession
             return;
         }
 
+        if (ini_set('session.use_strict_mode', '1') === false) {
+            throw new RuntimeException('Unable to enforce strict session mode.');
+        }
         session_name($this->name);
 
         if ((bool) ini_get('session.use_cookies')) {
@@ -72,6 +75,18 @@ final readonly class PhpSession
         }
 
         $_SESSION = [];
+
+        if ((bool) ini_get('session.use_cookies') && !headers_sent()) {
+            $parameters = session_get_cookie_params();
+            setcookie($this->name, '', [
+                'expires' => time() - 3600,
+                'path' => $parameters['path'],
+                'domain' => $parameters['domain'],
+                'secure' => $parameters['secure'],
+                'httponly' => $parameters['httponly'],
+                'samesite' => $parameters['samesite'],
+            ]);
+        }
 
         if (!session_destroy()) {
             throw new RuntimeException('Unable to destroy session.');

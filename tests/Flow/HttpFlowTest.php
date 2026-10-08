@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\Flow;
 
+use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
+use InterviewTask\Accounts\Login\Login;
+use InterviewTask\Accounts\Logout\Logout;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
@@ -23,6 +26,7 @@ use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
+use InterviewTask\Infrastructure\Database\Transaction;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Templating\Renderer;
@@ -67,15 +71,15 @@ final class HttpFlowTest extends TestCase
         $activity = new ActivityLog($this->pdo, $this->clock);
         $html = new HtmlPage(new Renderer());
         $signedIn = new RequireSignedIn($this->identity);
-        $this->accountPages = new AccountPages(
-            $this->pdo,
-            $this->accounts,
+        $lifecycle = new AccountLifecycle(
+            new Register($this->accounts, $this->clock),
+            new Login($this->accounts, $this->identity),
+            new Logout($this->identity),
             $this->identity,
-            $this->csrf,
-            $html,
-            $this->clock,
             $activity,
+            new Transaction($this->pdo),
         );
+        $this->accountPages = new AccountPages($lifecycle, $this->identity, $this->csrf, $html);
         $this->cowPages = new CowOfferPages(
             new CowOffer($activity),
             $signedIn,
@@ -339,6 +343,28 @@ final class HttpFlowTest extends TestCase
         ]));
         self::assertSame('/login', $buy->headers()['Location']);
         self::assertSame('/login', $download->headers()['Location']);
+
+        $statement = $this->pdo->query('SELECT COUNT(*) FROM activity_events');
+        self::assertNotFalse($statement);
+        self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions(): void
+    {
+        $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
+        $this->identity->signIn($account);
+        $csrf = $this->csrf->token();
+        $_SESSION['last_activity_at'] = time() - 1801;
+
+        self::assertSame('/login', $this->cowPages->pageA()->headers()['Location']);
+        self::assertSame('/login', $this->downloadPages->pageB()->headers()['Location']);
+        self::assertSame('/login', $this->cowPages->buyCow(new Request('POST', '/buy-cow', post: [
+            'csrf_token' => $csrf,
+        ]))->headers()['Location']);
+        self::assertSame('/login', $this->downloadPages->download(new Request('POST', '/download', post: [
+            'csrf_token' => $csrf,
+        ]))->headers()['Location']);
+        self::assertNull($this->identity->current());
 
         $statement = $this->pdo->query('SELECT COUNT(*) FROM activity_events');
         self::assertNotFalse($statement);

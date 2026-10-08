@@ -4,43 +4,24 @@ declare(strict_types=1);
 
 namespace InterviewTask\Bootstrap\Http;
 
-use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Login\InvalidCredentials;
-use InterviewTask\Accounts\Login\Login;
-use InterviewTask\Accounts\Logout\Logout;
-use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Accounts\UsernameTaken;
-use InterviewTask\ActivityTracking\ActivityLog;
-use InterviewTask\Infrastructure\Database\Transaction;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
-use PDO;
-use Psr\Clock\ClockInterface;
-use Throwable;
 
 /** HTTP adaptation for the Accounts owner's authentication lifecycle. */
 final readonly class AccountPages
 {
-    private Register $register;
-    private Login $login;
-    private Logout $logout;
-
     public function __construct(
-        private PDO $pdo,
-        Accounts $accounts,
+        private AccountLifecycle $lifecycle,
         private SessionIdentity $identity,
         private Csrf $csrf,
         private HtmlPage $html,
-        ClockInterface $clock,
-        private ActivityLog $activity,
-    ) {
-        $this->register = new Register($accounts, $clock);
-        $this->login = new Login($accounts, $identity);
-        $this->logout = new Logout($identity);
-    }
+    ) {}
 
     public function registerForm(): Response
     {
@@ -59,10 +40,7 @@ final readonly class AccountPages
         $password = $this->stringInput($request->post('password'));
 
         try {
-            (new Transaction($this->pdo))->run(function () use ($username, $password): void {
-                $account = $this->register->register($username, $password);
-                $this->activity->recordRegistration($account->id, $account->username);
-            });
+            $this->lifecycle->register($username, $password);
 
             return Response::redirect('/login?registered=1');
         } catch (UsernameTaken) {
@@ -93,7 +71,7 @@ final readonly class AccountPages
         }
 
         try {
-            $account = $this->login->login(
+            $this->lifecycle->login(
                 $this->stringInput($request->post('username')),
                 $this->stringInput($request->post('password')),
             );
@@ -102,13 +80,6 @@ final readonly class AccountPages
                 'csrfToken' => $this->csrf->token(),
                 'registered' => false, 'error' => 'Invalid username or password.',
             ], 401);
-        }
-
-        try {
-            $this->activity->recordLogin($account->id, $account->username);
-        } catch (Throwable $error) {
-            $this->identity->signOut();
-            throw $error;
         }
 
         return Response::redirect('/');
@@ -120,15 +91,7 @@ final readonly class AccountPages
             return Response::text('Forbidden', 403);
         }
 
-        $account = $this->identity->current();
-
-        try {
-            if ($account !== null) {
-                $this->activity->recordLogout($account->id, $account->username);
-            }
-        } finally {
-            $this->logout->logout();
-        }
+        $this->lifecycle->logout();
 
         return Response::redirect('/login');
     }

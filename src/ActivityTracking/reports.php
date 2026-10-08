@@ -1,5 +1,5 @@
 <?php
-/** @var array{daily: list<array{date:string,page_a_views:int,page_b_views:int,buy_cow_clicks:int,download_clicks:int}>} $data */
+/** @var array{daily: list<array{date:string,page_a_views:int,page_b_views:int,buy_cow_clicks:int,download_clicks:int}>,from:string,to:string,error:string} $data */
 /** @var callable(mixed): string $escape */
 $daily = $data['daily'];
 $series = [
@@ -24,7 +24,13 @@ $yFor = static fn(int $value): float => 265 - $value * 215 / $max;
 <style>body{font:16px/1.5 system-ui,sans-serif;max-width:1080px;margin:4vh auto;padding:0 24px;color:#17202a}a{color:#1542a5}svg{width:100%;height:auto;border:1px solid #d8dee4;border-radius:8px}table{width:100%;border-collapse:collapse}td,th{padding:10px;border-bottom:1px solid #d8dee4;text-align:right}th:first-child,td:first-child{text-align:left}.legend{display:flex;gap:16px;flex-wrap:wrap}.table-wrap{overflow-x:auto}</style>
 </head>
 <body><main><p><a href="/">← Home</a> · <a href="/statistics">Statistics</a></p><h1>Daily activity reports</h1>
-<p>All dates are UTC. The chart and table use the same daily dataset.</p>
+<p>All dates are UTC. The chart and table use the same daily dataset (up to <?= \InterviewTask\ActivityTracking\DailyReports::MAX_DAYS ?> recent active dates).</p>
+<form method="get" action="/reports">
+<label>From (UTC) <input name="from" placeholder="YYYY-MM-DD" value="<?= $escape($data['from']) ?>"></label>
+<label>To (UTC) <input name="to" placeholder="YYYY-MM-DD" value="<?= $escape($data['to']) ?>"></label>
+<button type="submit">Filter</button> <a href="/reports">Clear</a>
+</form>
+<?php if ($data['error'] !== ''): ?><p role="alert"><?= $escape($data['error']) ?></p><?php endif; ?>
 <?php if ($daily === []): ?>
 <p>No reportable activity yet.</p>
 <?php else: ?>

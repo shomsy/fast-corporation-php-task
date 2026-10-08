@@ -32,6 +32,19 @@ final class RouterTest extends TestCase
         $response = $router->dispatch(new Request('GET', '/submit'));
 
         self::assertSame(405, $response->status());
+        self::assertSame('POST', $response->headers()['Allow']);
+    }
+
+    public function testAllowListsAllRegisteredMethods(): void
+    {
+        $router = new Router();
+        $router->add('POST', '/submit', static fn(): Response => Response::text('ok'));
+        $router->add('GET', '/submit', static fn(): Response => Response::text('ok'));
+
+        $response = $router->dispatch(new Request('DELETE', '/submit'));
+
+        self::assertSame(405, $response->status());
+        self::assertSame('POST, GET', $response->headers()['Allow']);
     }
 
     public function testReturnsNotFoundForUnknownPath(): void

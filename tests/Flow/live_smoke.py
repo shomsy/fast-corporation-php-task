@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DOCKER_PHP = Path("/usr/local/bin/php8.5-docker").exists()
 
 
-def php_command(tmp, arguments, port=None):
+def php_command(tmp, arguments, port=None, db_path=None):
     """Use native PHP normally, or Docker with explicit DB_PATH when PHP is wrapped."""
     if not DOCKER_PHP:
         return ["php", *arguments]
@@ -25,7 +25,7 @@ def php_command(tmp, arguments, port=None):
         "-v", str(ROOT) + ":" + str(ROOT),
         "-v", tmp + ":" + tmp,
         "-w", str(ROOT),
-        "-e", "DB_PATH=" + str(Path(tmp) / "review.sqlite"),
+        "-e", "DB_PATH=" + str(db_path if db_path is not None else Path(tmp) / "review.sqlite"),
         "-e", "SESSION_COOKIE_SECURE=0",
     ]
     if port is not None:
@@ -138,6 +138,12 @@ def main():
             status, _, body = request(admin_user, base, "/reports")
             assert status == 200
             assert b"<svg" in body and b"<polyline" in body and b"Daily totals" in body
+            status, headers, body = request(user, base, "/logout")
+            assert status == 405 and headers.get("Allow") == "POST"
+            assert b"Method Not Allowed" in body
+
+            status, headers, body = request(user, base, "/page-a", {})
+            assert status == 405 and headers.get("Allow") == "GET"
             print("LIVE ACCEPTANCE: PASS")
             print("Fresh and idempotent migrations: PASS")
             print("CLI admin bootstrap: PASS")
@@ -150,6 +156,50 @@ def main():
             except subprocess.TimeoutExpired:
                 server.kill()
                 server.wait()
+
+
+        # Exercise actual front-controller behavior when PDO fails before routing.
+        failure_env = env.copy()
+        failure_env["DB_PATH"] = tmp
+        failure_log = Path(tmp) / "failure.log"
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            error_port = listener.getsockname()[1]
+        error_base = "http://127.0.0.1:" + str(error_port)
+        with failure_log.open("wb") as diagnostic:
+            broken_server = subprocess.Popen(
+                php_command(tmp, [
+                    "-S", ("0.0.0.0:" if DOCKER_PHP else "127.0.0.1:") + str(error_port),
+                    "-t", "public", "public/index.php",
+                ], error_port, db_path=tmp),
+                cwd=ROOT, env=failure_env,
+                stdout=subprocess.DEVNULL, stderr=diagnostic)
+            try:
+                for attempt in range(70):
+                    try:
+                        error_status, error_headers, error_body = request(
+                            client(), error_base, "/register")
+                        break
+                    except (URLError, TimeoutError, ConnectionResetError, ConnectionAbortedError):
+                        if attempt == 69 or broken_server.poll() is not None:
+                            raise AssertionError(
+                                "Failure server was not ready; diagnostics: "
+                                + failure_log.read_text(errors="replace")
+                            )
+                        time.sleep(0.08)
+                assert error_status == 500
+                assert error_body == b"Internal Server Error", "Server details exposed to client"
+                assert error_headers.get("Cache-Control") == "no-store"
+                assert error_headers.get("X-Content-Type-Options") == "nosniff"
+            finally:
+                broken_server.terminate()
+                try:
+                    broken_server.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    broken_server.kill()
+                    broken_server.wait()
+        assert "PDOException" in failure_log.read_text(errors="replace")
+        print("Safe 500 on PDO initialization failure: PASS")
 
 
 if __name__ == "__main__":

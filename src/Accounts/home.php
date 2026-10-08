@@ -23,7 +23,7 @@
                 <a href="/reports">Reports</a>
             <?php endif; ?>
         </nav>
-        <p>Pages become available as their task phases are implemented.</p>
+        <p>Use Page A to try Buy a cow and Page B to download the sample file. These actions are recorded in activity history.</p>
         <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="<?= $escape($data['csrfToken']) ?>">
             <button type="submit">Sign out</button>

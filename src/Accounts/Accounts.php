@@ -25,6 +25,10 @@ final readonly class Accounts
 
     public function authenticate(string $username, string $password): ?Account
     {
+        if (strlen($password) > 72) {
+            return null;
+        }
+
         $statement = $this->pdo->prepare(
             'SELECT id, username, password_hash, role, created_at FROM accounts WHERE username = :username LIMIT 1',
         );
@@ -44,8 +48,8 @@ final readonly class Accounts
 
         $account = $this->accountFromRow($row);
 
-        if (password_needs_rehash($hash, PASSWORD_DEFAULT)) {
-            $rehash = password_hash($password, PASSWORD_DEFAULT);
+        if (password_needs_rehash($hash, PASSWORD_BCRYPT)) {
+            $rehash = password_hash($password, PASSWORD_BCRYPT);
             $update = $this->pdo->prepare('UPDATE accounts SET password_hash = :hash WHERE id = :id');
             $update->execute(['hash' => $rehash, 'id' => $account->id]);
         }
@@ -75,7 +79,12 @@ final readonly class Accounts
             throw new RuntimeException('Account creation requires non-empty username and password.');
         }
 
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        // Bcrypt silently ignores bytes after 72. Reject rather than truncate credentials.
+        if (strlen($password) > 72) {
+            throw new PasswordRejected('Password must not exceed 72 bytes.');
+        }
+
+        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
         try {
             $statement = $this->pdo->prepare(

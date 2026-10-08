@@ -40,3 +40,6 @@ jobs:
 
       - name: Run quality suite
         run: composer quality
+
+      - name: Live HTTP and CLI acceptance
+        run: python3 tests/Flow/live_smoke.py

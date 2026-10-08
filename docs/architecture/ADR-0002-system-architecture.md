@@ -11,7 +11,7 @@ Governance: 1.7.1
 - Registration, login, logout, Page A + Buy a cow, Page B + Download, Statistics and Reports are required.
 - Activity actions are registration, login, logout, view-page and button-click.
 - Statistics filter by date/user/action; Reports aggregate four daily metrics.
-- No business implementation exists yet.
+- The business implementation is complete, exercised by PHPUnit and HTTP smoke, with follow-up security hardening in progress.
 
 ## Inferences
 
@@ -35,7 +35,7 @@ One deployable modular monolith with four business owners:
 
 Dependency direction is `Accounts -> ActivityTracking`, `CowOffer -> ActivityTracking`, `Downloads -> ActivityTracking`. ActivityTracking has no business-owner dependency and stores actor id plus a historical actor-label snapshot.
 
-`runtime/` contains neutral driving execution only. `infrastructure/` contains neutral driven resource mechanisms. Business schema remains owner-local. `module.php` becomes each owner's authoritative machine-checkable public surface when behavior code exists.
+`runtime/` contains neutral driving execution only. `infrastructure/` contains neutral driven resource mechanisms. Business schema remains owner-local. `module.php` is each owner's public surface; `tests/Architecture/PublicSurfaceTest.php` checks cross-owner and HTTP-adapter imports. The explicit composition root is exempt. This checks imported names, not every possible dynamic reference.
 
 Do not create `Owner/`, `Domain/`, `Features/`, `Capabilities/` or `Implementations/` merely to mirror governance vocabulary. No CQRS, event sourcing, broker, queue, cache, ORM, microservices or DI container without a concrete signal.
 
@@ -55,4 +55,4 @@ Register/Login/Logout touching identity and tracking is a Flow fact, not proof o
 
 Change/Invariant/Knowledge-hiding tests; owner-surface tests; authorization/session tests; DB constraints/table ownership; Deptrac; clean install; PHPUnit/PHPStan/style/CI.
 
-GOVERNANCE: NOT VERIFIED — accepted architecture, no implementation evidence yet.
+GOVERNANCE: PILOT — dependency graph, public-import test and behavior evidence exist; this does not claim whole-Governance VALIDATED status. CowOffer owner remains REVISIT if product meaning changes.

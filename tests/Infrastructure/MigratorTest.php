@@ -25,6 +25,7 @@ final class MigratorTest extends TestCase
             [
                 'Accounts:001_create_accounts.sql',
                 'ActivityTracking:001_create_activity_events.sql',
+                'ActivityTracking:002_activity_query_indexes.sql',
             ],
             $migrator->migrate(),
         );

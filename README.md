@@ -38,8 +38,8 @@ The default database is `var/database/app.sqlite`; `.env` and local database fil
 | `/login`, `/logout` | Public / signed-in | Password authentication and session revocation |
 | `/page-a` | Signed-in user | Records a page view; **Buy a cow** replaces the button with `thankYou` |
 | `/page-b` | Signed-in user | Records a page view; downloads the fixed `sample.exe` |
-| `/statistics` | Admin only | Event history with combinable UTC date, user and action filters |
-| `/reports` | Admin only | Daily graph and table, both from one four-metric aggregate |
+| `/statistics` | Admin only | Paginated activity history (50/page) with combinable UTC date, user and action filters |
+| `/reports` | Admin only | Bounded daily graph and table (latest 30 active dates), with optional UTC date range |
 
 Statistics includes registration, login, logout, page views and button clicks. Reports count Page A views, Page B views, Buy a cow clicks and Download clicks, grouped by **UTC date**.
 
@@ -47,9 +47,9 @@ The button state on Page A is intentionally transient; a fresh GET shows it agai
 
 ## Security and data correctness
 
-Passwords use PHP's `password_hash`/`password_verify`. Sessions regenerate their ID upon successful authentication. Cookies are HttpOnly with SameSite=Lax; set `SESSION_COOKIE_SECURE=1` and serve the application over HTTPS outside local development. All state-changing HTTP forms require a session-backed CSRF token, and access is checked server-side. Templates escape HTML output, SQL filters use prepared statements, and downloads use a fixed server-side path rather than input from the request.
+Passwords use explicit bcrypt, with a strict 72-**byte** maximum at user/admin creation and login (bcrypt would silently truncate longer inputs). Existing bcrypt accounts with historically overlong secrets should reset passwords. Sessions regenerate their ID upon successful authentication, require strict session IDs, expire after 30 minutes idle or 12 hours absolute lifetime, and invalidate the cookie at logout. Cookies are HttpOnly with SameSite=Lax; set `SESSION_COOKIE_SECURE=1` and serve the application over HTTPS outside local development. All state-changing HTTP forms require a session-backed CSRF token, and access is checked server-side. Templates escape HTML output, SQL filters use prepared statements, and downloads use a fixed server-side path rather than input from the request.
 
-An append-only activity history stores account ID, historical username snapshot, action, optional target and UTC timestamp. Account registration and its event are committed in one local database transaction. Logout invalidates the session even if activity recording fails. No background infrastructure is needed.
+An append-only activity history stores account ID, historical username snapshot, action, optional target and UTC timestamp. `view-page` means an accepted authorized request (not confirmation of browser rendering); `button-click/buy-cow` means accepted authorized interaction; `button-click/download` means a server-side file was available/read and a response was prepared, not proof the client finished transfer. Account registration and its event are committed in one local database transaction. Logout invalidates the session even if activity recording fails. No background infrastructure is needed.
 
 ## Validation
 
@@ -77,3 +77,13 @@ Time-dependent use cases accept the standard `Psr\Clock\ClockInterface` (PSR-20)
 implemented locally by `Infrastructure\Time\SystemClock` in UTC. Tests inject fixed clocks;
 no bespoke clock interface or extra clock implementation package is needed.
 See `docs/PHP-STANDARDS-VNEXT.md` for the decision and acceptance evidence.
+
+## Deployment scope and remaining hardening
+
+This is a reviewer-oriented local demo. Before public internet exposure, configure HTTPS,
+`SESSION_COOKIE_SECURE=1`, an edge/reverse-proxy login rate limit and request-size limits,
+plus centralized operational logging. Per-IP/session-only throttling in PHP is not treated
+as a production brute-force boundary. Unexpected HTTP failures return a generic 500
+without leaking exception details; the server error log retains diagnostic context.
+The live HTTP smoke test deliberately triggers a PDO bootstrap failure and verifies
+the safe response. Internet deployment remains conditional on the edge controls above.

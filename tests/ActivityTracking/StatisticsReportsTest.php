@@ -130,4 +130,72 @@ final class StatisticsReportsTest extends TestCase
         self::assertSame(2, $events[1]['actor_id']);
         self::assertSame(1, $events[2]['actor_id']);
     }
+    public function testStatisticsPaginationBoundsRowsAndUsesStableOrdering(): void
+    {
+        $insert = $this->pdo->prepare(
+            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
+        );
+        self::assertNotFalse($insert);
+        for ($i = 0; $i < 105; ++$i) {
+            $insert->execute();
+        }
+
+        $first = $this->statistics->events(page: 1);
+        $second = $this->statistics->events(page: 2);
+        $third = $this->statistics->events(page: 3);
+        self::assertCount(50, $first);
+        self::assertCount(50, $second);
+        self::assertCount(15, $third);
+        self::assertGreaterThan($second[0]['id'], $first[49]['id']);
+        self::assertGreaterThan($third[0]['id'], $second[49]['id']);
+    }
+
+    public function testStatisticsRejectsOutOfBoundsPage(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->statistics->events(page: 1001);
+    }
+
+    public function testReportsDateRangeLimitsDataset(): void
+    {
+        self::assertSame([
+            ['date' => '2026-10-08', 'page_a_views' => 1, 'page_b_views' => 1, 'buy_cow_clicks' => 1, 'download_clicks' => 1],
+        ], $this->reports->dailyCounts('2026-10-08', '2026-10-08'));
+    }
+
+    public function testReportsRejectInvalidDateRange(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->reports->dailyCounts('2026-10-09', '2026-10-08');
+    }
+
+    public function testReportsBoundNumberOfDays(): void
+    {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
+        );
+        self::assertNotFalse($stmt);
+        for ($i = 1; $i <= 40; ++$i) {
+            $stmt->execute([sprintf('2026-09-%02dT01:00:00+00:00', $i)]);
+        }
+        self::assertLessThanOrEqual(DailyReports::MAX_DAYS, count($this->reports->dailyCounts()));
+    }
+
+    public function testMeasuredActivityIndexesSupportNewestFirstAndDailyGroupPlans(): void
+    {
+        $recentPlan = $this->pdo->query(
+            'EXPLAIN QUERY PLAN SELECT id FROM activity_events ORDER BY occurred_at DESC, id DESC LIMIT 50',
+        );
+        self::assertNotFalse($recentPlan);
+        $recentDetails = implode(' ', array_map(static fn(mixed $detail): string => is_string($detail) ? $detail : '', array_column($recentPlan->fetchAll(PDO::FETCH_ASSOC), 'detail')));
+        self::assertStringContainsString('idx_activity_recent', $recentDetails);
+
+        $dailyPlan = $this->pdo->query(
+            'EXPLAIN QUERY PLAN SELECT substr(occurred_at, 1, 10) AS day, COUNT(*) FROM activity_events GROUP BY substr(occurred_at, 1, 10) ORDER BY day DESC LIMIT 30',
+        );
+        self::assertNotFalse($dailyPlan);
+        $dailyDetails = implode(' ', array_map(static fn(mixed $detail): string => is_string($detail) ? $detail : '', array_column($dailyPlan->fetchAll(PDO::FETCH_ASSOC), 'detail')));
+        self::assertStringContainsString('idx_activity_day', $dailyDetails);
+    }
+
 }
