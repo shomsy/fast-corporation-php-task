@@ -11,7 +11,7 @@ Governance: 1.7.1
 - Registration, login, logout, Page A + Buy a cow, Page B + Download, Statistics and Reports are required.
 - Activity actions are registration, login, logout, view-page and button-click.
 - Statistics filter by date/user/action; Reports aggregate four daily metrics.
-- The business implementation is complete, exercised by PHPUnit and HTTP smoke, with follow-up security hardening in progress.
+- The implementation is exercised by PHPUnit and live HTTP smoke; subsequent Compass review identified owner-public-surface and pagination boundary issues and prompted targeted hardening.
 
 ## Inferences
 
@@ -35,7 +35,7 @@ One deployable modular monolith with four business owners:
 
 Dependency direction is `Accounts -> ActivityTracking`, `CowOffer -> ActivityTracking`, `Downloads -> ActivityTracking`. ActivityTracking has no business-owner dependency and stores actor id plus a historical actor-label snapshot.
 
-`runtime/` contains neutral driving execution only. `infrastructure/` contains neutral driven resource mechanisms. Business schema remains owner-local. `module.php` is each owner's public surface; `tests/Architecture/PublicSurfaceTest.php` checks cross-owner and HTTP-adapter imports. The explicit composition root is exempt. This checks imported names, not every possible dynamic reference.
+`runtime/` contains neutral driving execution only. `infrastructure/` contains neutral driven resource mechanisms. Business schema remains owner-local. `module.php` is each owner's public surface. `AccountLifecycle` alone exports tracked authentication mutations; `CurrentAccount` provides read-only session lookup, while lower-level Register/Login/Logout/SessionIdentity remain internal. `tests/Architecture/PublicSurfaceTest.php` uses a PHP AST and name resolution to check static class references across owners and HTTP adapters. `tests/Architecture/DataOwnershipTest.php` catches direct foreign-table references in literal SQL and migrations. The explicit composition root is exempt. Dynamic class names, reflection and computed SQL identifiers remain review-owned rather than machine-guaranteed.
 
 Do not create `Owner/`, `Domain/`, `Features/`, `Capabilities/` or `Implementations/` merely to mirror governance vocabulary. No CQRS, event sourcing, broker, queue, cache, ORM, microservices or DI container without a concrete signal.
 
@@ -55,4 +55,4 @@ Register/Login/Logout touching identity and tracking is a Flow fact, not proof o
 
 Change/Invariant/Knowledge-hiding tests; owner-surface tests; authorization/session tests; DB constraints/table ownership; Deptrac; clean install; PHPUnit/PHPStan/style/CI.
 
-GOVERNANCE: PILOT — dependency graph, public-import test and behavior evidence exist; this does not claim whole-Governance VALIDATED status. CowOffer owner remains REVISIT if product meaning changes.
+GOVERNANCE: PILOT — dependency graph, AST export contract, static SQL table ownership checks and behavior evidence exist; dynamic sources and global operational validation remain outside the automation. This does not claim whole-Governance VALIDATED status. CowOffer owner remains REVISIT if product meaning changes.

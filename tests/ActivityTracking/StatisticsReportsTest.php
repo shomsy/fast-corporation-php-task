@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\ActivityTracking;
 
+use DateTimeImmutable;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Infrastructure\Database\Migrator;
@@ -150,10 +151,35 @@ final class StatisticsReportsTest extends TestCase
         self::assertGreaterThan($third[0]['id'], $second[49]['id']);
     }
 
-    public function testStatisticsRejectsOutOfBoundsPage(): void
+    public function testStatisticsHasNoArbitraryFiftyThousandEventAccessCeiling(): void
     {
+        self::assertSame([], $this->statistics->events(page: 1001));
         $this->expectException(InvalidArgumentException::class);
-        $this->statistics->events(page: 1001);
+        $this->statistics->events(page: 0);
+    }
+
+    public function testHasNextIsFalseAtExactlyFiftyAndTrueAtFiftyOne(): void
+    {
+        $this->pdo->exec('DELETE FROM activity_events');
+        $insert = $this->pdo->prepare(
+            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
+        );
+        self::assertNotFalse($insert);
+        for ($i = 0; $i < Statistics::PAGE_SIZE; ++$i) {
+            self::assertTrue($insert->execute());
+        }
+
+        $first = $this->statistics->page();
+        self::assertCount(50, $first['events']);
+        self::assertFalse($first['hasNext']);
+
+        self::assertTrue($insert->execute());
+        $next = $this->statistics->page();
+        self::assertCount(50, $next['events']);
+        self::assertTrue($next['hasNext']);
+        $last = $this->statistics->page(page: 2);
+        self::assertCount(1, $last['events']);
+        self::assertFalse($last['hasNext']);
     }
 
     public function testReportsDateRangeLimitsDataset(): void
@@ -176,9 +202,42 @@ final class StatisticsReportsTest extends TestCase
         );
         self::assertNotFalse($stmt);
         for ($i = 1; $i <= 40; ++$i) {
-            $stmt->execute([sprintf('2026-09-%02dT01:00:00+00:00', $i)]);
+            $date = (new DateTimeImmutable('2026-09-01T01:00:00+00:00'))->modify('+' . ($i - 1) . ' days');
+            self::assertTrue($stmt->execute([$date->format('c')]));
         }
         self::assertLessThanOrEqual(DailyReports::MAX_DAYS, count($this->reports->dailyCounts()));
+    }
+
+    public function testRepresentativeFiveThousandEventReportIsBoundedAndIndexed(): void
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $insert = $this->pdo->prepare(
+                "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
+            );
+            self::assertNotFalse($insert);
+            $start = new DateTimeImmutable('2026-08-01T01:00:00+00:00');
+            for ($i = 0; $i < 5000; ++$i) {
+                $date = $start->modify('+' . ($i % 60) . ' days');
+                self::assertTrue($insert->execute([$date->format('c')]));
+            }
+            $this->pdo->commit();
+        } catch (\Throwable $error) {
+            $this->pdo->rollBack();
+            throw $error;
+        }
+
+        $daily = $this->reports->dailyCounts();
+        self::assertCount(DailyReports::MAX_DAYS, $daily);
+        self::assertSame('2026-09-02', $daily[0]['date']);
+        self::assertSame('2026-10-08', $daily[29]['date']);
+
+        $plan = $this->pdo->query(
+            "EXPLAIN QUERY PLAN SELECT substr(occurred_at, 1, 10) AS date, COUNT(*) FROM activity_events WHERE action = 'view-page' AND target = 'page-a' AND substr(occurred_at, 1, 10) >= '2026-09-01' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT 30",
+        );
+        self::assertNotFalse($plan);
+        $details = implode(' ', array_map(static fn(mixed $row): string => is_array($row) && isset($row['detail']) && is_string($row['detail']) ? $row['detail'] : '', $plan->fetchAll(PDO::FETCH_ASSOC)));
+        self::assertStringContainsString('idx_activity_day', $details);
     }
 
     public function testMeasuredActivityIndexesSupportNewestFirstAndDailyGroupPlans(): void

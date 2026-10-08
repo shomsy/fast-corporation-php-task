@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace InterviewTask\Bootstrap\Http;
 
 use InterviewTask\Accounts\AccessDenied;
+use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\RequireAdmin;
-use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Runtime\Http\Request;
@@ -19,7 +19,7 @@ final readonly class ActivityPages
         private Statistics $statistics,
         private DailyReports $reports,
         private RequireAdmin $admin,
-        private SessionIdentity $identity,
+        private CurrentAccount $identity,
         private HtmlPage $html,
     ) {}
 
@@ -37,15 +37,18 @@ final readonly class ActivityPages
         $page = 1;
 
         try {
-            if (!preg_match('/^[1-9][0-9]{0,3}$/', $pageValue)) {
+            if (!preg_match('/^[1-9][0-9]{0,17}$/', $pageValue)) {
                 throw new InvalidArgumentException('Invalid page.');
             }
             $page = (int) $pageValue;
-            $events = $this->statistics->events($date, $user, $action, $page);
+            $result = $this->statistics->page($date, $user, $action, $page);
+            $events = $result['events'];
+            $hasNext = $result['hasNext'];
             $error = '';
             $status = 200;
         } catch (InvalidArgumentException $e) {
             $events = [];
+            $hasNext = false;
             $error = $e->getMessage();
             $status = 422;
         }
@@ -54,7 +57,7 @@ final readonly class ActivityPages
             'events' => $events, 'date' => $date ?? '',
             'user' => $user ?? '', 'action' => $action ?? '',
             'error' => $error, 'page' => $page,
-            'hasNext' => count($events) === Statistics::PAGE_SIZE,
+            'hasNext' => $hasNext,
         ], $status);
     }
 

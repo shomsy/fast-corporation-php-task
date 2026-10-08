@@ -7,6 +7,7 @@ namespace InterviewTask\Tests\Flow;
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
+use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Logout\Logout;
 use InterviewTask\Accounts\Register\Register;
@@ -79,7 +80,7 @@ final class HttpFlowTest extends TestCase
             $activity,
             new Transaction($this->pdo),
         );
-        $this->accountPages = new AccountPages($lifecycle, $this->identity, $this->csrf, $html);
+        $this->accountPages = new AccountPages($lifecycle, new CurrentAccount($this->identity), $this->csrf, $html);
         $this->cowPages = new CowOfferPages(
             new CowOffer($activity),
             $signedIn,
@@ -91,7 +92,7 @@ final class HttpFlowTest extends TestCase
             new Statistics($this->pdo),
             new DailyReports($this->pdo),
             new RequireAdmin($this->identity),
-            $this->identity,
+            new CurrentAccount($this->identity),
             $html,
         );
     }
@@ -162,6 +163,35 @@ final class HttpFlowTest extends TestCase
             ['action' => 'button-click', 'target' => 'download'],
             ['action' => 'logout', 'target' => null],
         ], $statement->fetchAll(PDO::FETCH_ASSOC));
+    }
+
+    public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists(): void
+    {
+        $admin = (new CreateAdmin($this->accounts, $this->clock))->create('admin', 'safe-pass');
+        $this->identity->signIn($admin);
+
+        $insert = $this->pdo->prepare(
+            "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'admin', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
+        );
+        self::assertNotFalse($insert);
+        for ($i = 0; $i < Statistics::PAGE_SIZE; ++$i) {
+            self::assertTrue($insert->execute());
+        }
+
+        $exact = $this->activityPages->statisticsPage(new Request('GET', '/statistics'));
+        self::assertSame(200, $exact->status());
+        self::assertStringNotContainsString('Next →', $exact->body());
+
+        self::assertTrue($insert->execute());
+        $next = $this->activityPages->statisticsPage(new Request('GET', '/statistics'));
+        self::assertStringContainsString('Next →', $next->body());
+        $last = $this->activityPages->statisticsPage(new Request('GET', '/statistics', query: ['page' => '2']));
+        self::assertStringNotContainsString('Next →', $last->body());
+        self::assertStringContainsString('← Previous', $last->body());
+
+        $oldPage = $this->activityPages->statisticsPage(new Request('GET', '/statistics', query: ['page' => '1001']));
+        self::assertSame(200, $oldPage->status());
+        self::assertStringNotContainsString('Next →', $oldPage->body());
     }
 
     public function testAnonymousAndRegularUsersCannotReadAdminPages(): void

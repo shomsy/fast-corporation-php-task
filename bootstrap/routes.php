@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Logout\Logout;
 use InterviewTask\Accounts\Register\Register;
@@ -39,6 +40,7 @@ return static function (Router $router) use ($config): void {
     $session = new PhpSession(secureCookie: $config['sessionCookieSecure']);
     $clock = new SystemClock();
     $identity = new SessionIdentity($session, $accounts, $clock);
+    $current = new CurrentAccount($identity);
     $csrf = new Csrf($session);
     $html = new HtmlPage(new Renderer());
     $activity = new ActivityLog($pdo, $clock);
@@ -52,7 +54,7 @@ return static function (Router $router) use ($config): void {
         $activity,
         new Transaction($pdo),
     );
-    $accountPages = new AccountPages($lifecycle, $identity, $csrf, $html);
+    $accountPages = new AccountPages($lifecycle, $current, $csrf, $html);
     $cowPages = new CowOfferPages(new CowOffer($activity), $signedIn, $csrf, $html);
     $downloadPages = new DownloadPages(
         new DownloadFile($activity, $config['root'] . '/assets/sample.exe'),
@@ -64,7 +66,7 @@ return static function (Router $router) use ($config): void {
         new Statistics($pdo),
         new DailyReports($pdo),
         new RequireAdmin($identity),
-        $identity,
+        $current,
         $html,
     );
 

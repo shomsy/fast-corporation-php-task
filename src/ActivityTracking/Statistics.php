@@ -21,7 +21,17 @@ final readonly class Statistics
      */
     public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
     {
-        if ($page < 1 || $page > 1000) {
+        return $this->page($date, $user, $action, $page)['events'];
+    }
+
+    /**
+     * One extra row proves whether an older page really exists.
+     *
+     * @return array{events: list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>, hasNext: bool}
+     */
+    public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
+    {
+        if ($page < 1 || $page > intdiv(PHP_INT_MAX, self::PAGE_SIZE) - 1) {
             throw new InvalidArgumentException('Invalid page.');
         }
 
@@ -72,13 +82,16 @@ final readonly class Statistics
         foreach ($parameters as $key => $value) {
             $statement->bindValue(':' . $key, $value, PDO::PARAM_STR);
         }
-        $statement->bindValue(':limit', self::PAGE_SIZE, PDO::PARAM_INT);
+        $statement->bindValue(':limit', self::PAGE_SIZE + 1, PDO::PARAM_INT);
         $statement->bindValue(':offset', ($page - 1) * self::PAGE_SIZE, PDO::PARAM_INT);
         $statement->execute();
 
         /** @var list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}> $rows */
         $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-        return $rows;
+        return [
+            'events' => array_slice($rows, 0, self::PAGE_SIZE),
+            'hasNext' => count($rows) > self::PAGE_SIZE,
+        ];
     }
 }

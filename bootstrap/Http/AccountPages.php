@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace InterviewTask\Bootstrap\Http;
 
 use InterviewTask\Accounts\AccountLifecycle;
+use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Register\RegistrationRejected;
-use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Accounts\UsernameTaken;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
@@ -18,7 +18,7 @@ final readonly class AccountPages
 {
     public function __construct(
         private AccountLifecycle $lifecycle,
-        private SessionIdentity $identity,
+        private CurrentAccount $identity,
         private Csrf $csrf,
         private HtmlPage $html,
     ) {}

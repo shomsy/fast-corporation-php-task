@@ -1,10 +1,50 @@
 # Implementation Plan
 
-Status: SUBMISSION READY (interview scope) — local acceptance and exact application-commit GitHub Actions PASS; public deployment requires separate edge controls
+Status: COMPASS DEEP REVIEW HARDENING — latest candidate passes local quality; exact candidate SHA GitHub CI pending
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
 Repository language: English only
+
+## Compass deep-review remediation (2026-10-08)
+
+This follow-up started from synchronized main at
+2833238552aa016f80344b5399bb71f8dcba7d3f. The prior CI evidence below
+remains historical for that commit, not proof of the follow-up.
+
+- **Lifecycle public contract:** AccountLifecycle is the only exported
+  registration/login/logout mutation facade. Raw Register/Login/Logout and
+  SessionIdentity are private implementation types. CurrentAccount exposes only
+  current() to HTTP adapters; the composition root constructs internal types.
+  Owner-contract tests detect lower-level exports and auth mutation leaks.
+- **Public-surface enforcement:** parser-based static class references replace
+  regex use-only detection: grouped imports, FQCN, aliases, constructors, type
+  hints, return types, static calls, ::class, etc. Mutation forms are tested.
+  Name generation via runtime strings/reflection remains review-enforced.
+- **Statistics correctness/completeness:** 51-row lookahead gives exactly 50
+  visible events and a truthful Next; 50 and 51 boundary cases tested in
+  activity and real HTTP adapter tests. Removed the arbitrary 1,000-page
+  cutoff while guarding overflow. Deep OFFSET remains O(offset) work;
+  keyset pagination is a REVISIT trigger when representative audit size
+  demonstrates the cost.
+- **Reports:** replaced invalid calendar-date fixtures; added a representative
+  5,000-event SQLite aggregate and EXPLAIN/index check. The last 30 *active*
+  UTC dates inside optional from/to are returned. Output size is bounded;
+  processing large history is not proven bounded or production-scale.
+- **Data ownership:** AST inspection of PHP SQL string literals and owner-local
+  .sql migrations detects static direct references to another owner's table;
+  negative owner/table mutation probes added. Dynamically computed SQL/table
+  identifiers remain REVIEW-ENFORCED and are explicitly not claimed covered.
+- **Local candidate quality:** composer validate/strict PSR-4, dependency audit,
+  style, PHPStan max, Deptrac (zero violations/uncovered) and PHPUnit
+  **79 tests / 5,929 assertions PASS**; final GitHub CI for follow-up SHA
+  must be verified before calling this candidate submission-ready.
+- **Scope boundary:** no new framework, ORM, queue, Redis, CQRS or DI container.
+  This is a reviewer demo, not a publicly deployed internet service:
+  HTTPS, edge login throttling, request size, operational logging and dynamic
+  architecture references require deployment/review decisions.
+- **Governance status:** PILOT; no claim that all 192 governance obligations
+  have been production-validated by these targeted checks.
 
 ## Hardening release acceptance (2026-10-08)
 

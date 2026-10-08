@@ -4,32 +4,37 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\Architecture;
 
+use InterviewTask\Accounts\AccountLifecycle;
+use InterviewTask\Accounts\CurrentAccount;
+use PhpParser\Node\Name\FullyQualified;
+use PhpParser\Node\Stmt\GroupUse;
+use PhpParser\Node\Stmt\Use_;
+use PhpParser\NodeFinder;
+use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitor\NameResolver;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use SplFileInfo;
 
 /**
- * Enforces declared owner exports for production imports; bootstrap/routes.php
- * is deliberately the composition root and does not take part in this scan.
+ * AST-based owner export enforcement for statically named PHP class references.
+ * Explicit composition root bootstrap/routes.php and test code are excluded.
+ * Runtime class-string/reflection construction is an independently reviewed risk.
  */
 final class PublicSurfaceTest extends TestCase
 {
     /** @var list<string> */
     private const array OWNERS = ['Accounts', 'ActivityTracking', 'CowOffer', 'Downloads'];
 
-    public function testEveryCrossOwnerAndHttpAdapterImportUsesDeclaredModuleSurface(): void
+    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface(): void
     {
         $root = dirname(__DIR__, 2);
-        $exports = [];
-        foreach (self::OWNERS as $owner) {
-            $manifest = require $root . '/src/' . $owner . '/module.php';
-            self::assertIsArray($manifest);
-            self::assertIsArray($manifest['public']);
-            $exports[$owner] = $manifest['public'];
-        }
-
+        $exports = self::exports($root);
         $problems = [];
+
         foreach ([$root . '/src', $root . '/bootstrap/Http'] as $directory) {
             $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
             foreach ($iterator as $entry) {
@@ -37,10 +42,10 @@ final class PublicSurfaceTest extends TestCase
                     || $entry->getExtension() !== 'php' || $entry->getFilename() === 'module.php') {
                     continue;
                 }
+
                 $path = $entry->getPathname();
                 $contents = file_get_contents($path);
                 self::assertIsString($contents);
-
                 $currentOwner = null;
                 foreach (self::OWNERS as $owner) {
                     if (str_starts_with($path, $root . '/src/' . $owner . '/')) {
@@ -48,9 +53,10 @@ final class PublicSurfaceTest extends TestCase
                         break;
                     }
                 }
-                foreach (self::importedOwnerTypes($contents) as [$owner, $type]) {
+
+                foreach (self::referencedOwnerTypes($contents) as [$owner, $type]) {
                     if ($currentOwner !== $owner && !in_array($type, $exports[$owner], true)) {
-                        $problems[] = substr($path, strlen($root) + 1) . ' imports private ' . $type;
+                        $problems[] = substr($path, strlen($root) + 1) . ' references private ' . $type;
                     }
                 }
             }
@@ -59,33 +65,119 @@ final class PublicSurfaceTest extends TestCase
         self::assertSame([], $problems);
     }
 
-    public function testForbiddenImportMutationIsDetected(): void
+    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges(): void
     {
-        $source = "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n";
-        self::assertSame([['Accounts', 'InterviewTask\\Accounts\\PasswordRejected']], self::importedOwnerTypes($source));
-        $manifest = require dirname(__DIR__, 2) . '/src/Accounts/module.php';
-        self::assertIsArray($manifest);
-        self::assertArrayHasKey('public', $manifest);
-        self::assertIsArray($manifest['public']);
-        self::assertNotContains('InterviewTask\\Accounts\\PasswordRejected', $manifest['public']);
+        $exports = self::exports(dirname(__DIR__, 2));
+        self::assertContains(AccountLifecycle::class, $exports['Accounts']);
+        self::assertContains(CurrentAccount::class, $exports['Accounts']);
+
+        foreach ([
+            'InterviewTask\Accounts\Register\Register',
+            'InterviewTask\Accounts\Login\Login',
+            'InterviewTask\Accounts\Logout\Logout',
+            'InterviewTask\Accounts\SessionIdentity',
+            'InterviewTask\Accounts\Accounts',
+        ] as $privateType) {
+            self::assertNotContains($privateType, $exports['Accounts'], $privateType . ' is a private implementation detail');
+        }
+
+        $view = new ReflectionClass(CurrentAccount::class);
+        self::assertTrue($view->hasMethod('current'));
+        self::assertFalse($view->hasMethod('signIn'));
+        self::assertFalse($view->hasMethod('signOut'));
+    }
+
+    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes(): void
+    {
+        $cases = [
+            "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n",
+            "<?php\nnamespace Consumer;\nnew \\InterviewTask\\Accounts\\PasswordRejected();\n",
+            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\{PasswordRejected as Reject, CurrentAccount};\nnew Reject();\n",
+            "<?php\nnamespace Consumer;\nclass C { public function fail(\\InterviewTask\\Accounts\\PasswordRejected \$e): void {} }\n",
+            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::forbidden();\n",
+            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::class;\n",
+            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\PasswordRejected as P;\nclass C { public function get(): P { throw new \\Exception(); } }\n",
+        ];
+        $exports = self::exports(dirname(__DIR__, 2));
+        foreach ($cases as $source) {
+            $refs = self::referencedOwnerTypes($source);
+            self::assertContains(['Accounts', 'InterviewTask\Accounts\PasswordRejected'], $refs, $source);
+            self::assertNotContains('InterviewTask\Accounts\PasswordRejected', $exports['Accounts']);
+        }
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private static function exports(string $root): array
+    {
+        $result = [];
+        foreach (self::OWNERS as $owner) {
+            $manifest = require $root . '/src/' . $owner . '/module.php';
+            self::assertIsArray($manifest);
+            self::assertIsArray($manifest['public']);
+            /** @var list<string> $public */
+            $public = $manifest['public'];
+            $result[$owner] = $public;
+        }
+
+        return $result;
     }
 
     /**
      * @return list<array{string, string}>
      */
-    private static function importedOwnerTypes(string $source): array
+    private static function referencedOwnerTypes(string $source): array
     {
-        $result = [];
-        preg_match_all(
-            '/^use\\s+(InterviewTask\\\\(Accounts|ActivityTracking|CowOffer|Downloads)\\\\[A-Za-z0-9_\\\\]+)(?:\\s+as\\s+[A-Za-z_]+)?\\s*;/m',
-            $source,
-            $matches,
-            PREG_SET_ORDER,
-        );
-        foreach ($matches as $match) {
-            $result[] = [$match[2], $match[1]];
+        $parser = (new ParserFactory())->createForNewestSupportedVersion();
+        $parsed = $parser->parse($source);
+        if ($parsed === null) {
+            return [];
         }
 
-        return $result;
+        $traverser = new NodeTraverser(new NameResolver());
+        $nodes = $traverser->traverse($parsed);
+        $finder = new NodeFinder();
+        $names = [];
+
+        // NameResolver expands aliases in new, type hints, static calls,
+        // class constants, traits, attributes, instanceof, extends and more.
+        foreach ($finder->findInstanceOf($nodes, FullyQualified::class) as $name) {
+            $names[] = $name->toString();
+        }
+
+        // Import declarations are not necessarily rewritten by NameResolver.
+        foreach ($finder->findInstanceOf($nodes, Use_::class) as $use) {
+            foreach ($use->uses as $item) {
+                if ($use->type === Use_::TYPE_NORMAL && $item->type !== Use_::TYPE_FUNCTION && $item->type !== Use_::TYPE_CONSTANT) {
+                    $names[] = $item->name->toString();
+                }
+            }
+        }
+        foreach ($finder->findInstanceOf($nodes, GroupUse::class) as $group) {
+            if ($group->type !== Use_::TYPE_NORMAL) {
+                continue;
+            }
+            foreach ($group->uses as $item) {
+                if ($item->type !== Use_::TYPE_FUNCTION && $item->type !== Use_::TYPE_CONSTANT) {
+                    $names[] = $group->prefix->toString() . '\\' . $item->name->toString();
+                }
+            }
+        }
+
+        $found = [];
+        foreach ($names as $className) {
+            $parts = explode('\\', $className);
+            $owner = $parts[1] ?? null;
+            if (($parts[0] ?? null) !== 'InterviewTask'
+                || $owner === null || !in_array($owner, self::OWNERS, true)
+                || count($parts) < 3) {
+                continue;
+            }
+            $found[$className] = [$owner, $className];
+        }
+        ksort($found);
+
+        return array_values($found);
     }
 }
