@@ -93,6 +93,8 @@ composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, P
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
 starts the same PHP version with explicit database environment and mapped temporary directory.
 
+For the prioritized remediation work, see **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 tracked items; review findings, not implemented fixes).
+
 For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the
 pinned Architecture Governance 1.7.1 document. The architecture tests use `nikic/php-parser` to verify statically named
 cross-owner references (normal/grouped imports, fully-qualified names, type hints, static calls), and inspect literal
