@@ -1,15 +1,17 @@
 # Implementation Plan
 
-Status: RELEASE CANDIDATE — local functional/security/quality gates PASS; exact-final-SHA GitHub CI required before submission
+Status: SUBMISSION READY (interview scope) — local acceptance and exact application-commit GitHub Actions PASS; public deployment requires separate edge controls
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
 Repository language: English only
 
-## Local release-candidate verification (2026-10-08)
+## Hardening release acceptance (2026-10-08)
 
-Earlier acceptance entries below are historical and describe earlier commits; do not
-reuse that CI result as proof for this hardening candidate.
+The evidence below verifies the hardening application-code commit. A subsequent
+documentation-only evidence commit must pass its own exact-SHA CI check before
+being considered the final delivered source revision. Earlier acceptance entries
+further below are historical and do not replace this validation.
 
 - Source base before hardening: local/remote `main` at `4233b83`.
 - Original user task: registration, login/logout, CowOffer, Downloads,
@@ -34,14 +36,20 @@ reuse that CI result as proof for this hardening candidate.
   Deptrac (0 violations, 0 uncovered) and **PHPUnit 73 tests/644 assertions**.
 - Live PHP HTTP/CLI acceptance: **PASS** including fresh/idempotent migrations,
   admin CLI, user/admin journeys, HTTP 405 and deliberately failed PDO startup.
-- GitHub Actions is configured to execute `tests/Flow/live_smoke.py` for
-  PHP 8.3, 8.4 and 8.5; **remote CI for the new final commit remains to be verified**.
+- GitHub Actions **PASS** at application commit
+  `2891c7729660ac15b31e38b1a6d2e6806f826f81`, run
+  `37720344044`: PHP **8.3 / 8.4 / 8.5** each completed successfully,
+  including `Run quality suite` and `Live HTTP and CLI acceptance`.
+  See https://github.com/shomsy/fast-corporation-php-task/actions/runs/37720344044.
+  Verify the latest `main` workflow again after this evidence-only update.
 - Internet-facing deployment is *outside* the interview demo's accepted scope.
   It requires real HTTPS, `SESSION_COOKIE_SECURE=1`, reverse-proxy/edge login
   rate limiting, request-size bounds and operational log routing. These are
   explicit residual deployment risks, not claimed PASS.
-- Submission-ready declaration requires remote CI on the exact delivered SHA
-  and clean/synchronized `main` after the push; local PASS alone is insufficient.
+- Interview-task scope satisfies acceptance; exact-final-SHA CI and clean/synced
+  `main` must still be verified after the documentation-only commit.
+  The public-internet edge controls above are **not implemented or validated**,
+  and no unconditional public-deployment readiness is claimed.
 
 ## Goal
 
