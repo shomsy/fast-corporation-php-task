@@ -88,6 +88,11 @@ def main():
                 capture_output=True, text=True)
             assert rejected.returncode == 2, "Invalid CLI password must fail cleanly"
             assert explanation in rejected.stderr and "Fatal error" not in rejected.stderr
+        invalid_admin = subprocess.run(
+            php_command(tmp, ["bin/create-admin.php", "not valid", "--password-stdin"]),
+            input="valid-admin-password\n", cwd=ROOT, env=env,
+            capture_output=True, text=True)
+        assert invalid_admin.returncode == 2 and "Username" in invalid_admin.stderr
         sock = socket.socket()
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -118,10 +123,13 @@ def main():
             assert status == 303 and headers.get("Location") == "/login?registered=1"
             status, _, body = request(user, base, "/login")
             assert status == 200
+            anonymous_token = csrf(body)
             status, headers, _ = request(user, base, "/login", {
                 "username": "review-user", "password": "review-password",
-                "csrf_token": csrf(body)})
+                "csrf_token": anonymous_token})
             assert status == 303 and headers.get("Location") == "/"
+            status, _, _ = request(user, base, "/buy-cow", {"csrf_token": anonymous_token})
+            assert status == 403, "Pre-login CSRF token remained valid after authentication"
             status, _, body = request(user, base, "/")
             assert status == 200 and b"review-user" in body
             status, _, body = request(user, base, "/page-a")

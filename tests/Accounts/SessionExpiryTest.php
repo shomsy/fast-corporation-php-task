@@ -7,6 +7,7 @@ namespace InterviewTask\Tests\Accounts;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Infrastructure\Session\PhpSession;
+use InterviewTask\Infrastructure\Session\Csrf;
 
 /**
  * Regression checks for Session expiry test, covering observable behavior and failure paths.
@@ -136,4 +137,33 @@ final class SessionExpiryTest extends AccountsTestCase
 
         self::assertNull($identity->current());
     }
+
+    /**
+     * Login rotates both session ID and CSRF token; old anonymous form tokens are invalid.
+     *
+     * @return void No return value.
+     */
+    public function testLoginRotatesCsrfTokenAndInvalidatesAnonymousForms(): void
+    {
+        $session = $this->session();
+        $csrf = new Csrf(session: $session);
+        $oldSessionId = session_id();
+        $oldToken = $csrf->token();
+
+        $account = (new Register(accounts: $this->accounts, clock: $this->clock))
+            ->register(username: 'alice', password: 'valid-password');
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
+        $identity->signIn(account: $account);
+
+        self::assertNotSame($oldSessionId, session_id());
+        self::assertFalse($csrf->matches(submitted: $oldToken));
+        $newToken = $csrf->token();
+        self::assertNotSame($oldToken, $newToken);
+        self::assertTrue($csrf->matches(submitted: $newToken));
+        self::assertNotNull($identity->current());
+
+        $identity->signOut();
+        self::assertFalse($csrf->matches(submitted: $newToken));
+    }
+
 }

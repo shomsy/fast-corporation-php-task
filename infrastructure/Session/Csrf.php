@@ -41,6 +41,17 @@ final readonly class Csrf
             return $stored;
         }
 
+        return $this->rotate();
+    }
+
+    /**
+     * Replace the CSRF token when the authentication context changes.
+     *
+     * @return string Newly issued unpredictable CSRF token for this session.
+     * @throws RandomException When the secure random generator fails.
+     */
+    public function rotate(): string
+    {
         $token = bin2hex(string: random_bytes(length: 32));
         $this->session->put(key: self::SESSION_KEY, value: $token);
 

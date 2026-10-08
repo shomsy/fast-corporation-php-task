@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Accounts;
 
 use InterviewTask\Infrastructure\Session\PhpSession;
+use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Infrastructure\Time\SystemClock;
 use Psr\Clock\ClockInterface;
 
@@ -68,6 +69,8 @@ final readonly class SessionIdentity
     public function signIn(Account $account): SignedInAccount
     {
         $this->session->regenerate();
+        // A pre-login anonymous form must not authorize a privileged session.
+        (new Csrf(session: $this->session))->rotate();
         $this->session->put(key: self::ACCOUNT_ID, value: $account->id);
         $now = $this->now();
         $this->session->put(key: self::ISSUED_AT, value: $now);
