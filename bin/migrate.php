@@ -15,10 +15,14 @@ use InterviewTask\Infrastructure\Database\SqliteConnection;
 
 require dirname(path: __DIR__) . '/vendor/autoload.php';
 
+if (PHP_SAPI !== 'cli') {
+    throw new RuntimeException(message: 'Database provisioning is CLI-only.');
+}
+
 /** @var array{root: string, databasePath: string} $config */
 $config = require dirname(path: __DIR__) . '/bootstrap/config.php';
 
-$pdo      = SqliteConnection::open(path: $config['databasePath']);
+$pdo      = SqliteConnection::open(path: $config['databasePath'], createIfMissing: true);
 $migrator = new Migrator(pdo: $pdo, migrationDirectories: [
     'Accounts'         => $config['root'] . '/src/Accounts/migrations',
     'ActivityTracking' => $config['root'] . '/src/ActivityTracking/migrations',

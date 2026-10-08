@@ -282,7 +282,7 @@ def main():
                     broken_server.kill()
                     broken_server.wait()
         failure_diagnostics = failure_log.read_text(errors="replace")
-        assert '"exception_class":"PDOException"' in failure_diagnostics
+        assert '"exception_class":"RuntimeException"' in failure_diagnostics
         assert '"request_id":"' + startup_request_id + '"' in failure_diagnostics
         assert '"event":"runtime.unhandled"' in failure_diagnostics
         assert "SQLSTATE[" not in failure_diagnostics

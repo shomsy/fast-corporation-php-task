@@ -49,6 +49,22 @@ if (! str_starts_with(haystack: $dbPath, needle: '/')) {
 
 $debug        = filter_var(value: getenv(name: 'APP_DEBUG') ?: '0', filter: FILTER_VALIDATE_BOOL);
 $secureCookie = filter_var(value: getenv(name: 'SESSION_COOKIE_SECURE') ?: '0', filter: FILTER_VALIDATE_BOOL);
+$environment  = getenv(name: 'APP_ENV') ?: 'local';
+
+if (! in_array(needle: $environment, haystack: ['local', 'test', 'production'], strict: true)) {
+    throw new RuntimeException(message: 'Unsupported application environment.');
+}
+
+if ($environment === 'production') {
+    $appUrl = getenv(name: 'APP_URL');
+    $parts  = is_string(value: $appUrl) ? parse_url(url: $appUrl) : false;
+
+    if ($debug || ! $secureCookie || ! is_array(value: $parts)
+        || ($parts['scheme'] ?? null) !== 'https' || ! is_string(value: $parts['host'] ?? null)
+        || $parts['host'] === '') {
+        throw new RuntimeException(message: 'Unsafe production configuration.');
+    }
+}
 
 /**
  * @var array{
@@ -61,7 +77,7 @@ $secureCookie = filter_var(value: getenv(name: 'SESSION_COOKIE_SECURE') ?: '0', 
  */
 return [
     'root'                => $root,
-    'environment'         => getenv(name: 'APP_ENV') ?: 'local',
+    'environment'         => $environment,
     'debug'               => $debug,
     'databasePath'        => $dbPath,
     'sessionCookieSecure' => $secureCookie,

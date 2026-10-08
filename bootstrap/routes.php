@@ -41,11 +41,27 @@ use InterviewTask\Runtime\Http\RouteAccess;
 use InterviewTask\Runtime\Http\Response;
 use InterviewTask\Runtime\Http\Router;
 
-/** @var array{databasePath: string, sessionCookieSecure: bool, root: string} $config */
+/** @var array{databasePath: string, sessionCookieSecure: bool, root: string, environment: string} $config */
 $config = require __DIR__ . '/config.php';
 
 return static function (Router $router) use ($config): void {
-    $pdo      = SqliteConnection::open(path: $config['databasePath']);
+    if ($config['environment'] === 'production'
+        && ! in_array(needle: $_SERVER['HTTPS'] ?? null, haystack: ['on', '1'], strict: true)) {
+        throw new RuntimeException(message: 'Production requests require trusted HTTPS.');
+    }
+
+    $pdo = SqliteConnection::open(path: $config['databasePath']);
+
+    // Runtime may only use a database explicitly prepared by the trusted CLI migrator.
+    foreach (['schema_migrations', 'accounts', 'activity_events'] as $table) {
+        $pdo->query(query: 'SELECT 1 FROM ' . $table . ' LIMIT 1');
+    }
+
+    $migrated = $pdo->query(query: 'SELECT COUNT(*) FROM schema_migrations');
+
+    if ($migrated === false || (int) $migrated->fetchColumn() < 3) {
+        throw new RuntimeException(message: 'Database migrations have not been applied.');
+    }
     $accounts = new Accounts(pdo: $pdo);
     $session  = new PhpSession(secureCookie: $config['sessionCookieSecure']);
     $clock    = new SystemClock();

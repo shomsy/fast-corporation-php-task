@@ -16,19 +16,30 @@ use RuntimeException;
 final class SqliteConnection
 {
     /**
-     * Create the parent directory if necessary and open a file-backed SQLite database.
+     * Open existing database for runtime, allowing explicit CLI provisioning only.
      *
-     * @param string $path Absolute route, request path, or trusted local filesystem path.
+     * @param string $path Trusted local SQLite filesystem path.
+     * @param bool $createIfMissing Explicit CLI migration provisioning permission.
      * @return PDO Configured PDO connection to the requested SQLite file.
-     * @throws RuntimeException If the parent database directory cannot be created.
+     * @throws RuntimeException If runtime database is absent or provisioning fails.
      * @throws PDOException If SQLite cannot be opened.
      */
-    public static function open(string $path): PDO
+    public static function open(string $path, bool $createIfMissing = false): PDO
     {
-        $directory = dirname(path: $path);
+        if (! $createIfMissing && ! is_file(filename: $path)) {
+            throw new RuntimeException(message: 'Database has not been provisioned.');
+        }
 
-        if (! is_dir(filename: $directory) && ! mkdir(directory: $directory, permissions: 0775, recursive: true) && ! is_dir(filename: $directory)) {
-            throw new RuntimeException(message: 'Unable to create database directory: ' . $directory);
+        if ($createIfMissing) {
+            $directory = dirname(path: $path);
+
+            if (! is_dir(filename: $directory) && ! mkdir(directory: $directory, permissions: 0700, recursive: true) && ! is_dir(filename: $directory)) {
+                throw new RuntimeException(message: 'Unable to create database directory.');
+            }
+        }
+
+        if (file_exists(filename: $path) && ! is_file(filename: $path)) {
+            throw new RuntimeException(message: 'Configured database path is not a file.');
         }
 
         return self::configure(pdo: new PDO(dsn: 'sqlite:' . $path));

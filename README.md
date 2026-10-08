@@ -35,6 +35,8 @@ in at `/login`. Run `php bin/migrate.php` again to verify that there are no pend
 The default database is `var/database/app.sqlite`; `.env` and local database files are ignored by Git. Use an alternate
 `DB_PATH` in `.env` to isolate an installation. Keep `public/` as the only web document root.
 
+**Provisioning and production boot:** Only `php bin/migrate.php` is permitted to create the database and its parent directory. HTTP requests and admin account creation require an existing database; HTTP startup also verifies that the migration ledger and owner tables exist. Always execute migrations *before* the web server accepts traffic. For a public deployment explicitly set `APP_ENV=production`, `APP_DEBUG=0`, `APP_URL=https://your-host.example`, and `SESSION_COOKIE_SECURE=1`. Production HTTP handling additionally requires the trusted PHP server TLS indication (`HTTPS=on` or `HTTPS=1`); configure your trusted reverse proxy/web server accordingly. Do not trust browser-supplied `X-Forwarded-Proto` as proof of HTTPS. A missing database, unapplied migrations, or unsafe production settings fail closed with a generic HTTP 500.
+
 ## Pages and roles
 
 | Page                | Access             | Behavior                                                                               |
