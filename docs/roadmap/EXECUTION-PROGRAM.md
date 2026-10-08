@@ -7,7 +7,7 @@
 
 1. Begin each run from actual Git state and Homer checkpoint, never from transcript memory; the existing M00 evidence may be reused if still valid. Do not touch unrelated dirty user work.
 2. The original interview TASK.md is the acceptance contract. Preserve business owner modules, screaming names, vertical slices, separation of concerns and information hiding; no superficial SOLID class proliferation.
-3. Red/green regression on confirmed defects, tests + evidence before closing packets. Conditional performance/storage issues require measured workload, not guessed severity.
+3. Batch 2–4 dependent-unblocked coherent packets per RP turn when safe, instead of stopping after each task. Preserve independent commits/validation for each packet and red/green tests for confirmed defects. Conditional performance/storage issues require measured workload, not guessed severity.
 4. Preserve personal PhpStorm MOI file unchanged, named-argument API compatibility, Deptrac and useful PHPDocs. No mass format/rename.
 5. Compass relevant guides and selected relevant material from `/home/shomsy/Documents/Books/` are mandatory for consequential decisions; do not load entire corpus or claim unread books.
 6. Security, backend API and schema changes land before dependent SPA screens; old SSR remains rollback fallback during per-slice migration.
@@ -105,10 +105,10 @@
 - [ ] **Exit gate:** Interview acceptance proven, public-production NO-GO unless deployment controls tested, clean main pushed to origin.
 - [ ] **Evidence:** exact commit, commands, tests, risk decision, changed public contract, and next legal packet recorded before moving on.
 
-## One bounded RP iteration
+## One RP iteration: several bounded work packets
 
 1. OPEN the stable Homer Workstream (not a new Workstream per chat); inspect checkpoint, git tree, active failures and next legal packet.
-2. Select the smallest unblocked C-ID from current milestone. Name owner, invariant, risk and executable acceptance test. Read relevant files/Compass/book passage for *that* problem.
+2. Select the next 2–4 unblocked C-IDs from the current milestone (or prerequisite). Name owner, invariant, risk and executable acceptance test. Read relevant files/Compass/book passage for *that* problem.
 3. For confirmed bug: write a failing regression before implementation where practicable. For conditional claim: measure and write ADR or mark deferred with evidence. No gratuitous framework/port.
 4. Make one bounded, reviewable code change; protect business ownership and existing paths. Run scoped tests; full `composer quality`, `python3 tests/Flow/live_smoke.py`, browser E2E at phase gate.
 5. Inspect diff, secrets, PHP named-argument compatibility, MOI (untouched), Deptrac and behavior. Update only proven C-ID checkboxes/status and evidence in ledger.

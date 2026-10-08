@@ -1,20 +1,20 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M01 IN PROGRESS; C-01 AND C-02 COMPLETE; C-21 NEXT. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
+**Status:** M01 COMPLETE (C-01/C-02/C-21/C-31); M02 IN PROGRESS (C-06 COMPLETE); next C-03 and C-04. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `31d748482fd6ff930377e847a00898c699cf15ef` (C-02).
-**Next legal action:** M01 / C-21: verify HTTP 4xx/5xx error mapping with negative tests, then continue C-31.
+**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `6cc9e1d4d4528d93190fcbfea65ba00c6c04c479` (C-21); earlier C-31 `c6f003d`, C-06 `87cc139`.
+**Next legal action:** M02 / C-03: define shared username and password invariants with backwards-compatibility decisions and regression tests, then C-04 login timing and C-07 session token lifecycle as dependencies permit. Execute multiple independent tested packets per RP turn.
 
 ## Milestone status
 
 | Phase | Goal | State | Evidence (commit/test) |
 |---|---|---|---|
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
-| M01 | Confirmed correctness | **IN PROGRESS — C-01/C-02 DONE** | `e209775`: NUL/array date filters now return HTTP 422; regression RED before fix, composer quality PASS (89 tests / 6007 assertions), live HTTP smoke PASS. |
-| M02 | Security/auth | NOT STARTED | — |
+| M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
+| M02 | Security/auth | **IN PROGRESS — C-06 DONE** | `87cc139`: route access defaults to authenticated; CSRF enforced on all unsafe routes, including public POST. Router regressions 7 tests/14 assertions, full quality/smoke PASS. |
 | M03 | Runtime/session/config | NOT STARTED | — |
 | M04 | DB/audit/durability | NOT STARTED | — |
 | M05 | Analytics/performance | NOT STARTED | — |
@@ -25,14 +25,14 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 48/48 OPEN
+## Canonical packet status — 5 DONE / 48 TOTAL (43 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
 - [ ] **C-03** — Establish one username invariant (length, canonical uniqueness, Unicode spoofing decision) and one. *(OPEN; no implementation evidence yet)*
 - [ ] **C-04** — Close unknown-account password timing branch. *(OPEN; no implementation evidence yet)*
 - [ ] **C-05** — Add enforceable login/registration abuse limits at deployment boundary. *(OPEN; no implementation evidence yet)*
-- [ ] **C-06** — Make authorization and CSRF an explicit fail-closed route policy. *(OPEN; no implementation evidence yet)*
+- [x] **C-06** — Make authorization and CSRF an explicit fail-closed route policy. **DONE:** `87cc139`; every route has access contract (public, signed-in, admin), new routes default to protected and unguarded unsafe requests deny. Central server-owned cookie/CSRF policy plus existing adapter checks; Router 7 tests/14 assertions, full quality and HTTP smoke PASS. Origin/Fetch Metadata can be considered as later defense in depth.
 - [ ] **C-07** — Define session state transitions, ID and CSRF token rotation at login. *(OPEN; no implementation evidence yet)*
 - [ ] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization before changing n. *(OPEN; no implementation evidence yet)*
 - [ ] **C-09** — Apply suitable headers to every response: nosniff, cache-control for private data, referrer protec. *(OPEN; no implementation evidence yet)*
@@ -47,7 +47,7 @@
 - [ ] **C-18** — Specify whether raw clicks or accepted unique actions are counted. *(OPEN; no implementation evidence yet)*
 - [ ] **C-19** — Clarify Page A/B view counts: accepted authorized navigation versus actual rendering. *(OPEN; no implementation evidence yet)*
 - [ ] **C-20** — Assess account disable/reset/admin recovery scope separately from interview acceptance. *(OPEN; no implementation evidence yet)*
-- [ ] **C-21** — Differentiate client validation/authorization from dependency errors. *(OPEN; no implementation evidence yet)*
+- [x] **C-21** — Differentiate client validation/authorization from dependency errors. **DONE:** `6cc9e1d`; existing 4xx/503/500 mappings verified, both real 500 causes remain safe generic responses with 24-hex-character X-Request-ID and matching server log reference. RED smoke before fix; GREEN after; quality 98/6038 PASS.
 - [ ] **C-22** — Define safe URI parsing, HEAD/OPTIONS/Allow handling and output rules. *(OPEN; no implementation evidence yet)*
 - [ ] **C-23** — Keep fixed server-selected artifact. *(OPEN; no implementation evidence yet)*
 - [ ] **C-24** — Define non-nesting transaction contract and preserve original failure if rollback/session compensa. *(OPEN; no implementation evidence yet)*
@@ -57,7 +57,7 @@
 - [ ] **C-28** — Measure latency, memory, DB lock, file download and resource utilization under target load. *(OPEN; no implementation evidence yet)*
 - [ ] **C-29** — Improve true responsibility boundaries: HTTP/JSON transport, auth policy, application orchestratio. *(OPEN; no implementation evidence yet)*
 - [ ] **C-30** — Review shallow wrappers, misleading side-effect names, redundant route helpers and module APIs wit. *(OPEN; no implementation evidence yet)*
-- [ ] **C-31** — Validate untrusted input at transport boundary, typed invariants at owner. *(OPEN; no implementation evidence yet)*
+- [x] **C-31** — Validate untrusted input at transport boundary, typed invariants at owner. **DONE:** `c6f003d`; arrays/oversized credentials and activity filters rejected as 422 before business logic; wrong scalar password still 401. RED 2 tests first plus oversized filter; quality PASS 95/6031, HTTP smoke PASS.
 - [ ] **C-32** — Measure eager PDO/config/router wiring and duplicate authoritative account lookups before lazy opt. *(OPEN; no implementation evidence yet)*
 - [ ] **C-33** — Evaluate maintain/replace options for PHP HTTP stack, templating retirement, logging, native JS ro. *(OPEN; no implementation evidence yet)*
 - [ ] **C-34** — Keep useful PHPDoc, remove generic boilerplate where it hides semantics, retain MOI and named-argu. *(OPEN; no implementation evidence yet)*
@@ -89,6 +89,10 @@
 
 | 2026-10-09 | M01 / C-02 | `31d748482fd6ff930377e847a00898c699cf15ef` | RED 2 Renderer regressions; GREEN 92/92 PHPUnit (6017 assertions), PHPStan, Deptrac, audit, live HTTP smoke | Original exception preserved, output buffer depth restored; next C-21. |
 
+| 2026-10-09 | M01 / C-31 | `c6f003d4b4087bab43ed2660ca98d95004b94742` | Malformed login/register inputs RED before fix; 95/6031 quality PASS and HTTP smoke PASS | Safe 422 for array/oversized form and query fields; preserve 401 for incorrect credentials. |
+| 2026-10-09 | M02 / C-06 | `87cc1397262c120d9b3e582ab194749f62ab28bc` | New Router guard contract tests; 98/6038 quality PASS; live HTTP smoke PASS | Default protected routes, central CSRF for unsafe methods and admin access scope. |
+| 2026-10-09 | M01 / C-21 | `6cc9e1d4d4528d93190fcbfea65ba00c6c04c479` | HTTP smoke initially RED for missing 500 request ID; then PASS for DB initialization and audit failure; 98/6038 quality PASS | HTTP 500 stays generic, correlation header links to server log. |
+
 ## Decisions log
 
 | Date | Decision | Basis | Consequence / reopen trigger |
@@ -96,7 +100,8 @@
 | 2026-10-09 | Vanilla JavaScript ES Modules SPA; same-origin PHP session cookies; no JWT | User-approved architecture direction | Reconsider only if independently deployed clients or product scale changes justify it |
 | 2026-10-09 | Preserve PHP business owner modules / MOI / named-argument contracts | Project doctrine and explicit owner choice | Reopen only with documented behavior/API need |
 | 2026-10-09 | Defer 142 review claims to 48 mapped work packets rather than count all as bugs | Source traceability and factual review | Revalidate individual claims before implementation |
+| 2026-10-09 | Larger RP turns: batch several independent bounded packets, preserve per-task commits and regression gates | Owner instruction in current RP conversation | Do not end automatically after one fix; do not sacrifice checks for throughput |
 
 ## Turn continuation contract
 
-At the end of every RP bounded run: update only actually completed packet checkboxes, milestone evidence, next precise intent, runtime blockers, and stable workstream ID; checkpoint in Homer. Preserve original reviews. At kickoff, inspect git state first; no documentation-only action counts as application implementation.
+At the end of every RP batched run: update only actually completed packet checkboxes, milestone evidence, next precise intent, runtime blockers, and stable workstream ID; checkpoint in Homer. Preserve original reviews. At kickoff, inspect git state first; no documentation-only action counts as application implementation.

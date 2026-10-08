@@ -41,19 +41,19 @@ MANDATORY NON-GOALS:
 CONTINUITY & MUTATION SAFETY:
 1. At the start of EVERY new RP turn, restore stable Homer Workstream identity from existing scheduler/job/project mapping or the progress ledger; call Homer open and use the fresh turn fence before governed mutation. If genuinely no workstream exists, create **one stable** workstream ID and persist it in EXECUTION-PROGRESS.md, then reuse it in all subsequent turns. Do not invent IDs or infer workstream state from old chat text.
 2. Inspect current Git repository state, HEAD, remote, progress ledger, nextIntent, unresolved effects and relevant code. Preserve unrelated dirty work and never assume any previous commit/push succeeded.
-3. Choose the smallest unblocked next C-ID from the execution program. Work in dependency order, not just numeric order; M00 baseline first, then tested confirmed defects, auth/security/data LLD, JSON API seam, Vanilla JS SPA feature-by-feature, final gates.
+3. Select a BATCH of 2–4 unblocked, related C-IDs when feasible (fewer if security/deployment complexity requires). Work in dependency order, not merely numeric order. Finish several packets in one RP turn; keep each fix independently reviewable, tested, and committed. Never compromise correctness or effect reconciliation for batch size.
 4. Preserve durable operation identity and idempotency for filesystem/Git actions. If Homer/H-General returns UNKNOWN, PARTIAL, MAY_HAVE_EFFECT or stale turn/revision, STOP unsafe mutation, inspect/reconcile and do not replay blindly.
 5. Legal connectivity fallback: Homer → H-General → rollover to fresh regular ChatGPT conversation → one-turn Temporary Conversation. Do not resurrect H-Code, H-Leg, H-Remote, H-Ops or Git watcher transports. If connector binding is poisoned, do not restart a healthy host service just to fix a conversation binding.
 6. Before each major bounded run ends, persist verified progress, test evidence, exact next C-ID, blockers, committed SHA and Homer checkpoint/nextIntent. Temporary chat memory is not canonical.
 
-ENGINEERING LOOP — ONE SMALL COHERENT PACKET EACH TURN:
+ENGINEERING LOOP — MULTIPLE TESTED PACKETS PER TURN:
 A. Read the exact relevant code, TASK.md contract, selected Compass domain guides, and actual relevant sections of the local Books corpus. Do not load all skills/books by habit. Name the invariant and who owns it.
 B. If defect is confirmed, reproduce as a failing regression (when practicable) before code change. If conditional, measure or document a decision before adding mechanisms. Explain WHY the change is necessary.
 C. Design the smallest correct fix; preserve module boundaries and named-argument compatibility. Avoid hidden state, multi-purpose classes, unsafe DOM innerHTML or client-side authorization decisions. Evaluate native PHP/JS and existing OSS APIs before inventing primitives.
 D. Implement and run scoped tests quickly. Run composer quality, python3 tests/Flow/live_smoke.py and applicable browser E2E at milestones, before merges/cutover, and after high-risk security/schema changes. Do not fake suite results or erase failing tests.
-E. Check Git diff for unrelated files, secrets, schema compatibility, renamed API params and visual MOI drift. When tests pass, update canonical packet/milestone evidence in EXECUTION-PROGRESS.md and any proven source disposition in REVIEW-TRACEABILITY.md. Stage code and evidence files together; commit coherent validated work and push main to origin after gates; no force push. A green test from another date is not completion proof.
+E. After each verified C-ID, review unrelated diffs, secrets, schemas, named argument compatibility and MOI; commit a coherent change independently. Move immediately to the next unblocked C-ID in the SAME turn; run scoped tests per packet and full quality/smoke at security gates and end of batch. Update source dispositions only with proof. Commit the evidence ledger and push main to origin after verified gates; no force push.
 F. Verify local commit and remote push independently. If remote rejects push, preserve truthful local evidence and report exact blocker; never mark remote delivery done before verification.
-G. Checkpoint Homer and return a brief Serbian report: what changed, why, which tests passed, commit/push reality, precise next action. Continue next RP turn from durable state, not from the beginning.
+G. Continue bounded packets within the SAME RP turn until 2–4 tasks are completed or an actual safety/quality/capacity blocker demands stopping. At batch end verify remote state, checkpoint Homer once with all commit SHAs, and report in brief Serbian: completed IDs, tests, push reality and next dependent tasks.
 
 FRONTEND DESIGN CONSTRAINTS:
 - Native ES Modules (no runtime bundler), narrow same-origin HTTP client, separate view/flow/API responsibilities, one owner of UI state. Classes for real state/lifecycle, functions for stateless logic. Keep feature folders business-first.
@@ -71,8 +71,8 @@ SPECIAL TEST / RELEASE RULES:
 - Stop on user approval needed for destructive changes, unavailable irreversible migration preconditions, unresolved external credentials, or violation of primary source requirements. Otherwise make routine scoped engineering decisions independently.
 - When all required C-IDs and final gates are verifiably complete, produce final acceptance with commit references and STOP the RP loop rather than repeating no-op runs.
 
-IMMEDIATE NEXT STEP ON FIRST RP TURN:
-Read current EXECUTION-PROGRESS.md first. M00 is already PASS at application baseline bb420841 (composer quality: 86 tests/5958 assertions; live HTTP smoke PASS; 142-source mapping checked), before documentation-only roadmap commit. Confirm no app-code drift. Proceed with M01 / C-01 failing NUL-date regression, then C-02 Renderer nested-buffer regression, one bounded packet at a time. Re-run M00 only if its evidence is invalid or source/runtime changed materially.
+RESUME FROM DURABLE PROGRESS ON EVERY RP TURN:
+Read Homer checkpoint and EXECUTION-PROGRESS.md first. M00 and M01 are completed; C-01/C-02/C-21/C-31 and C-06 are already verified. Never restart them without contrary evidence. Continue M02 starting C-03 (then C-04), and C-07 when ready. Finish multiple bounded, tested, individually committed packets in each turn. Preserve original security and production gates.
 
 CONTINUATION MESSAGE AFTER A TRANSIENT INTERRUPTED CHAT (not a new job):
 "Continue from where you left off. If you've already loaded the mandatory rules, you don't need to load them again; just keep following them."
@@ -84,5 +84,5 @@ CONTINUATION MESSAGE AFTER A TRANSIENT INTERRUPTED CHAT (not a new job):
 1. Open a new ChatGPT conversation with required H-Prompt / Recursive Prompt extension enabled and supported connectors bound.
 2. Paste the entire **RP MESSAGE** block from above (not this paragraph), or configure this document as the schedule's reusable message source if the extension supports file-backed prompts.
 3. Ensure only **one** schedule/workstream targets this repo and branch. Set desired cadence in the extension UI; this document does **not** install or activate a scheduler.
-4. The loop's first run must read the existing M00 evidence, verify any source drift, record stable workstream ID, and begin M01/C-01 unless baseline is invalid. A new conversation must resume from Homer checkpoint and progress ledger.
+4. Every loop run opens the existing stable Homer workstream, reads current source/progress and batches the next 2–4 unblocked C-IDs. C-01/C-02/C-21/C-31/C-06 are already done; never restart them absent contrary evidence. A new conversation resumes from Homer checkpoint and progress ledger.
 5. To stop, disable the H-Prompt schedule in the extension and reconcile in-flight effects before any other runner takes over.
