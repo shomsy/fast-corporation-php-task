@@ -309,6 +309,85 @@ final class HttpFlowTest extends TestCase
     }
 
     /**
+     * Reject array credential fields with validation status instead of treating them as bad passwords.
+     *
+     * @return void No return value.
+     */
+    public function testLoginRejectsMalformedCredentialFieldsWithoutLoginEvents(): void
+    {
+        foreach (['username', 'password'] as $field) {
+            $values = [
+                'username'   => 'alice',
+                'password'   => 'wrong-password',
+                'csrf_token' => $this->csrf->token(),
+            ];
+            $values[$field] = ['unexpected'];
+
+            $response = $this->accountPages->loginSubmit(request: new Request(
+                method: 'POST',
+                path: '/login',
+                post: $values,
+            ));
+            self::assertSame(422, $response->status());
+            self::assertStringNotContainsString('unexpected', $response->body());
+        }
+
+        $statement = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE action = 'login'");
+        self::assertNotFalse($statement);
+        self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    /**
+     * Reject arrays and oversized credential values before account creation.
+     *
+     * @return void No return value.
+     */
+    public function testRegistrationRejectsMalformedAndOversizedCredentialFields(): void
+    {
+        foreach ([
+            ['username' => ['invalid'], 'password' => 'safe-pass'],
+            ['username' => 'alice', 'password' => ['invalid']],
+            ['username' => str_repeat(string: 'u', times: 17000), 'password' => 'safe-pass'],
+            ['username' => 'alice', 'password' => str_repeat(string: 'p', times: 17000)],
+        ] as $values) {
+            $response = $this->accountPages->registerSubmit(request: new Request(
+                method: 'POST',
+                path: '/register',
+                post: $values + ['csrf_token' => $this->csrf->token()],
+            ));
+            self::assertSame(422, $response->status());
+        }
+
+        $statement = $this->pdo->query(query: 'SELECT COUNT(*) FROM accounts');
+        self::assertNotFalse($statement);
+        self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    /**
+     * Oversized activity filters are invalid rather than unbounded database lookups.
+     *
+     * @return void No return value.
+     */
+    public function testStatisticsRejectsOversizedUserFilterAtHttpBoundary(): void
+    {
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(
+            username: 'filter-admin',
+            password: 'safe-pass',
+        );
+        $this->identity->signIn(account: $admin);
+        $oversized = str_repeat(string: 'u', times: 17000);
+
+        $result = $this->activityPages->statisticsPage(request: new Request(
+            method: 'GET',
+            path: '/statistics',
+            query: ['user' => $oversized],
+        ));
+
+        self::assertSame(422, $result->status());
+        self::assertStringNotContainsString($oversized, $result->body());
+    }
+
+    /**
      * Verify missing artifact fails without download activity through the public behavior.
      *
      * @return void No return value.

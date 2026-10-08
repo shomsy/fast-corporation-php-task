@@ -115,7 +115,7 @@ final readonly class ActivityPages
             return null;
         }
 
-        if (! is_string(value: $value)) {
+        if (! is_string(value: $value) || strlen(string: $value) > 4096) {
             throw new InvalidArgumentException(message: 'Invalid query parameter.');
         }
 

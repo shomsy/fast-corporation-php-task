@@ -12,6 +12,7 @@ use InterviewTask\Accounts\UsernameTaken;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
+use InvalidArgumentException;
 
 /**
  * HTTP adaptation for the Accounts owner's authentication lifecycle.
@@ -59,8 +60,15 @@ final readonly class AccountPages
             return Response::text(body: 'Forbidden', status: 403);
         }
 
-        $username = $this->stringInput(value: $request->post(key: 'username'));
-        $password = $this->stringInput(value: $request->post(key: 'password'));
+        try {
+            $username = $this->stringInput(value: $request->post(key: 'username'));
+            $password = $this->stringInput(value: $request->post(key: 'password'));
+        } catch (InvalidArgumentException) {
+            return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
+                'csrfToken' => $this->csrf->token(), 'username' => '',
+                'error'     => 'Invalid registration request.',
+            ], status: 422);
+        }
 
         try {
             $this->lifecycle->register(username: $username, password: $password);
@@ -80,14 +88,23 @@ final readonly class AccountPages
     }
 
     /**
-     * Convert only scalar string form input, rejecting submitted arrays.
+     * Convert a missing field to empty, reject non-strings and bound submitted strings to 4096 bytes.
      *
      * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
-     * @return string Result described by the native PHP return type.
+     * @return string A bounded string for business-level credential validation.
+     * @throws InvalidArgumentException When a credential field has an invalid type or exceeds the transport budget.
      */
     private function stringInput(mixed $value): string
     {
-        return is_string(value: $value) ? $value : '';
+        if ($value === null) {
+            return '';
+        }
+
+        if (! is_string(value: $value) || strlen(string: $value) > 4096) {
+            throw new InvalidArgumentException(message: 'Invalid credential input.');
+        }
+
+        return $value;
     }
 
     /**
@@ -117,10 +134,17 @@ final readonly class AccountPages
         }
 
         try {
-            $this->lifecycle->login(
-                username: $this->stringInput(value: $request->post(key: 'username')),
-                password: $this->stringInput(value: $request->post(key: 'password')),
-            );
+            $username = $this->stringInput(value: $request->post(key: 'username'));
+            $password = $this->stringInput(value: $request->post(key: 'password'));
+        } catch (InvalidArgumentException) {
+            return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
+                'csrfToken'  => $this->csrf->token(),
+                'registered' => false, 'error' => 'Invalid login request.',
+            ], status: 422);
+        }
+
+        try {
+            $this->lifecycle->login(username: $username, password: $password);
         } catch (InvalidCredentials) {
             return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
                 'csrfToken'  => $this->csrf->token(),
