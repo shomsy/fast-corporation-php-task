@@ -97,6 +97,8 @@ For the prioritized remediation work, see **[OOP / Architecture Remediation TODO
 
 Independent review pending reconciliation: **[ClaudeCode original text](docs/reviews/CLAUDE-CODE-REVIEW-2026-10-08.txt)** and its **[62-finding index](docs/reviews/CLAUDE-CODE-REVIEW-INDEX.md)**. These are archived claims, not yet merged into the canonical remediation TODO.
 
+Separate **[LLD design & code review](docs/reviews/LLD-CODE-REVIEW-2026-10-08.md)**: 26 independently tracked findings (8 high, 14 medium, 4 low), with roles, risks and proposed fixes. It is not yet reconciled with the OOP or ClaudeCode lists.
+
 For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the
 pinned Architecture Governance 1.7.1 document. The architecture tests use `nikic/php-parser` to verify statically named
 cross-owner references (normal/grouped imports, fully-qualified names, type hints, static calls), and inspect literal
