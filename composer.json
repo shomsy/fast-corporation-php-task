@@ -7,7 +7,8 @@
     "php": "^8.3",
     "ext-pdo": "*",
     "ext-pdo_sqlite": "*",
-    "ext-session": "*"
+    "ext-session": "*",
+    "psr/clock": "^1.0"
   },
   "require-dev": {
     "deptrac/deptrac": "^4.7",
@@ -38,15 +39,17 @@
     "stan": "phpstan analyse --no-progress",
     "cs": "php-cs-fixer check --diff",
     "cs:fix": "php-cs-fixer fix",
-    "architecture": "deptrac analyse --config-file=tools/architecture.yaml",
+    "architecture": "deptrac analyse --config-file=tools/architecture.yaml --fail-on-uncovered",
     "quality": [
       "@check:composer",
+      "@check:psr4",
       "@security:audit",
       "@cs",
       "@stan",
       "@architecture",
       "@test"
-    ]
+    ],
+    "check:psr4": "composer dump-autoload --optimize --strict-psr --strict-ambiguous"
   },
   "config": {
     "sort-packages": true,

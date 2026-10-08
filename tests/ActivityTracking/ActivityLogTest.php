@@ -13,11 +13,11 @@ use InterviewTask\ActivityTracking\TrackedPage;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
-use InterviewTask\Infrastructure\Time\Clock;
 use InvalidArgumentException;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 
 final class ActivityLogTest extends TestCase
 {
@@ -32,7 +32,7 @@ final class ActivityLogTest extends TestCase
             'ActivityTracking' => dirname(__DIR__, 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
-        $clock = new class implements Clock {
+        $clock = new class implements ClockInterface {
             public function now(): DateTimeImmutable
             {
                 return new DateTimeImmutable('2026-10-08 12:15:00', new DateTimeZone('Europe/Belgrade'));

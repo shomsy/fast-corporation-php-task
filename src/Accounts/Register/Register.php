@@ -6,13 +6,13 @@ namespace InterviewTask\Accounts\Register;
 
 use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Infrastructure\Time\Clock;
+use Psr\Clock\ClockInterface;
 
 final readonly class Register
 {
     public function __construct(
         private Accounts $accounts,
-        private Clock $clock,
+        private ClockInterface $clock,
     ) {}
 
     public function register(string $username, string $password): Account

@@ -56,7 +56,7 @@ An append-only activity history stores account ID, historical username snapshot,
 ```bash
 composer test                 # complete PHPUnit suite
 python3 tests/Flow/live_smoke.py  # fresh DB, CLI admin, local PHP server, user/admin HTTP journeys
-composer quality              # composer validation, dependency audit, style, PHPStan, Deptrac, PHPUnit
+composer quality              # strict PSR-4, composer validation, audit, style, PHPStan, Deptrac, PHPUnit
 ```
 
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it starts the same PHP version with explicit database environment and mapped temporary directory.
@@ -68,8 +68,12 @@ For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR
 Composer PSR-4 autoloads all project classes, including `InterviewTask\Bootstrap\`.
 The explicit HTTP adapter classes live in `bootstrap/Http/` and keep routing,
 security response headers and transport mapping separate from business ownership.
-Run `composer dump-autoload --optimize --strict-psr` to check autoload integrity.
+Every `composer quality` run verifies PSR-4 namespaces and duplicate class definitions via
+`composer dump-autoload --optimize --strict-psr --strict-ambiguous`.
 
 PHP-CS-Fixer uses `@PER-CS3x0` (PER Coding Style 3.0), plus project-specific strict
 rules. This does **not** assert complete PER Coding Style 3.1 verification.
+Time-dependent use cases accept the standard `Psr\Clock\ClockInterface` (PSR-20),
+implemented locally by `Infrastructure\Time\SystemClock` in UTC. Tests inject fixed clocks;
+no bespoke clock interface or extra clock implementation package is needed.
 See `docs/PHP-STANDARDS-VNEXT.md` for the decision and acceptance evidence.

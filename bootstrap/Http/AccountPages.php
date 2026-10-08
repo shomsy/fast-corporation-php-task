@@ -15,10 +15,10 @@ use InterviewTask\Accounts\UsernameTaken;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\Infrastructure\Database\Transaction;
 use InterviewTask\Infrastructure\Session\Csrf;
-use InterviewTask\Infrastructure\Time\Clock;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 use PDO;
+use Psr\Clock\ClockInterface;
 use Throwable;
 
 /** HTTP adaptation for the Accounts owner's authentication lifecycle. */
@@ -34,7 +34,7 @@ final readonly class AccountPages
         private SessionIdentity $identity,
         private Csrf $csrf,
         private HtmlPage $html,
-        Clock $clock,
+        ClockInterface $clock,
         private ActivityLog $activity,
     ) {
         $this->register = new Register($accounts, $clock);

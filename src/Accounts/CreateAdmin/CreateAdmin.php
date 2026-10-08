@@ -6,14 +6,14 @@ namespace InterviewTask\Accounts\CreateAdmin;
 
 use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Infrastructure\Time\Clock;
 use InvalidArgumentException;
+use Psr\Clock\ClockInterface;
 
 final readonly class CreateAdmin
 {
     public function __construct(
         private Accounts $accounts,
-        private Clock $clock,
+        private ClockInterface $clock,
     ) {}
 
     public function create(string $username, string $password): Account

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace InterviewTask\ActivityTracking;
 
 use DateTimeZone;
-use InterviewTask\Infrastructure\Time\Clock;
 use InvalidArgumentException;
 use PDO;
+use Psr\Clock\ClockInterface;
 use RuntimeException;
 
 /**
@@ -20,7 +20,7 @@ final readonly class ActivityLog
 {
     public function __construct(
         private PDO $pdo,
-        private Clock $clock,
+        private ClockInterface $clock,
     ) {}
 
     public function recordRegistration(int $actorId, string $actorLabel): void

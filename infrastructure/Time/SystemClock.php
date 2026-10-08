@@ -6,8 +6,9 @@ namespace InterviewTask\Infrastructure\Time;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Psr\Clock\ClockInterface;
 
-final class SystemClock implements Clock
+final class SystemClock implements ClockInterface
 {
     public function now(): DateTimeImmutable
     {

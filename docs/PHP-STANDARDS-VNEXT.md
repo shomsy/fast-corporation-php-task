@@ -82,7 +82,29 @@ Acceptance evidence from the local vNext run (2026-10-08):
 - Fresh SQLite migrations and second idempotent run PASS.
 - Real user and admin HTTP journeys, fixed download and admin CLI bootstrap PASS.
 - Previous refactor commit `04ee86f` pushed to `origin/main`, exact GitHub Actions run `37713637004` PASS on PHP 8.3, 8.4 and 8.5.
-- The final style/docs commit requires its own clean working tree, synchronized `main` and exact-commit remote CI PASS.
+- Style/docs commit `c405e53` was pushed to `origin/main`; exact GitHub Actions run `37713941049` PASS for PHP 8.3, 8.4, and 8.5.
+
+## PSR-20 clock contract and PSR-4 enforcement
+
+The application previously declared `Infrastructure\Time\Clock`, an interface identical
+to PHP-FIG PSR-20. That local duplicate has been removed, and all production consumers
+and test fakes type-hint `Psr\Clock\ClockInterface` from `psr/clock:^1.0`.
+The existing `SystemClock` still provides UTC `DateTimeImmutable`; the PSR interface
+intentionally leaves timezone choice to the implementation. No other ownership or
+business behavior changes, and `composer.lock` pins the exact package version.
+
+Composer now exposes `check:psr4` and runs it within `composer quality`, using
+`composer dump-autoload --optimize --strict-psr --strict-ambiguous`.
+This fails CI when project classes violate declared PSR-4 paths or duplicate a class.
+Deptrac also explicitly assigns the external PSR-20 contract to the narrow `PsrClock`
+layer, permitted only for current consumers; `--fail-on-uncovered` prevents silent
+gaps in future architectural dependency coverage.
+The new `SystemClockTest::testImplementsStandardPsr20Contract` verifies the standard
+type is actually used, alongside existing UTC and flow behavior tests.
+
+Scope tests (PHP 8.5.5) PASS: SystemClock 2 tests / 3 assertions, Accounts 9 / 29,
+ActivityTracking 16 / 267. Complete PHPUnit PASS: 52 tests / 417 assertions.
+Final style, security, architecture and exact-commit remote CI remain mandatory release gates.
 
 ## Deliberate exclusions / REVISIT
 

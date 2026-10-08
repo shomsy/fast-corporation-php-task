@@ -142,6 +142,22 @@ under `bootstrap/Http/` in place of the old `WebPages` class, and the explicit
 claim full PER-CS 3.1 compliance. See `docs/PHP-STANDARDS-VNEXT.md` for
 the implementation decisions, validation criteria, and evidence.
 
+## PSR-20 and strict PSR-4 (2026-10-08)
+
+Adopted PHP-FIG `Psr\Clock\ClockInterface` via the direct `psr/clock:^1.0`
+dependency. Removed the duplicate local `Infrastructure\Time\Clock` interface;
+the existing `SystemClock` remains a UTC implementation and injected test clocks
+continue to make time deterministic. The smallest compatibility change updates
+type-hints in Accounts, ActivityTracking, bootstrap and tests without adding layers.
+
+`composer quality` now invokes `check:psr4` with optimized strict PSR namespace
+mapping and duplicate-class detection.
+Deptrac models the exact external `Psr\Clock\ClockInterface` contract with a
+`PsrClock` layer, explicitly whitelists only its consumers, and fails on
+uncovered architecture edges. Scoped tests and the full PHPUnit suite
+were run before the final static/quality acceptance gates.
+See `docs/PHP-STANDARDS-VNEXT.md` for exact coverage and decision rationale.
+
 ## Delivery phases
 
 - Phase 0 — Planning / architecture — DONE (`113e2d4`)

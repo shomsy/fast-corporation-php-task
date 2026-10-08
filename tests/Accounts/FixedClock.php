@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Accounts;
 
 use DateTimeImmutable;
-use InterviewTask\Infrastructure\Time\Clock;
+use Psr\Clock\ClockInterface;
 
-final readonly class FixedClock implements Clock
+final readonly class FixedClock implements ClockInterface
 {
     public function __construct(private DateTimeImmutable $now) {}
 
