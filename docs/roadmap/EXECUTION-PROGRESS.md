@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M01 COMPLETE (C-01/C-02/C-21/C-31); M02 IN PROGRESS (C-06 COMPLETE); next C-03 and C-04. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
+**Status:** M01 COMPLETE (C-01/C-02/C-21/C-31); M02 IN PROGRESS (C-03/C-04/C-06/C-07 COMPLETE); next C-09/C-27. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `6cc9e1d4d4528d93190fcbfea65ba00c6c04c479` (C-21); earlier C-31 `c6f003d`, C-06 `87cc139`.
-**Next legal action:** M02 / C-03: define shared username and password invariants with backwards-compatibility decisions and regression tests, then C-04 login timing and C-07 session token lifecycle as dependencies permit. Execute multiple independent tested packets per RP turn.
+**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `c62a03d4f62e9d09804d819ac041b243b79df3d3` (C-07); C-03/C-04 `79058675a1ba3dbe5978f0e41f518d24fdefce02`.
+**Next legal action:** M02 / C-09 test security headers on normal/error/binary responses; then C-27 safe diagnostics. Evaluate C-05 edge rate limits separately for public deployment. Batch 2–4 related packets per turn.
 
 ## Milestone status
 
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
-| M02 | Security/auth | **IN PROGRESS — C-06 DONE** | `87cc139`: route access defaults to authenticated; CSRF enforced on all unsafe routes, including public POST. Router regressions 7 tests/14 assertions, full quality/smoke PASS. |
+| M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
 | M03 | Runtime/session/config | NOT STARTED | — |
 | M04 | DB/audit/durability | NOT STARTED | — |
 | M05 | Analytics/performance | NOT STARTED | — |
@@ -25,15 +25,15 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 5 DONE / 48 TOTAL (43 OPEN)
+## Canonical packet status — 8 DONE / 48 TOTAL (40 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
-- [ ] **C-03** — Establish one username invariant (length, canonical uniqueness, Unicode spoofing decision) and one. *(OPEN; no implementation evidence yet)*
-- [ ] **C-04** — Close unknown-account password timing branch. *(OPEN; no implementation evidence yet)*
+- [x] **C-03** — Shared Account creation policy: 1–64 ASCII username characters matching SQLite NOCASE, 12–72-byte passwords without NUL, for registration and admin CLI. **DONE:** `7905867`; RED username/short-secret regressions, GREEN full quality and real CLI/HTTP smoke. Historical usernames/credentials can still authenticate.
+- [x] **C-04** — Unknown accounts pay dummy bcrypt cost 12; explicit cost independent of PHP defaults, legacy hashes safely upgraded using compare-and-swap. **DONE:** `7905867`; RED missing-user timing test, GREEN login/rehash tests and full quality.
 - [ ] **C-05** — Add enforceable login/registration abuse limits at deployment boundary. *(OPEN; no implementation evidence yet)*
 - [x] **C-06** — Make authorization and CSRF an explicit fail-closed route policy. **DONE:** `87cc139`; every route has access contract (public, signed-in, admin), new routes default to protected and unguarded unsafe requests deny. Central server-owned cookie/CSRF policy plus existing adapter checks; Router 7 tests/14 assertions, full quality and HTTP smoke PASS. Origin/Fetch Metadata can be considered as later defense in depth.
-- [ ] **C-07** — Define session state transitions, ID and CSRF token rotation at login. *(OPEN; no implementation evidence yet)*
+- [x] **C-07** — Session ID and CSRF token rotate on login; pre-login tokens cannot authorize authenticated POST, and logout/expiry revoke session. **DONE:** `c62a03d`; RED token test, GREEN session and HTTP smoke with role-demotion regression.
 - [ ] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization before changing n. *(OPEN; no implementation evidence yet)*
 - [ ] **C-09** — Apply suitable headers to every response: nosniff, cache-control for private data, referrer protec. *(OPEN; no implementation evidence yet)*
 - [ ] **C-10** — Reject unsafe production configuration. *(OPEN; no implementation evidence yet)*
@@ -92,6 +92,9 @@
 | 2026-10-09 | M01 / C-31 | `c6f003d4b4087bab43ed2660ca98d95004b94742` | Malformed login/register inputs RED before fix; 95/6031 quality PASS and HTTP smoke PASS | Safe 422 for array/oversized form and query fields; preserve 401 for incorrect credentials. |
 | 2026-10-09 | M02 / C-06 | `87cc1397262c120d9b3e582ab194749f62ab28bc` | New Router guard contract tests; 98/6038 quality PASS; live HTTP smoke PASS | Default protected routes, central CSRF for unsafe methods and admin access scope. |
 | 2026-10-09 | M01 / C-21 | `6cc9e1d4d4528d93190fcbfea65ba00c6c04c479` | HTTP smoke initially RED for missing 500 request ID; then PASS for DB initialization and audit failure; 98/6038 quality PASS | HTTP 500 stays generic, correlation header links to server log. |
+
+| 2026-10-09 | M02 / C-03+C-04 | `79058675a1ba3dbe5978f0e41f518d24fdefce02` | 12-byte password/username and missing-user timing RED before fix; full quality 104 tests/6067 assertions PASS; live CLI/HTTP smoke PASS | Unified creation policy; legacy credentials compatible; bcrypt cost 12 fixed. |
+| 2026-10-09 | M02 / C-07 | `c62a03d4f62e9d09804d819ac041b243b79df3d3` | RED old anonymous CSRF token; GREEN session tests and live HTTP smoke; quality PASS | Login invalidates anonymous forms; rotating CSRF with session ID. |
 
 ## Decisions log
 

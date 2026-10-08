@@ -62,9 +62,9 @@ sample, outside the public document root. The server never executes it.
 
 ## Security and data correctness
 
-Passwords use explicit bcrypt, with a strict 72-**byte** maximum at user/admin creation and login (bcrypt would silently
+New usernames use 1–64 ASCII letters/digits/dots/underscores/hyphens (starting with a letter or digit) aligned with SQLite NOCASE uniqueness; historical names remain valid at login. New user/admin passwords use explicit bcrypt cost 12 with a strict **12–72-byte** limit and no NUL (bcrypt would silently
 truncate longer inputs). Existing bcrypt accounts with historically overlong secrets should reset passwords. Sessions
-regenerate their ID upon successful authentication, require strict session IDs, expire after 30 minutes idle or 12 hours
+regenerate their ID and their CSRF token upon successful authentication, require strict session IDs, expire after 30 minutes idle or 12 hours
 absolute lifetime, and invalidate the cookie at logout. Cookies are HttpOnly with SameSite=Lax; set
 `SESSION_COOKIE_SECURE=1` and serve the application over HTTPS outside local development. All state-changing HTTP forms
 require a session-backed CSRF token, and access is checked server-side. Templates escape HTML output, SQL filters use
@@ -93,7 +93,7 @@ composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, P
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
 starts the same PHP version with explicit database environment and mapped temporary directory.
 
-**Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). The M00 baseline is verified; application fixes are not yet implemented.
+**Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). M00/M01 are verified; 8/48 canonical work packets are implemented, with M02 security work ongoing. Public-production readiness has not yet been demonstrated.
 
 Original earlier worklist (archived input): **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 review findings).
 
