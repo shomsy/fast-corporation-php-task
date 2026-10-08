@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: DEEP REVIEW F-01/F-05 HARDENING — local acceptance PASS; exact new commit CI pending
+Status: SUBMISSION READY (interview scope) — deep-review hardening application commit CI PASS on PHP 8.3/8.4/8.5; public internet deployment separately gated
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
@@ -9,9 +9,10 @@ Repository language: English only
 ## Compass Engineering + Books — error semantics and OOP follow-up (2026-10-08)
 
 Base: GitHub main at `233832fca3ac714cb72e9ea585754b56c6b76f1f`.
-This new review was independently reproduced with failing regression tests
-before the repairs. Earlier acceptance evidence remains historical until
-the exact new commit is independently validated in GitHub Actions.
+This review was independently reproduced with failing regression tests before
+the repairs. The hardened application commit was subsequently verified with
+successful GitHub Actions on the exact SHA; older commits' acceptance evidence
+remains historical, not proof for the updated application code.
 
 - **F-01 (download failure taxonomy):** expected unreadable/missing local
   download artifact raises Downloads::ArtifactUnavailable and HTTP adapter
@@ -52,8 +53,15 @@ the exact new commit is independently validated in GitHub Actions.
   **84 tests / 5,950 assertions**, PHPStan max 0 errors, Deptrac 0 violations,
   0 skipped/0 uncovered, Composer validation/strict PSR-4/security audit PASS,
   PHP-CS-Fixer PASS. Live HTTP/CLI smoke PASS including missing audit DB
-  during download with HTTP 500 and server-side diagnostics. Exact new SHA CI
-  and clean remote Git status still must be confirmed prior to release closure.
+  during download with HTTP 500 and server-side diagnostics. The application
+  commit `f8c9381584ae16e44ba4691a1648ade27d1bffaf` was pushed to
+  `origin/main` and independently verified by GitHub Actions run `37769054126`:
+  **completed/success** on PHP 8.3, 8.4 and 8.5, including both `Run quality
+  suite` and `Live HTTP and CLI acceptance` in each job.
+  https://github.com/shomsy/fast-corporation-php-task/actions/runs/37769054126.
+  After the application commit was pushed, local `main` and `origin/main`
+  matched and the working tree was clean. This evidence-only documentation
+  update must separately pass exact-SHA CI before final release closure.
 - **Limits:** Governance remains PILOT. Public-internet HTTPS, secure cookies,
   edge rate limits, request-size controls and operational logging remain
   distinct deployment gates; no universal production certification is claimed.
