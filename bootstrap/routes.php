@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Canonical HTTP routes for all requested user and administrator workflows.
  *
- * Only trusted handlers are registered; authentication and CSRF guards remain inside their adapters.
+ * A central route guard enforces authorization and CSRF; existing adapter checks add defense in depth.
  *
  * @package InterviewTask\Bootstrap
  */
@@ -15,6 +15,7 @@ use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
+use InterviewTask\Accounts\Role;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
@@ -35,6 +36,7 @@ use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Templating\Renderer;
 use InterviewTask\Infrastructure\Time\SystemClock;
 use InterviewTask\Runtime\Http\Request;
+use InterviewTask\Runtime\Http\RouteAccess;
 use InterviewTask\Runtime\Http\Response;
 use InterviewTask\Runtime\Http\Router;
 
@@ -52,6 +54,28 @@ return static function (Router $router) use ($config): void {
     $html     = new HtmlPage(renderer: new Renderer());
     $activity = new ActivityLog(pdo: $pdo, clock: $clock);
     $signedIn = new RequireSignedIn(identity: $identity);
+
+    // Authorization and CSRF are enforced before all route handlers, including future ones.
+    $router->guardWith(static function (Request $request, RouteAccess $access) use ($current, $csrf): ?Response {
+        if ($access !== RouteAccess::Public) {
+            $account = $current->current();
+
+            if ($account === null) {
+                return Response::redirect(location: '/login');
+            }
+
+            if ($access === RouteAccess::Admin && $account->role !== Role::Admin) {
+                return Response::text(body: 'Forbidden', status: 403);
+            }
+        }
+
+        if (! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)
+            && ! $csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
+            return Response::text(body: 'Forbidden', status: 403);
+        }
+
+        return null;
+    });
 
     $lifecycle     = new AccountLifecycle(
         register: new Register(accounts: $accounts, clock: $clock),
@@ -76,16 +100,16 @@ return static function (Router $router) use ($config): void {
         html: $html,
     );
 
-    $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home());
-    $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm());
-    $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request));
-    $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request));
-    $router->add(method: 'POST', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginSubmit(request: $request));
-    $router->add(method: 'POST', path: '/logout', handler: static fn(Request $request): Response => $accountPages->logoutSubmit(request: $request));
-    $router->add(method: 'GET', path: '/page-a', handler: static fn(): Response => $cowPages->pageA());
-    $router->add(method: 'POST', path: '/buy-cow', handler: static fn(Request $request): Response => $cowPages->buyCow(request: $request));
-    $router->add(method: 'GET', path: '/page-b', handler: static fn(): Response => $downloadPages->pageB());
-    $router->add(method: 'POST', path: '/download', handler: static fn(Request $request): Response => $downloadPages->download(request: $request));
-    $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request));
-    $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request));
+    $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm(), access: RouteAccess::Public);
+    $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);
+    $router->add(method: 'POST', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginSubmit(request: $request), access: RouteAccess::Public);
+    $router->add(method: 'POST', path: '/logout', handler: static fn(Request $request): Response => $accountPages->logoutSubmit(request: $request), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/page-a', handler: static fn(): Response => $cowPages->pageA(), access: RouteAccess::SignedIn);
+    $router->add(method: 'POST', path: '/buy-cow', handler: static fn(Request $request): Response => $cowPages->buyCow(request: $request), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/page-b', handler: static fn(): Response => $downloadPages->pageB(), access: RouteAccess::SignedIn);
+    $router->add(method: 'POST', path: '/download', handler: static fn(Request $request): Response => $downloadPages->download(request: $request), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request), access: RouteAccess::Admin);
+    $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request), access: RouteAccess::Admin);
 };

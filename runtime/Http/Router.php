@@ -19,9 +19,27 @@ final class Router
     /**
      * Internal state or dependency owned by Router.
      *
-     * @var array<string, array<string, Closure(Request): Response>>
+     * @var array<string, array<string, array{handler: Closure(Request): Response, access: RouteAccess}>>
      */
     private array $routes = [];
+
+    /**
+     * Central application security gate applied to all registered routes.
+     *
+     * @var (Closure(Request, RouteAccess): ?Response)|null
+     */
+    private ?Closure $guard = null;
+
+    /**
+     * Configure the single security boundary for route authorization and unsafe methods.
+     *
+     * @param callable(Request, RouteAccess): ?Response $guard Denial response or null when permitted.
+     * @return void No return value.
+     */
+    public function guardWith(callable $guard): void
+    {
+        $this->guard = Closure::fromCallable(callback: $guard);
+    }
 
     /**
      * Register or replace an exact HTTP method-and-path handler.
@@ -29,10 +47,11 @@ final class Router
      * @param string $method HTTP request method or route verb.
      * @param string $path Absolute route, request path, or trusted local filesystem path.
      * @param callable(Request): Response $handler
+     * @param RouteAccess $access Required permission; defaults to signed-in, never public.
      * @return void No return value.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
-    public function add(string $method, string $path, callable $handler): void
+    public function add(string $method, string $path, callable $handler, RouteAccess $access = RouteAccess::SignedIn): void
     {
         $method = strtoupper(string: trim(string: $method));
 
@@ -44,7 +63,10 @@ final class Router
             throw new InvalidArgumentException(message: 'Route path must start with "/".');
         }
 
-        $this->routes[$method][$path] = Closure::fromCallable(callback: $handler);
+        $this->routes[$method][$path] = [
+            'handler' => Closure::fromCallable(callback: $handler),
+            'access'  => $access,
+        ];
     }
 
     /**
@@ -55,10 +77,23 @@ final class Router
      */
     public function dispatch(Request $request): Response
     {
-        $handler = $this->routes[$request->method()][$request->path()] ?? null;
+        $route = $this->routes[$request->method()][$request->path()] ?? null;
 
-        if ($handler !== null) {
-            return $handler($request);
+        if ($route !== null) {
+            if ($this->guard === null) {
+                // No application security binding: protected routes and all unsafe verbs fail closed.
+                if ($route['access'] !== RouteAccess::Public || ! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)) {
+                    return Response::text(body: 'Forbidden', status: 403);
+                }
+            } else {
+                $denied = ($this->guard)($request, $route['access']);
+
+                if ($denied !== null) {
+                    return $denied;
+                }
+            }
+
+            return ($route['handler'])($request);
         }
 
         $allowed = [];
