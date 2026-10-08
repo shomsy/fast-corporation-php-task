@@ -82,6 +82,15 @@ download artifact returns 503, but a failure to write its required activity even
 boundary and is logged on the server. Only the specific SQLite username UNIQUE violation is translated to
 `UsernameTaken`; other constraint failures are not concealed. No background infrastructure is needed.
 
+Dynamic HTTP responses now include centralized browser/privacy headers for HTML,
+redirects, errors and binary downloads. CSP does not permit inline JavaScript,
+and HSTS is emitted only on proven HTTPS requests. Legacy inline CSS is a
+temporary SSR exception until the SPA cutover. Denied login, CSRF, admin and
+unexpected runtime failures use structured, redacted security diagnostics and
+correlation IDs; product activity tracking remains independent. See
+[security diagnostics](docs/security/SECURITY-DIAGNOSTICS.md) for remaining
+production log retention and alerting work.
+
 ## Validation
 
 ```bash

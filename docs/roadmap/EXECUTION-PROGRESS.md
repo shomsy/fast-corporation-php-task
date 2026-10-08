@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M01 COMPLETE (C-01/C-02/C-21/C-31); M02 IN PROGRESS (C-03/C-04/C-06/C-07 COMPLETE); next C-09/C-27. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
+**Status:** M01 DONE; M02 IN PROGRESS: C-03/C-04/C-06/C-07/C-09 done; C-27 diagnostics done. 10/48 complete. Public production not yet certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `c62a03d4f62e9d09804d819ac041b243b79df3d3` (C-07); C-03/C-04 `79058675a1ba3dbe5978f0e41f518d24fdefce02`.
-**Next legal action:** M02 / C-09 test security headers on normal/error/binary responses; then C-27 safe diagnostics. Evaluate C-05 edge rate limits separately for public deployment. Batch 2–4 related packets per turn.
+**Last implementation commit:** ee0cff65d1f3c90861a1846aa1961e660c7d9a13 (C-27); C-09 bd62a5a3abfb473ac45a604d40616013229809e5.
+**Next legal action:** C-10 production fail-closed boot and DB provisioning, then C-08 session storage/GC/locking if measured. Evaluate C-05 rate limits with actual deployment. Batch 2-4 coherent tasks per RP turn.
 
 ## Milestone status
 
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
-| M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
+| M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
 | M03 | Runtime/session/config | NOT STARTED | — |
 | M04 | DB/audit/durability | NOT STARTED | — |
 | M05 | Analytics/performance | NOT STARTED | — |
@@ -25,7 +25,7 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 8 DONE / 48 TOTAL (40 OPEN)
+## Canonical packet status — 10 DONE / 48 TOTAL (38 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -35,7 +35,7 @@
 - [x] **C-06** — Make authorization and CSRF an explicit fail-closed route policy. **DONE:** `87cc139`; every route has access contract (public, signed-in, admin), new routes default to protected and unguarded unsafe requests deny. Central server-owned cookie/CSRF policy plus existing adapter checks; Router 7 tests/14 assertions, full quality and HTTP smoke PASS. Origin/Fetch Metadata can be considered as later defense in depth.
 - [x] **C-07** — Session ID and CSRF token rotate on login; pre-login tokens cannot authorize authenticated POST, and logout/expiry revoke session. **DONE:** `c62a03d`; RED token test, GREEN session and HTTP smoke with role-demotion regression.
 - [ ] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization before changing n. *(OPEN; no implementation evidence yet)*
-- [ ] **C-09** — Apply suitable headers to every response: nosniff, cache-control for private data, referrer protec. *(OPEN; no implementation evidence yet)*
+- [x] **C-09** — Unified privacy and browser security headers on every dynamic response, including 200/3xx/4xx/5xx, JSON and binary; CSP disallows inline JS; HSTS only on trusted HTTPS. DONE bd62a5a3abfb473ac45a604d40616013229809e5. RED then GREEN 9 Router tests/65 assertions, quality 106/6118 and live smoke PASS. Legacy inline CSS retained until SPA.
 - [ ] **C-10** — Reject unsafe production configuration. *(OPEN; no implementation evidence yet)*
 - [ ] **C-11** — Make migrations deterministic and drift-detectable with SQL-content checksums and safe concurrent-. *(OPEN; no implementation evidence yet)*
 - [ ] **C-12** — Define accepted-event audit semantics, caller authority, retention, tamper threat model and UTC ti. *(OPEN; no implementation evidence yet)*
@@ -53,7 +53,7 @@
 - [ ] **C-24** — Define non-nesting transaction contract and preserve original failure if rollback/session compensa. *(OPEN; no implementation evidence yet)*
 - [ ] **C-25** — Enforce least privilege for DB/config/session files and rehearse durable SQLite backup/restore. *(OPEN; no implementation evidence yet)*
 - [ ] **C-26** — Define deployment/runbook/health/readiness/schema checks and safe rollback/forward recovery. *(OPEN; no implementation evidence yet)*
-- [ ] **C-27** — Structured diagnostic/security logs separate from product activity. *(OPEN; no implementation evidence yet)*
+- [x] **C-27** — Allowlisted structured security logs for auth/CSRF/admin denials and failures; 24-hex request ID links response and server log; no raw exception message, SQL or credentials. DONE ee0cff65d1f3c90861a1846aa1961e660c7d9a13. RED then GREEN HTTP smoke + logger tests; quality 108/6128 PASS. Log retention/alert deployment remains C-26/C-47.
 - [ ] **C-28** — Measure latency, memory, DB lock, file download and resource utilization under target load. *(OPEN; no implementation evidence yet)*
 - [ ] **C-29** — Improve true responsibility boundaries: HTTP/JSON transport, auth policy, application orchestratio. *(OPEN; no implementation evidence yet)*
 - [ ] **C-30** — Review shallow wrappers, misleading side-effect names, redundant route helpers and module APIs wit. *(OPEN; no implementation evidence yet)*
@@ -95,6 +95,9 @@
 
 | 2026-10-09 | M02 / C-03+C-04 | `79058675a1ba3dbe5978f0e41f518d24fdefce02` | 12-byte password/username and missing-user timing RED before fix; full quality 104 tests/6067 assertions PASS; live CLI/HTTP smoke PASS | Unified creation policy; legacy credentials compatible; bcrypt cost 12 fixed. |
 | 2026-10-09 | M02 / C-07 | `c62a03d4f62e9d09804d819ac041b243b79df3d3` | RED old anonymous CSRF token; GREEN session tests and live HTTP smoke; quality PASS | Login invalidates anonymous forms; rotating CSRF with session ID. |
+
+| 2026-10-09 | M02/C-09 | bd62a5a3abfb473ac45a604d40616013229809e5 | RED 2 header tests; GREEN composer quality 106/6118, full live HTTP smoke | Shared browser headers; HTTPS only HSTS, transitional inline CSS. |
+| 2026-10-09 | C-27 | ee0cff65d1f3c90861a1846aa1961e660c7d9a13 | RED missing 401 ID; GREEN safe 401/403/500 real smoke, logger 2 tests, full quality 108/6128 | Structured redacted logging; retention/alerting remain deployment gates. |
 
 ## Decisions log
 
