@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Release candidate — all local acceptance gates PASS; remote CI pending
+Status: SUBMISSION READY — all local acceptance gates and exact-commit remote CI PASS
 Project: Fast Corporation PHP Developer technical task
 Architecture level: L3 greenfield, applied proportionally
 Governance: Architecture Governance 1.7.1
@@ -131,7 +131,7 @@ Remote `main` is the delivery source of truth. Each loop iteration resumes from 
 - Complete PHPUnit: **PASS, 50 tests / 400 assertions** (PHP 8.5.5). Superseded Accounts HTTP adapter test was replaced by actual composition-boundary Flow coverage.
 - `composer quality`: **PASS**. Composer validation PASS, dependency security audit PASS (no advisories), PHP-CS-Fixer PASS, PHPStan max PASS (0 errors), Deptrac PASS (0 violations, 0 skipped), PHPUnit PASS.
 - Isolated live HTTP smoke: **PASS** for fresh and idempotent SQLite migrations, CLI admin bootstrap, complete user registration/login/cow/download/logout and admin Statistics/filters/Reports using actual local HTTP server.
-- Release gate: final Git commit, origin/main synchronization and GitHub Actions CI for exact SHA must still be independently confirmed before declaring submission-ready.
+- Release gate: commit `f319e57fd02e8beebeec57a5f32adb2269039668` is pushed to `origin/main`; GitHub Actions run `37710008109` completed successfully on PHP 8.3, 8.4 and 8.5; clean working tree verified.
 
 ## Delivery phases
 
@@ -145,7 +145,7 @@ Remote `main` is the delivery source of truth. Each loop iteration resumes from 
 - Phase 6 — Statistics — DONE locally
 - Phase 7 — Reports — DONE locally
 - Phase 8 — Security and failure hardening — DONE locally, quality PASS
-- Phase 9 — Acceptance and reviewer experience — local live smoke PASS; GitHub release CI pending
+- Phase 9 — Acceptance and reviewer experience — DONE (live HTTP smoke, full quality suite, synchronized Git, and remote PHP 8.3/8.4/8.5 CI PASS)
 
 ### Alignment exit
 
