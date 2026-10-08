@@ -111,8 +111,8 @@ $yFor  = static fn (int $value) : float => 265 - $value * 215 / $max;
                 endforeach; ?>"/>
                 <?php
                 foreach ($daily as $i => $day): ?>
-                    <circle cx="<?= $escape($xFor($i)) ?>" cy="<?= $escape($yFor((int) $day[$key])) ?>" r="4"
-                            fill="<?= $escape($s['color']) ?>">
+                <circle cx="<?= $escape($xFor($i)) ?>" cy="<?= $escape($yFor((int) $day[$key])) ?>" r="4"
+                        fill="<?= $escape($s['color']) ?>">
                     <title><?= $escape($s['label'] . ': ' . $day[$key] . ' on ' . $day['date']) ?></title></circle><?php
                 endforeach; ?>
             <?php

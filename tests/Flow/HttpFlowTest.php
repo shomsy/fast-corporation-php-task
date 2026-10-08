@@ -212,6 +212,16 @@ final class HttpFlowTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
+    private function downloadPages(string $artifact) : DownloadPages
+    {
+        return new DownloadPages(
+            new DownloadFile(new ActivityLog($this->pdo, $this->clock), $artifact),
+            new RequireSignedIn($this->identity),
+            $this->csrf,
+            new HtmlPage(new Renderer()),
+        );
+    }
+
     public function testDownloadAuditFailurePropagatesDatabaseException() : void
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
@@ -430,16 +440,6 @@ final class HttpFlowTest extends TestCase
             new RequireAdmin($this->identity),
             new CurrentAccount($this->identity),
             $html,
-        );
-    }
-
-    private function downloadPages(string $artifact) : DownloadPages
-    {
-        return new DownloadPages(
-            new DownloadFile(new ActivityLog($this->pdo, $this->clock), $artifact),
-            new RequireSignedIn($this->identity),
-            $this->csrf,
-            new HtmlPage(new Renderer()),
         );
     }
 
