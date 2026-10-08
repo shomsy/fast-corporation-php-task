@@ -10,6 +10,14 @@ declare(strict_types=1);
  */
 
 use Rector\CodingStyle\Rector\Catch_\CatchExceptionNameMatchingTypeRector;
+use Rector\CodingStyle\Rector\ClassLike\NewlineBetweenClassLikeStmtsRector;
+use Rector\CodingStyle\Rector\ClassMethod\NewlineBeforeNewAssignSetRector;
+use Rector\CodingStyle\Rector\Stmt\NewlineAfterStatementRector;
+use Rector\DeadCode\Rector\Property\RemoveUselessVarTagRector;
+use Rector\DeadCode\Rector\Node\RemoveNonExistingVarAnnotationRector;
+use Rector\CodingStyle\Rector\PostInc\PostIncDecToPreIncDecRector;
+use Rector\DeadCode\Rector\ClassMethod\RemoveUnusedPublicMethodParameterRector;
+use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\Config\RectorConfig;
 use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
 use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
@@ -35,7 +43,8 @@ return RectorConfig::configure()
     ->withPreparedSets(
         deadCode: true,
         codeQuality: true,
-        codingStyle: true,
+        // MOI owns visual formatting; Rector must not invent a competing style.
+        codingStyle: false,
         typeDeclarations: true,
         typeDeclarationDocblocks: true,
         privatization: true,
@@ -60,5 +69,17 @@ return RectorConfig::configure()
         RenameForeachValueVariableToMatchExprVariableRector::class,
         RenameForeachValueVariableToMatchMethodCallReturnTypeRector::class,
         CatchExceptionNameMatchingTypeRector::class,
+        // Rector quality presets must not override MOI whitespace and test style.
+        NewlineAfterStatementRector::class,
+        NewlineBeforeNewAssignSetRector::class,
+        NewlineBetweenClassLikeStmtsRector::class,
+        PreferPHPUnitThisCallRector::class,
+        // Project requires explicit @var contracts in comprehensive DocBlocks.
+        RemoveUselessVarTagRector::class,
+        // Preserve PHPDoc array-shapes attached to file-level return expressions,
+        // lexical template parameters, and author-chosen operator spelling.
+        RemoveNonExistingVarAnnotationRector::class,
+        RemoveUnusedPublicMethodParameterRector::class,
+        PostIncDecToPreIncDecRector::class,
     ])
     ->withComposerBased(phpunit: true);

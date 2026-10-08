@@ -1,5 +1,11 @@
 # Rector MAX — PHP 8.3 dry-run report
 
+> **MOI-only update (2026-10-08):** this document records historical Rector
+> scan results and earlier formatting policy. Current practice is documented
+> in `docs/MOI-FORMATTING.md`: MOI is the only formatter; Rector visual
+> style rules are disabled and Composer CI does not invoke PHP-CS-Fixer.
+
+
 Date: 2026-10-08. Rector: **2.7.0**. Project PHP baseline: **8.3**.
 
 ## Configuration

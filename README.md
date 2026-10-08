@@ -87,7 +87,7 @@ boundary and is logged on the server. Only the specific SQLite username UNIQUE v
 ```bash
 composer test                 # complete PHPUnit suite
 python3 tests/Flow/live_smoke.py  # fresh DB, CLI admin, local PHP server, user/admin HTTP journeys
-composer quality              # strict PSR-4, audit, style, PHPDoc, PHPStan, Deptrac, PHPUnit
+composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, PHPUnit
 ```
 
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
@@ -107,11 +107,13 @@ security response headers and transport mapping separate from business ownership
 Every `composer quality` run verifies PSR-4 namespaces and duplicate class definitions via
 `composer dump-autoload --optimize --strict-psr --strict-ambiguous`.
 
-PHP-CS-Fixer uses `@PER-CS3x0` (PER Coding Style 3.0), plus project-specific strict
-rules. This does **not** assert complete PER Coding Style 3.1 verification.
-Class and attribute references use file-level `use` imports, including simple PHPDoc
-annotations (`@throws`, `@see`). Automatic importing, import ordering and removing
-unused imports are enforced by `composer quality` for project code and tooling.
+**PhpStorm MOI is the only PHP formatter.** It is the selected project code
+style and the author-owned visual standard. PHP-CS-Fixer is not executed by
+`composer quality`; CI checks correctness but cannot independently check
+exact MOI whitespace. See `docs/MOI-FORMATTING.md` for IDE formatting.
+Class and attribute references normally use file-level `use` imports, including
+simple PHPDoc annotations (`@throws`, `@see`). PhpStorm recommends and organizes
+imports using MOI. Exact import formatting is no longer enforced by Composer CI.
 Time-dependent use cases accept the standard `Psr\Clock\ClockInterface` (PSR-20),
 implemented locally by `Infrastructure\Time\SystemClock` in UTC. Tests inject fixed clocks;
 no bespoke clock interface or extra clock implementation package is needed.
@@ -130,9 +132,9 @@ This protects business vocabulary and the public contracts of PHP named argument
 Review remaining suggestions against PHPDoc, module boundaries, existing behavior
 and tests. The evidence is in `docs/RECTOR-MAX-PHP83-REPORT.md`.
 
-The active global PhpStorm `MOI` code style is aligned with
-`.editorconfig` and PHP-CS-Fixer's PER Coding Style rules.
-`composer quality` is the mandatory code/style gate; Rector is advisory.
+The original global MOI scheme is the sole visual formatter; Rector is
+an advisory dry-run scanner without automatic visual style transformations.
+`composer quality` checks correctness, not exact formatting.
 
 ## Deployment scope and remaining hardening
 

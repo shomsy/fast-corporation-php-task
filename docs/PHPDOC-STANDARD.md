@@ -81,7 +81,7 @@ The **mandatory, machine-enforced** rule is `fully_qualified_strict_types: {impo
 
 **Exceptions:** string values and executable PHP source fixtures whose precise FQCN literal is under test; deliberate alias/name collisions; language syntax, functions and constants that are not classes; advanced PHPStan shape aliases not understood by the simple PHPDoc tag fixer. Never rename an identifier merely for the appearance of a shorter spelling, and never change runtime behavior.
 
-This is a **project policy**, not a PHP-FIG requirement that fully qualified names be banned. The active PhpStorm MOI style should match it.
+This is a **project preference**, not a PHP-FIG requirement that fully qualified names be banned. The original global MOI profile is authoritative and must not be altered merely to satisfy import tooling.
 
 ## What must **not** be added artificially
 

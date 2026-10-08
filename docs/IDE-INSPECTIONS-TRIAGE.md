@@ -3,7 +3,7 @@
 Baseline: 2026-10-08; original XML reports are preserved in `var/phpstorm-inspections/2026-10-08/`.
 The underlying export is a snapshot, not automatically recalculated after changes.
 
-Authority: PHP 8.3+ runtime; project PHP-CS-Fixer (PER Coding Style); PHPStan; PHPUnit; Deptrac; live HTTP acceptance.
+Current authority: original MOI for visual formatting; PHP 8.3+ runtime, PHPStan, PHPUnit, Deptrac and live HTTP acceptance for correctness. Previous PHP-CS-Fixer findings in this dated report are historical.
 
 ## Baseline counts
 
