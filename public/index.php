@@ -27,12 +27,15 @@ try {
     error_log(message: 'request_id=' . $requestId . ' ' . (string) $error);
 
     if (! headers_sent()) {
-        http_response_code(response_code: 500);
-        header(header: 'Content-Type: text/plain; charset=UTF-8');
-        header(header: 'Cache-Control: no-store');
-        header(header: 'X-Content-Type-Options: nosniff');
-        header(header: 'X-Request-ID: ' . $requestId);
+        (new \InterviewTask\Runtime\Http\Response(
+            body: 'Internal Server Error',
+            status: 500,
+            headers: [
+                'Content-Type' => 'text/plain; charset=UTF-8',
+                'X-Request-ID' => $requestId,
+            ],
+        ))->send();
+    } else {
+        echo 'Internal Server Error';
     }
-
-    echo 'Internal Server Error';
 }

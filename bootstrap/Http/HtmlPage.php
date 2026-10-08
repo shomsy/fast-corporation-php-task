@@ -40,7 +40,6 @@ final readonly class HtmlPage
                 'X-Content-Type-Options'  => 'nosniff',
                 'X-Frame-Options'         => 'DENY',
                 'Referrer-Policy'         => 'no-referrer',
-                'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
             ],
         );
     }

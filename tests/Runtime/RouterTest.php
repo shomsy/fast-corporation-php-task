@@ -140,4 +140,57 @@ final class RouterTest extends TestCase
         self::assertSame(200, $router->dispatch(request: new Request(method: 'POST', path: '/signup', post: ['csrf_token' => 'valid']))->status());
     }
 
+
+    /**
+     * Every response type has browser protections, including denied, redirects, errors and downloads.
+     *
+     * @return void No return value.
+     */
+    public function testAllResponseTypesReceiveSecurityAndPrivacyHeaders(): void
+    {
+        $responses = [
+            Response::text(body: 'Forbidden', status: 403),
+            Response::text(body: 'Not Found', status: 404),
+            Response::text(body: 'Service Unavailable', status: 503),
+            Response::html(body: '<p>Hello</p>'),
+            Response::redirect(location: '/login'),
+            new Response(body: 'MZ', headers: ['Content-Type' => 'application/octet-stream']),
+            new Response(body: '{"status":"ok"}', headers: ['Content-Type' => 'application/json']),
+        ];
+
+        foreach ($responses as $response) {
+            $headers = $response->headers();
+            self::assertSame('nosniff', $headers['X-Content-Type-Options']);
+            self::assertSame('no-store', $headers['Cache-Control']);
+            self::assertSame('no-referrer', $headers['Referrer-Policy']);
+            self::assertSame('DENY', $headers['X-Frame-Options']);
+            self::assertStringContainsString("script-src 'self'", $headers['Content-Security-Policy']);
+            self::assertStringNotContainsString("script-src 'unsafe-inline'", $headers['Content-Security-Policy']);
+            self::assertArrayNotHasKey('Strict-Transport-Security', $headers);
+        }
+    }
+
+    /**
+     * HSTS must only appear when the server has explicitly identified an HTTPS request.
+     *
+     * @return void No return value.
+     */
+    public function testHstsOnlyForTrustedHttpsTransport(): void
+    {
+        $prior = $_SERVER['HTTPS'] ?? null;
+
+        try {
+            $_SERVER['HTTPS'] = 'on';
+            self::assertSame('max-age=31536000', Response::text(body: 'secure')->headers()['Strict-Transport-Security']);
+            $_SERVER['HTTPS'] = 'off';
+            self::assertArrayNotHasKey('Strict-Transport-Security', Response::text(body: 'insecure')->headers());
+        } finally {
+            if ($prior === null) {
+                unset($_SERVER['HTTPS']);
+            } else {
+                $_SERVER['HTTPS'] = $prior;
+            }
+        }
+    }
+
 }

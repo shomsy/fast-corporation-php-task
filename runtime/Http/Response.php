@@ -94,7 +94,22 @@ final readonly class Response
      */
     public function headers(): array
     {
-        return $this->headers;
+        // One boundary for private dynamic responses: never depend on every handler
+        // remembering browser security, privacy or HTTPS policy.
+        $defaults = [
+            'Cache-Control'           => 'no-store',
+            'X-Content-Type-Options' => 'nosniff',
+            'X-Frame-Options'        => 'DENY',
+            'Referrer-Policy'        => 'no-referrer',
+            // SSR still embeds CSS. Scripts are only allowed as same-origin files.
+            'Content-Security-Policy' => "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+        ];
+
+        if (in_array(needle: $_SERVER['HTTPS'] ?? null, haystack: ['on', '1'], strict: true)) {
+            $defaults['Strict-Transport-Security'] = 'max-age=31536000';
+        }
+
+        return array_replace($defaults, $this->headers);
     }
 
     /**
@@ -106,7 +121,7 @@ final readonly class Response
     {
         http_response_code(response_code: $this->status);
 
-        foreach ($this->headers as $name => $value) {
+        foreach ($this->headers() as $name => $value) {
             header(header: $name . ': ' . $value);
         }
 

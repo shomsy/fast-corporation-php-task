@@ -51,7 +51,16 @@ def request(opener, base, path, data=None):
     except HTTPError as error:
         response = error
     with response:
-        return response.code, dict(response.headers), response.read()
+        headers = dict(response.headers)
+        assert headers.get('X-Content-Type-Options') == 'nosniff', (path, response.code, 'nosniff')
+        assert headers.get('Cache-Control') == 'no-store', (path, response.code, 'cache')
+        assert headers.get('Referrer-Policy') == 'no-referrer', (path, response.code, 'referrer')
+        assert headers.get('X-Frame-Options') == 'DENY', (path, response.code, 'frame')
+        policy = headers.get('Content-Security-Policy', '')
+        assert "script-src 'self'" in policy, (path, response.code, 'CSP')
+        assert "script-src 'unsafe-inline'" not in policy, (path, response.code, 'inline script')
+        assert 'Strict-Transport-Security' not in headers, 'HSTS must not be sent over local HTTP'
+        return response.code, headers, response.read()
 
 
 def csrf(body):
