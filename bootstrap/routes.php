@@ -31,6 +31,7 @@ use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Templating\Renderer;
@@ -65,13 +66,13 @@ return static function (Router $router) use ($config): void {
             }
 
             if ($access === RouteAccess::Admin && $account->role !== Role::Admin) {
-                return Response::text(body: 'Forbidden', status: 403);
+                return Response::text(body: 'Forbidden', status: 403)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.admin_denied'));
             }
         }
 
         if (! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)
             && ! $csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
-            return Response::text(body: 'Forbidden', status: 403);
+            return Response::text(body: 'Forbidden', status: 403)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.csrf_denied'));
         }
 
         return null;

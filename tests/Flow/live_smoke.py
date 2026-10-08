@@ -133,12 +133,24 @@ def main():
             status, _, body = request(user, base, "/login")
             assert status == 200
             anonymous_token = csrf(body)
+            status, denial_headers, _ = request(user, base, "/login", {
+                "username": "review-user", "password": "incorrect-password",
+                "csrf_token": anonymous_token})
+            assert status == 401
+            login_denied_id = denial_headers.get("X-Request-ID")
+            assert re.fullmatch(r"[0-9a-f]{24}", login_denied_id or ""), "Login denial lacks correlation ID"
             status, headers, _ = request(user, base, "/login", {
                 "username": "review-user", "password": "review-password",
                 "csrf_token": anonymous_token})
             assert status == 303 and headers.get("Location") == "/"
-            status, _, _ = request(user, base, "/buy-cow", {"csrf_token": anonymous_token})
+            status, denial_headers, _ = request(user, base, "/buy-cow", {"csrf_token": anonymous_token})
             assert status == 403, "Pre-login CSRF token remained valid after authentication"
+            csrf_denied_id = denial_headers.get("X-Request-ID")
+            assert re.fullmatch(r"[0-9a-f]{24}", csrf_denied_id or ""), "CSRF denial lacks correlation ID"
+            status, admin_headers, _ = request(user, base, "/statistics")
+            assert status == 403
+            admin_denied_id = admin_headers.get("X-Request-ID")
+            assert re.fullmatch(r"[0-9a-f]{24}", admin_denied_id or ""), "Authorization denial lacks correlation ID"
             status, _, body = request(user, base, "/")
             assert status == 200 and b"review-user" in body
             status, _, body = request(user, base, "/page-a")
@@ -214,8 +226,17 @@ def main():
             server_log_stream.close()
 
         diagnostics = server_log.read_text(errors="replace")
-        assert "PDOException" in diagnostics and "activity_events" in diagnostics
-        assert "request_id=" + audit_request_id in diagnostics
+        for event_id, event in [
+            (login_denied_id, "auth.login_denied"),
+            (csrf_denied_id, "security.csrf_denied"),
+            (admin_denied_id, "security.admin_denied"),
+            (audit_request_id, "runtime.unhandled"),
+        ]:
+            assert '"request_id":"' + event_id + '"' in diagnostics
+            assert '"event":"' + event + '"' in diagnostics
+        assert '"exception_class":"PDOException"' in diagnostics
+        assert "SQLSTATE[" not in diagnostics, "Raw database exception leaked to diagnostics"
+        assert "incorrect-password" not in diagnostics
         print("Download audit DB failure -> safe HTTP 500 and server diagnostics: PASS")
 
         # Exercise actual front-controller behavior when PDO fails before routing.
@@ -260,8 +281,11 @@ def main():
                 except subprocess.TimeoutExpired:
                     broken_server.kill()
                     broken_server.wait()
-        assert "PDOException" in failure_log.read_text(errors="replace")
-        assert "request_id=" + startup_request_id in failure_log.read_text(errors="replace")
+        failure_diagnostics = failure_log.read_text(errors="replace")
+        assert '"exception_class":"PDOException"' in failure_diagnostics
+        assert '"request_id":"' + startup_request_id + '"' in failure_diagnostics
+        assert '"event":"runtime.unhandled"' in failure_diagnostics
+        assert "SQLSTATE[" not in failure_diagnostics
         print("Safe 500 on PDO initialization failure: PASS")
 
 

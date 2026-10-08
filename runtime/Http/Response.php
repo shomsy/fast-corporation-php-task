@@ -113,6 +113,25 @@ final readonly class Response
     }
 
     /**
+     * Create an immutable copy with an additional trusted response header.
+     *
+     * @param string $name HTTP response header name.
+     * @param string $value Server-created header value.
+     * @return self Response copy including the new header.
+     * @throws InvalidArgumentException When the header contains forbidden characters.
+     */
+    public function withHeader(string $name, string $value): self
+    {
+        if (preg_match(pattern: '/\A[A-Za-z0-9-]+\z/D', subject: $name) !== 1
+            || str_contains(haystack: $value, needle: "\r")
+            || str_contains(haystack: $value, needle: "\n")) {
+            throw new InvalidArgumentException(message: 'Invalid response header.');
+        }
+
+        return new self(body: $this->body, status: $this->status, headers: array_replace($this->headers, [$name => $value]));
+    }
+
+    /**
      * Emit the status, HTTP headers and body from the entry point.
      *
      * @return void No return value.

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Router;
+use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 
 // Never expose exception messages or stack traces to HTTP clients.
 ini_set(option: 'display_errors', value: '0');
@@ -23,8 +24,7 @@ try {
     $router->dispatch(request: Request::fromGlobals())->send();
 } catch (Throwable $error) {
     // One outermost diagnostic boundary; expected 4xx responses do not throw.
-    $requestId = bin2hex(string: random_bytes(length: 12));
-    error_log(message: 'request_id=' . $requestId . ' ' . (string) $error);
+    $requestId = SecurityEvents::record(event: 'runtime.unhandled', error: $error);
 
     if (! headers_sent()) {
         (new \InterviewTask\Runtime\Http\Response(

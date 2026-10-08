@@ -9,6 +9,7 @@ use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 use InterviewTask\Accounts\UsernameTaken;
+use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
@@ -149,7 +150,7 @@ final readonly class AccountPages
             return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
                 'csrfToken'  => $this->csrf->token(),
                 'registered' => false, 'error' => 'Invalid username or password.',
-            ], status: 401);
+            ], status: 401)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'auth.login_denied'));
         }
 
         return Response::redirect(location: '/');
