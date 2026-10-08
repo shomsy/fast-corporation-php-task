@@ -1,19 +1,19 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00 BASELINE VERIFIED; application remediation and SPA implementation have NOT STARTED. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
+**Status:** M01 IN PROGRESS; C-01 COMPLETE; C-02 NEXT. SPA implementation NOT STARTED; public-production acceptance NOT MET. **Date created:** 2026-10-09. **Baseline code revision:** `bb420841` (before planning documents).
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
-**Homer workstream:** UNASSIGNED — RP not activated by writing plan. At first RP run resolve existing project/job mapping or create **one stable ID** and persist it before governed multi-turn mutations. Never create a new ID per chat.
-**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206` (documentation-only planning follows). No application implementation commit yet.
-**Next legal action:** M01 / C-01: write a failing invalid-date NUL regression and implement exact 422 validation. Then C-02 nested Renderer buffer cleanup. If code differs from baseline, recheck relevant evidence first.
+**Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
+**Last baseline application commit:** `bb420841c8331d7064931115510b91f51f609206`. **Last implementation commit:** `e20977586b6da783b2bd43d04a1186be7a4d7263` (C-01).
+**Next legal action:** M01 / C-02: reproduce nested output-buffer leak with a failing regression, restore buffer entry depth in Renderer and validate; then continue C-21 and C-31 under the execution program.
 
 ## Milestone status
 
 | Phase | Goal | State | Evidence (commit/test) |
 |---|---|---|---|
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
-| M01 | Confirmed correctness | NOT STARTED | — |
+| M01 | Confirmed correctness | **IN PROGRESS — C-01 DONE** | `e209775`: NUL/array date filters now return HTTP 422; regression RED before fix, composer quality PASS (89 tests / 6007 assertions), live HTTP smoke PASS. |
 | M02 | Security/auth | NOT STARTED | — |
 | M03 | Runtime/session/config | NOT STARTED | — |
 | M04 | DB/audit/durability | NOT STARTED | — |
@@ -27,7 +27,7 @@
 
 ## Canonical packet status — 48/48 OPEN
 
-- [ ] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. *(OPEN; no implementation evidence yet)*
+- [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [ ] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. *(OPEN; no implementation evidence yet)*
 - [ ] **C-03** — Establish one username invariant (length, canonical uniqueness, Unicode spoofing decision) and one. *(OPEN; no implementation evidence yet)*
 - [ ] **C-04** — Close unknown-account password timing branch. *(OPEN; no implementation evidence yet)*
@@ -78,13 +78,14 @@
 
 ## Current blockers
 
-- None established during documentation-only planning; tool/auth/CI capacity and actual runtime are to be checked in M00. Do not claim a green suite or production GO without a fresh run.
+- No active blocker. Root-owned generated PHPStan cache quarantined under gitignored `var/phpstan/cache/PHPStan.root-owned-archive-20261009`, new user-owned cache works. Live smoke startup now retries transient connection resets with diagnostics.
 
 ## Phase evidence log
 
 | UTC time | Phase/packet | Commit / operation reference | Exact commands/tests | Outcome + risk / next action |
 |---|---|---|---|---|
-| 2026-10-09 | M00 baseline | `bb420841c8331d7064931115510b91f51f609206` | `composer quality` => PASS; `python3 tests/Flow/live_smoke.py` => PASS; 142/142 review IDs and 48/48 canonical IDs verified | Baseline recorded; **no defects fixed**; next C-01 red regression, then C-02. |
+| 2026-10-09 | M00 baseline | `bb420841c8331d7064931115510b91f51f609206` | `composer quality` => PASS; `python3 tests/Flow/live_smoke.py` => PASS; 142/142 review IDs and 48/48 canonical IDs verified | Historical M00 baseline; C-01 later fixed. |
+| 2026-10-09 | M01 / C-01 | `e20977586b6da783b2bd43d04a1186be7a4d7263` | RED: 2 unit and 1 HTTP regression tests failed before fix; GREEN: 38 scoped tests / 5700 assertions; `composer quality` PASS 89 tests / 6007 assertions, PHPStan/Deptrac/audit PASS; `python3 tests/Flow/live_smoke.py` PASS | C-01 fixed with safe 422 for malformed inputs. Next C-02. |
 
 ## Decisions log
 
