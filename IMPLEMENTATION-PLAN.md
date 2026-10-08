@@ -125,7 +125,7 @@ Remote `main` is the delivery source of truth. Each loop iteration resumes from 
 ## Acceptance evidence — local final gates (2026-10-08)
 
 - Functional task coverage: registration/login/logout; authenticated Page A, Buy a cow -> `thankYou`; authenticated Page B -> fixed `assets/sample.exe`; admin Statistics date/user/action filters; admin Reports SVG and table from one UTC daily aggregate.
-- Owner boundaries: Accounts, ActivityTracking, CowOffer, Downloads. Technical HTTP transport mapping belongs to `bootstrap/WebPages.php`; no business owner imports Runtime HTTP types.
+- Owner boundaries: Accounts, ActivityTracking, CowOffer, Downloads. Technical HTTP transport mapping belongs to four focused adapters under `bootstrap/Http/`; no business owner imports Runtime HTTP types.
 - Security: password hashing, generic invalid login, regeneration on sign-in, CSRF for POST actions, server-side authorization, escaped HTML, prepared queries, session destruction on logout, fixed download path, failure-visible activity logging and transaction rollback.
 - Scoped HTTP tests: **PASS, 12 tests / 77 assertions**.
 - Complete PHPUnit: **PASS, 50 tests / 400 assertions** (PHP 8.5.5). Superseded Accounts HTTP adapter test was replaced by actual composition-boundary Flow coverage.

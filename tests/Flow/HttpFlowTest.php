@@ -7,10 +7,20 @@ namespace InterviewTask\Tests\Flow;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\Register\Register;
+use InterviewTask\Accounts\RequireAdmin;
+use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\DailyReports;
+use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\ActivityTracking\TrackedPage;
-use InterviewTask\Bootstrap\WebPages;
+use InterviewTask\Bootstrap\Http\AccountPages;
+use InterviewTask\Bootstrap\Http\ActivityPages;
+use InterviewTask\Bootstrap\Http\CowOfferPages;
+use InterviewTask\Bootstrap\Http\DownloadPages;
+use InterviewTask\Bootstrap\Http\HtmlPage;
+use InterviewTask\CowOffer\CowOffer;
+use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Session\Csrf;
@@ -22,15 +32,16 @@ use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
-require_once dirname(__DIR__, 2) . '/bootstrap/WebPages.php';
-
-final class WebPagesTest extends TestCase
+final class HttpFlowTest extends TestCase
 {
     private PDO $pdo;
     private Accounts $accounts;
     private SessionIdentity $identity;
     private Csrf $csrf;
-    private WebPages $pages;
+    private AccountPages $accountPages;
+    private CowOfferPages $cowPages;
+    private DownloadPages $downloadPages;
+    private ActivityPages $activityPages;
     private SystemClock $clock;
 
     protected function setUp(): void
@@ -53,7 +64,32 @@ final class WebPagesTest extends TestCase
         $this->identity = new SessionIdentity($session, $this->accounts);
         $this->csrf = new Csrf($session);
         $this->clock = new SystemClock();
-        $this->pages = $this->webPages(dirname(__DIR__, 2) . '/assets/sample.exe');
+        $activity = new ActivityLog($this->pdo, $this->clock);
+        $html = new HtmlPage(new Renderer());
+        $signedIn = new RequireSignedIn($this->identity);
+        $this->accountPages = new AccountPages(
+            $this->pdo,
+            $this->accounts,
+            $this->identity,
+            $this->csrf,
+            $html,
+            $this->clock,
+            $activity,
+        );
+        $this->cowPages = new CowOfferPages(
+            new CowOffer($activity),
+            $signedIn,
+            $this->csrf,
+            $html,
+        );
+        $this->downloadPages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/sample.exe');
+        $this->activityPages = new ActivityPages(
+            new Statistics($this->pdo),
+            new DailyReports($this->pdo),
+            new RequireAdmin($this->identity),
+            $this->identity,
+            $html,
+        );
     }
 
     protected function tearDown(): void
@@ -67,10 +103,10 @@ final class WebPagesTest extends TestCase
 
     public function testEndToEndBrowserFlowRecordsEveryRequiredUserEvent(): void
     {
-        self::assertSame(200, $this->pages->registerForm()->status());
-        self::assertSame(200, $this->pages->loginForm(new Request('GET', '/login'))->status());
+        self::assertSame(200, $this->accountPages->registerForm()->status());
+        self::assertSame(200, $this->accountPages->loginForm(new Request('GET', '/login'))->status());
 
-        $registered = $this->pages->registerSubmit(new Request('POST', '/register', post: [
+        $registered = $this->accountPages->registerSubmit(new Request('POST', '/register', post: [
             'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
             'role' => 'admin',
         ]));
@@ -82,32 +118,32 @@ final class WebPagesTest extends TestCase
         self::assertNotFalse($role);
         self::assertSame('user', $role->fetchColumn());
 
-        $bad = $this->pages->loginSubmit(new Request('POST', '/login', post: [
+        $bad = $this->accountPages->loginSubmit(new Request('POST', '/login', post: [
             'username' => 'alice', 'password' => 'wrong', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(401, $bad->status());
 
-        $loggedIn = $this->pages->loginSubmit(new Request('POST', '/login', post: [
+        $loggedIn = $this->accountPages->loginSubmit(new Request('POST', '/login', post: [
             'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(303, $loggedIn->status());
-        self::assertSame(200, $this->pages->home()->status());
+        self::assertSame(200, $this->accountPages->home()->status());
 
-        self::assertSame(200, $this->pages->pageA()->status());
-        $bought = $this->pages->buyCow(new Request('POST', '/buy-cow', post: ['csrf_token' => $this->csrf->token()]));
+        self::assertSame(200, $this->cowPages->pageA()->status());
+        $bought = $this->cowPages->buyCow(new Request('POST', '/buy-cow', post: ['csrf_token' => $this->csrf->token()]));
         self::assertSame(200, $bought->status());
         self::assertStringContainsString('thankYou', $bought->body());
         self::assertStringNotContainsString('>Buy a cow</button>', $bought->body());
 
-        self::assertSame(200, $this->pages->pageB()->status());
-        $download = $this->pages->download(new Request('POST', '/download', post: ['csrf_token' => $this->csrf->token()]));
+        self::assertSame(200, $this->downloadPages->pageB()->status());
+        $download = $this->downloadPages->download(new Request('POST', '/download', post: ['csrf_token' => $this->csrf->token()]));
         self::assertSame(200, $download->status());
         self::assertSame('application/octet-stream', $download->headers()['Content-Type']);
         self::assertStringContainsString('sample.exe', $download->headers()['Content-Disposition']);
         self::assertSame('MZ', substr($download->body(), 0, 2));
         self::assertSame("PE\0\0", substr($download->body(), 0x80, 4));
 
-        $loggedOut = $this->pages->logoutSubmit(new Request('POST', '/logout', post: ['csrf_token' => $this->csrf->token()]));
+        $loggedOut = $this->accountPages->logoutSubmit(new Request('POST', '/logout', post: ['csrf_token' => $this->csrf->token()]));
         self::assertSame(303, $loggedOut->status());
         self::assertNull($this->identity->current());
 
@@ -126,15 +162,15 @@ final class WebPagesTest extends TestCase
 
     public function testAnonymousAndRegularUsersCannotReadAdminPages(): void
     {
-        self::assertSame('/login', $this->pages->pageA()->headers()['Location']);
-        self::assertSame('/login', $this->pages->pageB()->headers()['Location']);
-        self::assertSame('/login', $this->pages->statisticsPage(new Request('GET', '/statistics'))->headers()['Location']);
-        self::assertSame('/login', $this->pages->reportsPage()->headers()['Location']);
+        self::assertSame('/login', $this->cowPages->pageA()->headers()['Location']);
+        self::assertSame('/login', $this->downloadPages->pageB()->headers()['Location']);
+        self::assertSame('/login', $this->activityPages->statisticsPage(new Request('GET', '/statistics'))->headers()['Location']);
+        self::assertSame('/login', $this->activityPages->reportsPage()->headers()['Location']);
 
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
-        self::assertSame(403, $this->pages->statisticsPage(new Request('GET', '/statistics'))->status());
-        self::assertSame(403, $this->pages->reportsPage()->status());
+        self::assertSame(403, $this->activityPages->statisticsPage(new Request('GET', '/statistics'))->status());
+        self::assertSame(403, $this->activityPages->reportsPage()->status());
     }
 
     public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents(): void
@@ -142,11 +178,11 @@ final class WebPagesTest extends TestCase
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
         foreach ([
-            $this->pages->registerSubmit(new Request('POST', '/register')),
-            $this->pages->loginSubmit(new Request('POST', '/login')),
-            $this->pages->buyCow(new Request('POST', '/buy-cow')),
-            $this->pages->download(new Request('POST', '/download')),
-            $this->pages->logoutSubmit(new Request('POST', '/logout')),
+            $this->accountPages->registerSubmit(new Request('POST', '/register')),
+            $this->accountPages->loginSubmit(new Request('POST', '/login')),
+            $this->cowPages->buyCow(new Request('POST', '/buy-cow')),
+            $this->downloadPages->download(new Request('POST', '/download')),
+            $this->accountPages->logoutSubmit(new Request('POST', '/logout')),
         ] as $response) {
             self::assertSame(403, $response->status());
         }
@@ -160,25 +196,25 @@ final class WebPagesTest extends TestCase
     {
         $admin = (new CreateAdmin($this->accounts, $this->clock))->create('root', 'safe-pass');
         $this->identity->signIn($admin);
-        $this->pages->pageA();
-        $this->pages->pageB();
-        $this->pages->buyCow(new Request('POST', '/buy-cow', post: ['csrf_token' => $this->csrf->token()]));
-        $this->pages->download(new Request('POST', '/download', post: ['csrf_token' => $this->csrf->token()]));
+        $this->cowPages->pageA();
+        $this->downloadPages->pageB();
+        $this->cowPages->buyCow(new Request('POST', '/buy-cow', post: ['csrf_token' => $this->csrf->token()]));
+        $this->downloadPages->download(new Request('POST', '/download', post: ['csrf_token' => $this->csrf->token()]));
 
         (new ActivityLog($this->pdo, $this->clock))->recordPageView(3, '<script>alert(1)</script>', TrackedPage::PageA);
-        $stats = $this->pages->statisticsPage(new Request('GET', '/statistics', query: ['action' => 'view-page']));
+        $stats = $this->activityPages->statisticsPage(new Request('GET', '/statistics', query: ['action' => 'view-page']));
         self::assertSame(200, $stats->status());
         self::assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $stats->body());
         self::assertStringNotContainsString('<script>alert(1)</script>', $stats->body());
 
-        $empty = $this->pages->statisticsPage(new Request('GET', '/statistics', query: ['user' => 'missing']));
+        $empty = $this->activityPages->statisticsPage(new Request('GET', '/statistics', query: ['user' => 'missing']));
         self::assertSame(200, $empty->status());
         self::assertStringContainsString('No matching activity events', $empty->body());
 
-        $invalid = $this->pages->statisticsPage(new Request('GET', '/statistics', query: ['date' => '2026-02-31']));
+        $invalid = $this->activityPages->statisticsPage(new Request('GET', '/statistics', query: ['date' => '2026-02-31']));
         self::assertSame(422, $invalid->status());
 
-        $report = $this->pages->reportsPage();
+        $report = $this->activityPages->reportsPage();
         self::assertSame(200, $report->status());
         self::assertStringContainsString('<svg', $report->body());
         self::assertStringContainsString('<polyline', $report->body());
@@ -192,7 +228,7 @@ final class WebPagesTest extends TestCase
     {
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
-        $pages = $this->webPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
+        $pages = $this->downloadPages(dirname(__DIR__, 2) . '/assets/does-not-exist.exe');
         $response = $pages->download(new Request('POST', '/download', post: ['csrf_token' => $this->csrf->token()]));
         self::assertSame(503, $response->status());
         $statement = $this->pdo->query("SELECT COUNT(*) FROM activity_events WHERE target = 'download'");
@@ -206,7 +242,7 @@ final class WebPagesTest extends TestCase
 
         $this->expectException(PDOException::class);
         try {
-            $this->pages->registerSubmit(new Request('POST', '/register', post: [
+            $this->accountPages->registerSubmit(new Request('POST', '/register', post: [
                 'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
             ]));
         } finally {
@@ -224,7 +260,7 @@ final class WebPagesTest extends TestCase
         $this->pdo->exec('DROP TABLE activity_events');
 
         try {
-            $this->pages->logoutSubmit(new Request('POST', '/logout', post: ['csrf_token' => $token]));
+            $this->accountPages->logoutSubmit(new Request('POST', '/logout', post: ['csrf_token' => $token]));
             self::fail('Activity failure must be visible.');
         } catch (PDOException) {
             self::assertNull($this->identity->current());
@@ -233,7 +269,7 @@ final class WebPagesTest extends TestCase
 
     public function testHtmlResponsesCarryNoStoreAndBrowserSecurityHeaders(): void
     {
-        $response = $this->pages->registerForm();
+        $response = $this->accountPages->registerForm();
 
         self::assertSame('no-store', $response->headers()['Cache-Control']);
         self::assertSame('nosniff', $response->headers()['X-Content-Type-Options']);
@@ -244,12 +280,12 @@ final class WebPagesTest extends TestCase
 
     public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent(): void
     {
-        $first = $this->pages->registerSubmit(new Request('POST', '/register', post: [
+        $first = $this->accountPages->registerSubmit(new Request('POST', '/register', post: [
             'username' => 'Alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(303, $first->status());
 
-        $duplicate = $this->pages->registerSubmit(new Request('POST', '/register', post: [
+        $duplicate = $this->accountPages->registerSubmit(new Request('POST', '/register', post: [
             'username' => 'alice', 'password' => 'safe-pass', 'csrf_token' => $this->csrf->token(),
         ]));
         self::assertSame(409, $duplicate->status());
@@ -268,7 +304,7 @@ final class WebPagesTest extends TestCase
         $this->pdo->exec('DROP TABLE activity_events');
 
         try {
-            $this->pages->loginSubmit(new Request('POST', '/login', post: [
+            $this->accountPages->loginSubmit(new Request('POST', '/login', post: [
                 'username' => 'alice', 'password' => 'safe-pass',
                 'csrf_token' => $this->csrf->token(),
             ]));
@@ -283,7 +319,7 @@ final class WebPagesTest extends TestCase
         $account = (new Register($this->accounts, $this->clock))->register('alice', 'safe-pass');
         $this->identity->signIn($account);
 
-        $response = $this->pages->download(new Request('POST', '/download', post: [
+        $response = $this->downloadPages->download(new Request('POST', '/download', post: [
             'csrf_token' => $this->csrf->token(),
             'file' => '../../../../etc/passwd',
         ]));
@@ -295,10 +331,10 @@ final class WebPagesTest extends TestCase
     public function testAnonymousCannotTriggerSignedInActionsEvenWithValidCsrfToken(): void
     {
         $csrf = $this->csrf->token();
-        $buy = $this->pages->buyCow(new Request('POST', '/buy-cow', post: [
+        $buy = $this->cowPages->buyCow(new Request('POST', '/buy-cow', post: [
             'csrf_token' => $csrf,
         ]));
-        $download = $this->pages->download(new Request('POST', '/download', post: [
+        $download = $this->downloadPages->download(new Request('POST', '/download', post: [
             'csrf_token' => $csrf,
         ]));
         self::assertSame('/login', $buy->headers()['Location']);
@@ -309,16 +345,13 @@ final class WebPagesTest extends TestCase
         self::assertSame(0, (int) $statement->fetchColumn());
     }
 
-    private function webPages(string $artifact): WebPages
+    private function downloadPages(string $artifact): DownloadPages
     {
-        return new WebPages(
-            $this->pdo,
-            $this->accounts,
-            $this->identity,
+        return new DownloadPages(
+            new DownloadFile(new ActivityLog($this->pdo, $this->clock), $artifact),
+            new RequireSignedIn($this->identity),
             $this->csrf,
-            new Renderer(),
-            $this->clock,
-            $artifact,
+            new HtmlPage(new Renderer()),
         );
     }
 }

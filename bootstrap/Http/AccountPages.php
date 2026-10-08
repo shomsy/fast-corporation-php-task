@@ -1,0 +1,154 @@
+<?php
+
+declare(strict_types=1);
+
+namespace InterviewTask\Bootstrap\Http;
+
+use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\Login\InvalidCredentials;
+use InterviewTask\Accounts\Login\Login;
+use InterviewTask\Accounts\Logout\Logout;
+use InterviewTask\Accounts\Register\Register;
+use InterviewTask\Accounts\Register\RegistrationRejected;
+use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\UsernameTaken;
+use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Session\Csrf;
+use InterviewTask\Infrastructure\Time\Clock;
+use InterviewTask\Runtime\Http\Request;
+use InterviewTask\Runtime\Http\Response;
+use PDO;
+use Throwable;
+
+/** HTTP adaptation for the Accounts owner's authentication lifecycle. */
+final readonly class AccountPages
+{
+    private Register $register;
+    private Login $login;
+    private Logout $logout;
+
+    public function __construct(
+        private PDO $pdo,
+        Accounts $accounts,
+        private SessionIdentity $identity,
+        private Csrf $csrf,
+        private HtmlPage $html,
+        Clock $clock,
+        private ActivityLog $activity,
+    ) {
+        $this->register = new Register($accounts, $clock);
+        $this->login = new Login($accounts, $identity);
+        $this->logout = new Logout($identity);
+    }
+
+    public function registerForm(): Response
+    {
+        return $this->html->render('src/Accounts/Register/form.php', [
+            'csrfToken' => $this->csrf->token(), 'username' => '', 'error' => '',
+        ]);
+    }
+
+    public function registerSubmit(Request $request): Response
+    {
+        if (!$this->csrf->matches($request->post('csrf_token'))) {
+            return Response::text('Forbidden', 403);
+        }
+
+        $username = $this->stringInput($request->post('username'));
+        $password = $this->stringInput($request->post('password'));
+
+        try {
+            (new Transaction($this->pdo))->run(function () use ($username, $password): void {
+                $account = $this->register->register($username, $password);
+                $this->activity->recordRegistration($account->id, $account->username);
+            });
+
+            return Response::redirect('/login?registered=1');
+        } catch (UsernameTaken) {
+            return $this->html->render('src/Accounts/Register/form.php', [
+                'csrfToken' => $this->csrf->token(), 'username' => $username,
+                'error' => 'Username is already taken.',
+            ], 409);
+        } catch (RegistrationRejected $e) {
+            return $this->html->render('src/Accounts/Register/form.php', [
+                'csrfToken' => $this->csrf->token(), 'username' => $username,
+                'error' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    public function loginForm(Request $request): Response
+    {
+        return $this->html->render('src/Accounts/Login/form.php', [
+            'csrfToken' => $this->csrf->token(), 'registered' => $request->query('registered') === '1',
+            'error' => '',
+        ]);
+    }
+
+    public function loginSubmit(Request $request): Response
+    {
+        if (!$this->csrf->matches($request->post('csrf_token'))) {
+            return Response::text('Forbidden', 403);
+        }
+
+        try {
+            $account = $this->login->login(
+                $this->stringInput($request->post('username')),
+                $this->stringInput($request->post('password')),
+            );
+        } catch (InvalidCredentials) {
+            return $this->html->render('src/Accounts/Login/form.php', [
+                'csrfToken' => $this->csrf->token(),
+                'registered' => false, 'error' => 'Invalid username or password.',
+            ], 401);
+        }
+
+        try {
+            $this->activity->recordLogin($account->id, $account->username);
+        } catch (Throwable $error) {
+            $this->identity->signOut();
+            throw $error;
+        }
+
+        return Response::redirect('/');
+    }
+
+    public function logoutSubmit(Request $request): Response
+    {
+        if (!$this->csrf->matches($request->post('csrf_token'))) {
+            return Response::text('Forbidden', 403);
+        }
+
+        $account = $this->identity->current();
+
+        try {
+            if ($account !== null) {
+                $this->activity->recordLogout($account->id, $account->username);
+            }
+        } finally {
+            $this->logout->logout();
+        }
+
+        return Response::redirect('/login');
+    }
+
+    public function home(): Response
+    {
+        $account = $this->identity->current();
+
+        if ($account === null) {
+            return Response::redirect('/login');
+        }
+
+        return $this->html->render('src/Accounts/home.php', [
+            'username' => $account->username, 'role' => $account->role->value,
+            'csrfToken' => $this->csrf->token(),
+        ]);
+    }
+
+    private function stringInput(mixed $value): string
+    {
+        return is_string($value) ? $value : '';
+    }
+}
