@@ -56,11 +56,24 @@ CREATE INDEX idx_activity_day ON activity_events (substr(occurred_at,1,10) DESC)
         lower=first+timedelta(days=DATES-30)
         bounded=sample(db,REPORT.format(bounds=" AND substr(occurred_at,1,10)>='"+lower.isoformat()+"'"))
         filtered={k:sample(db,sql) for k,sql in FILTERS.items()}
+        extra=[(1,"rare","view-page","page-a",first.isoformat()+"T12:00:00+00:00") for _ in range(3000)]
+        t_write=time.perf_counter_ns()
+        db.executemany("INSERT INTO activity_events(actor_id,actor_label,action,target,occurred_at) VALUES (?,?,?,?,?)",extra)
+        db.commit()
+        base_write_ms=round((time.perf_counter_ns()-t_write)/1e6,2)
         t0=time.perf_counter()
         db.execute('CREATE INDEX idx_activity_actor_recent ON activity_events(actor_label COLLATE NOCASE,occurred_at DESC,id DESC)')
         db.commit()
         index_creation_ms=round((time.perf_counter()-t0)*1000,2)
         candidate={k:sample(db,sql) for k,sql in FILTERS.items()}
-        print(json.dumps({"report_all":unbounded,"report_last30":bounded,"filters_before":filtered,"index_creation_ms":index_creation_ms,"filters_after_actor_recent_index":candidate},indent=2))
+        date_guarded={
+            k:sample(db,sql.replace("FROM activity_events WHERE", "FROM activity_events INDEXED BY idx_activity_day WHERE"))
+            for k,sql in FILTERS.items() if "date" in k
+        }
+        t0=time.perf_counter_ns()
+        db.executemany("INSERT INTO activity_events(actor_id,actor_label,action,target,occurred_at) VALUES (?,?,?,?,?)",extra)
+        db.commit()
+        indexed_write_ms=round((time.perf_counter_ns()-t0)/1e6,2)
+        print(json.dumps({"report_all":unbounded,"report_last30":bounded,"filters_before":filtered,"index_creation_ms":index_creation_ms,"filters_after_actor_recent_index":candidate,"date_guarded_with_actor_index":date_guarded,"3000_inserts_before_actor_index_ms":base_write_ms,"3000_inserts_after_actor_index_ms":indexed_write_ms},indent=2))
         print('BENCHMARK: PASS')
 if __name__=='__main__':main()

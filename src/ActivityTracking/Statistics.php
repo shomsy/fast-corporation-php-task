@@ -102,7 +102,10 @@ final readonly class Statistics
             $parameters['action'] = $validated->value;
         }
 
-        $sql = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM activity_events';
+        // Date-filtered requests must stay on the existing day expression index even
+        // for frequent actors; a competing actor-first index can cause a long scan.
+        $table = $date !== null && $date !== '' ? 'activity_events INDEXED BY idx_activity_day' : 'activity_events';
+        $sql   = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
 
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(separator: ' AND ', array: $where);
