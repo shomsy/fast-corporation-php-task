@@ -209,46 +209,13 @@ final readonly class Statistics
         }
 
         $filters     = $this->filters(date: $date, user: $user, action: $action);
-        $where       = $filters['where'];
-        $parameters  = $filters['parameters'];
         $fingerprint = hash(algo: 'sha256', data: json_encode(value: [$date ?? '', $user === null ? '' : trim(string: $user), $action ?? ''], flags: JSON_THROW_ON_ERROR));
         $position    = $cursor === null ? null : $this->decodeCursor(cursor: $cursor, key: $key, fingerprint: $fingerprint);
         $direction   = $position['direction'] ?? 'before';
 
-        if ($position !== null) {
-            $comparison                     = $direction === 'after' ? '>' : '<';
-            $where[]                        = '(occurred_at ' . $comparison . ' :cursor_time OR (occurred_at = :cursor_same_time AND id ' . $comparison . ' :cursor_id))';
-            $parameters['cursor_time']      = $position['time'];
-            $parameters['cursor_same_time'] = $position['time'];
-        }
-
-        $table = $date !== null && $date !== '' ? 'activity_events INDEXED BY idx_activity_day' : 'activity_events';
-        $sql   = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
-        if ($where !== []) {
-            $sql .= ' WHERE ' . implode(separator: ' AND ', array: $where);
-        }
-        $sort      = $direction === 'after' ? 'ASC' : 'DESC';
-        $sql       .= ' ORDER BY occurred_at ' . $sort . ', id ' . $sort . ' LIMIT :limit';
-        $statement = $this->pdo->prepare(query: $sql);
-        if ($statement === false) {
-            throw new RuntimeException(message: 'Unable to prepare cursor activity history.');
-        }
-        foreach ($parameters as $name => $value) {
-            $statement->bindValue(param: ':' . $name, value: $value, type: PDO::PARAM_STR);
-        }
-        if ($position !== null) {
-            $statement->bindValue(param: ':cursor_id', value: $position['id'], type: PDO::PARAM_INT);
-        }
-        $statement->bindValue(param: ':limit', value: self::PAGE_SIZE + 1, type: PDO::PARAM_INT);
-        $statement->execute();
-
-        /** @var list<ActivityEventRow> $rows */
-        $rows    = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
-        $hasMore = count(value: $rows) > self::PAGE_SIZE;
-        $rows    = array_slice(array: $rows, offset: 0, length: self::PAGE_SIZE);
-        if ($direction === 'after') {
-            $rows = array_reverse(array: $rows);
-        }
+        $slice   = $this->readCursorSlice(filters: $filters, position: $position, date: $date, direction: $direction);
+        $rows    = $slice['rows'];
+        $hasMore = $slice['hasMore'];
 
         if ($rows === []) {
             return ['events' => [], 'hasNext' => false, 'nextCursor' => null, 'previousCursor' => null];
@@ -285,6 +252,60 @@ final readonly class Statistics
         $mac  = hash_hmac(algo: 'sha256', data: $body, key: $key);
 
         return $body . '.' . $mac;
+    }
+
+    /**
+     * Read one bounded keyset slice without owning cursor signing or navigation links.
+     *
+     * @param array{where: list<string>, parameters: array<string, string>} $filters Bound predicates.
+     * @param array{time: string, id: int, direction: string}|null $position Verified cursor position.
+     * @param string|null $date Optional UTC date for the existing SQLite index hint.
+     * @param string $direction before or after.
+     *
+     * @return array{rows: list<ActivityEventRow>, hasMore: bool}
+     * @throws RuntimeException If preparing the SQLite read fails.
+     * @throws PDOException If the database cannot execute the read.
+     */
+    private function readCursorSlice(array $filters, array|null $position, string|null $date, string $direction) : array
+    {
+        $where      = $filters['where'];
+        $parameters = $filters['parameters'];
+        if ($position !== null) {
+            $comparison                     = $direction === 'after' ? '>' : '<';
+            $where[]                        = '(occurred_at ' . $comparison . ' :cursor_time OR (occurred_at = :cursor_same_time AND id ' . $comparison . ' :cursor_id))';
+            $parameters['cursor_time']      = $position['time'];
+            $parameters['cursor_same_time'] = $position['time'];
+        }
+
+        $table = $date !== null && $date !== '' ? 'activity_events INDEXED BY idx_activity_day' : 'activity_events';
+        $sql   = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
+        if ($where !== []) {
+            $sql .= ' WHERE ' . implode(separator: ' AND ', array: $where);
+        }
+        $sort      = $direction === 'after' ? 'ASC' : 'DESC';
+        $sql       .= ' ORDER BY occurred_at ' . $sort . ', id ' . $sort . ' LIMIT :limit';
+        $statement = $this->pdo->prepare(query: $sql);
+        if ($statement === false) {
+            throw new RuntimeException(message: 'Unable to prepare cursor activity history.');
+        }
+        foreach ($parameters as $name => $value) {
+            $statement->bindValue(param: ':' . $name, value: $value, type: PDO::PARAM_STR);
+        }
+        if ($position !== null) {
+            $statement->bindValue(param: ':cursor_id', value: $position['id'], type: PDO::PARAM_INT);
+        }
+        $statement->bindValue(param: ':limit', value: self::PAGE_SIZE + 1, type: PDO::PARAM_INT);
+        $statement->execute();
+
+        /** @var list<ActivityEventRow> $rows */
+        $rows    = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
+        $hasMore = count(value: $rows) > self::PAGE_SIZE;
+        $rows    = array_slice(array: $rows, offset: 0, length: self::PAGE_SIZE);
+        if ($direction === 'after') {
+            $rows = array_reverse(array: $rows);
+        }
+
+        return ['rows' => $rows, 'hasMore' => $hasMore];
     }
 
     /**
