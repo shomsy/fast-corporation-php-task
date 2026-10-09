@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02/M03 IN PROGRESS; M04/M05 DONE at local evidence; M11 IN PROGRESS (C-23/C-26 done). 27/48 complete. Public production not certified.
+**Status:** M00/M01 DONE; M02/M03/M06 IN PROGRESS; M04/M05 DONE at local evidence; M11 IN PROGRESS (C-23/C-26 done). 30/48 complete. Public production not certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** 84c734ab49bbf2b816300266886c416ba6bebc11 (C-28); C-23 ceb12f8b5edd2565f576c3b2d34e3a08578d4758; C-26 857926e8fac3e97dab0d179a1b9caa9b140ad6c0.
-**Next legal action:** Start M06 with C-29 HTTP/JSON vs business owner responsibility and C-30 measured misleading APIs, then C-33 transport/tooling choice (no framework without evidence). C-32 bootstrap measurements and C-34 PHPDoc/MOI remain candidates. C-05 live proxy rate limiting and target RPO/RTO/worker RSS remain public-release gates. Execute 2–4 tested coherent packets per RP turn.
+**Last implementation commit:** a578f845acd0a8c3646417215ee3e6be93c1f904 (C-33); C-30 b17432e941752c955b6ce2e546cefc590eed9471; C-29 93bcb5fa764c44ff709b07bfa8745ac50dacc37c.
+**Next legal action:** Finish M06 C-34 useful PHPDoc and named-argument compatibility, consider measured M03 C-32 bootstrap wiring, then begin M07 C-37/C-38 native JS SPA shell and navigation when prerequisites permit. Do not repeat C-29/C-30/C-33. Public C-05 proxy rate limiting and C-47 RPO/RTO/FPM measurements remain deployment gates. Execute 2–4 independently tested packets per RP turn.
 
 ## Milestone status
 
@@ -18,14 +18,14 @@
 | M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10/C-22 DONE** | Session GC/private files `effca0e`; fail-closed production boot `c5b5b80`; HTTP URI/method/HEAD/OPTIONS contract `ead0b66`; full quality and smoke PASS. |
 | M04 | DB/audit/durability | **DONE (local acceptance)** | C-11/C-12/C-13/C-18/C-19/C-24/C-25: checksummed migrations, audit/view/click semantics, WAL, transactional failure, online backup and restore passed. Host-specific RPO/RTO remain a public release gate, not claimed by local acceptance. |
 | M05 | Analytics/performance | **DONE (local acceptance)** | C-14/C-15/C-16/C-17/C-28 complete; report query plans, actor indexes, signed keyset, UTC chart, 4-client/176-request p95/p99 baseline `84c734a`, SQLite lock and bounded PHP heap. No public PHP-FPM load SLO claimed. |
-| M06 | Backend LLD & API | NOT STARTED | — |
+| M06 | Backend LLD & API | **IN PROGRESS — C-29/C-30/C-33 DONE** | `93bcb5f` same-origin session/CSRF JSON seam, `b17432e` explicit download audit method, `a578f84` evaluated minimal PHP and Vanilla JS tooling. Full quality 150 tests/6608 assertions; PHPStan/Deptrac/audit and HTTP smoke PASS. |
 | M07 | SPA shell & security | NOT STARTED | — |
 | M08 | User screens | NOT STARTED | — |
 | M09 | Admin screens/tests | NOT STARTED | — |
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | **IN PROGRESS — C-23/C-26 DONE** | `ceb12f8` fixed 2 MiB SHA-pinned PE; `857926e` liveness/readiness schema hashes and deployment recovery runbook, HTTP and local backup failure tests PASS. Final C-47 and deployment GO remain OPEN. |
 
-## Canonical packet status — 27 DONE / 48 TOTAL (21 OPEN)
+## Canonical packet status — 30 DONE / 48 TOTAL (18 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -55,11 +55,11 @@
 - [x] **C-26** — Define deployment/runbook/health/readiness/schema checks and safe rollback/forward recovery. DONE (local acceptance) `857926e8fac3e97dab0d179a1b9caa9b140ad6c0`: early GET/HEAD healthz without DB or session; readyz validates DB/schema/owner SQL migration hashes; safe 503+correlation on failure; 3 new tests/19 assertions and real HTTP missing-table red/green PASS, composer quality 145/6572; operator recovery runbook. Public RPO/RTO and proxy still unverified.
 - [x] **C-27** — Allowlisted structured security logs for auth/CSRF/admin denials and failures; 24-hex request ID links response and server log; no raw exception message, SQL or credentials. DONE ee0cff65d1f3c90861a1846aa1961e660c7d9a13. RED then GREEN HTTP smoke + logger tests; quality 108/6128 PASS. Log retention/alert deployment remains C-26/C-47.
 - [x] **C-28** — Measure latency, memory, DB lock, file download and resource utilization under target load. DONE (bounded local baseline) `84c734ab49bbf2b816300266886c416ba6bebc11`: 4 users, 176 timed HTTP requests, 0 errors; measured Page A p95/p99 2.68/3.33 ms, download 2.39/2.45 ms, readiness 2.00/2.17 ms; 105 DB audit events, SHA/length validated. PHP CLI allocation peak 8 MiB, file cap 2 MiB, SQLite WAL reader/writer/backup probe PASS. Real PHP-FPM worker RSS/CPU, multi-instance limits and public SLO **not measured**, remain C-47; ADR-0014. Full quality 148/6586 PASS.
-- [ ] **C-29** — Improve true responsibility boundaries: HTTP/JSON transport, auth policy, application orchestratio. *(OPEN; no implementation evidence yet)*
-- [ ] **C-30** — Review shallow wrappers, misleading side-effect names, redundant route helpers and module APIs wit. *(OPEN; no implementation evidence yet)*
+- [x] **C-29** — Separate SSR and JSON transport from business owner behavior. **DONE:** `93bcb5fa764c44ff709b07bfa8745ac50dacc37c`; GET /api/session and GET /api/csrf, shared cookie-backed identity/CSRF, HTML-safe JSON serialization, no JWT or duplicate Accounts rules. RED missing API methods first; GREEN 2 scoped tests/17 checks, quality 150/6608, PHPStan/Deptrac/audit and real HTTP login/token rotation/SSR smoke PASS. ADR-0015. Other JSON flows remain in later packets.
+- [x] **C-30** — Review shallow wrappers and misleading side effects against actual change pressure. **DONE:** `b17432e941752c955b6ce2e546cefc590eed9471`; renamed DownloadFile::read to prepareDownload to expose its accepted-audit write, updated all internal usages and memory probe, preserved named arguments, rejected speculative extra helpers. RED 6 tests then GREEN 6/25; quality 150/6608, HTTP and memory checks PASS. ADR-0016.
 - [x] **C-31** — Validate untrusted input at transport boundary, typed invariants at owner. **DONE:** `c6f003d`; arrays/oversized credentials and activity filters rejected as 422 before business logic; wrong scalar password still 401. RED 2 tests first plus oversized filter; quality PASS 95/6031, HTTP smoke PASS.
 - [ ] **C-32** — Measure eager PDO/config/router wiring and duplicate authoritative account lookups before lazy opt. *(OPEN; no implementation evidence yet)*
-- [ ] **C-33** — Evaluate maintain/replace options for PHP HTTP stack, templating retirement, logging, native JS ro. *(OPEN; no implementation evidence yet)*
+- [x] **C-33** — Evaluate OSS choices for PHP routing/templates/logging and SPA routing/chart/testing. **DONE:** `a578f845acd0a8c3646417215ee3e6be93c1f904`; ADR-0017 compares Slim PSR-15, Twig, Monolog, native History/ES Modules, client routing libraries, Chart.js and testing with maintenance/dependency/security/fit trade-offs. Retain smallest tested implementation until a library earns its cost; no new dependency. Quality 150/6608 PASS.
 - [ ] **C-34** — Keep useful PHPDoc, remove generic boilerplate where it hides semantics, retain MOI and named-argu. *(OPEN; no implementation evidence yet)*
 - [ ] **C-35** — Extend tests beyond happy paths and preserve Composer/PHPStan/Deptrac baseline, pinned CI where ju. *(OPEN; no implementation evidence yet)*
 - [ ] **C-36** — Create project-specific agent guidance and deterministic RP iteration, checkpoint, reconciliation . *(OPEN; no implementation evidence yet)*
@@ -121,6 +121,10 @@
 | 2026-10-09 | M03 / C-22 | `ead0b66` | HTTP protocol malformed targets, HEAD, OPTIONS, Allow integration; final 142 PHPUnit / 6552 assertions, live smoke PASS | Preserve framework-free Router; no speculative PSR HTTP stack. |
 | 2026-10-09 | M04 / C-24 | `8aec184` | Failure injection for DB transaction/rollback and session compensation; final quality 142/6552 PASS | No accidental nested transactions; original failure retained. |
 | 2026-10-09 | M04 / C-25 | `c872ebc35cb1849606a53548231a2fbf79961bf2` | SQLite WAL backup restored 25 rows + 4 migrations, no overwrite/insecure dir rejection, local SQLITE_FULL rollback/integrity PASS; final 142/6552, HTTP smoke PASS | Private process/storage paths and operator recovery ADR; real deployment ownership/RPO/RTO still C-26/C-47 gates. |
+
+| 2026-10-09 | M06/C-29 | `93bcb5fa764c44ff709b07bfa8745ac50dacc37c` | RED missing SessionApi/Response::json; GREEN 2/17, quality 150/6608 and actual HTTP CSRF/token/SSR smoke PASS | JSON transport without duplicated identity/business, ADR-0015. |
+| 2026-10-09 | M06/C-30 | `b17432e941752c955b6ce2e546cefc590eed9471` | RED method call; GREEN 6/25, memory and full quality/HTTP smoke PASS | Explicit accepted-download side effect, ADR-0016. |
+| 2026-10-09 | M06/C-33 | `a578f845acd0a8c3646417215ee3e6be93c1f904` | Maintained upstream options compared and composer dependency footprint unchanged; quality 150/6608 PASS | Native PHP + Vanilla JS justified against OSS alternatives, ADR-0017. |
 
 ## Decisions log
 
