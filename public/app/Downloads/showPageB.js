@@ -10,6 +10,7 @@ export function showPageB({ page, outlet, signal }, { client, navigate }) {
   const feedback = page.createElement('p');
   feedback.setAttribute('role', 'status');
   feedback.setAttribute('aria-live', 'polite');
+  feedback.tabIndex = -1;
   feedback.textContent = 'Preparing download…';
   section.append(heading, feedback);
   outlet.replaceChildren(section);
@@ -42,7 +43,9 @@ export function showPageB({ page, outlet, signal }, { client, navigate }) {
         navigate('/app/login');
         return;
       }
+      feedback.setAttribute('role', 'alert');
       feedback.textContent = error?.message || 'Download is temporarily unavailable.';
+      feedback.focus?.();
     }
   }
   void load();

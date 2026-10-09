@@ -9,6 +9,7 @@ export function showPageA({ page, outlet, signal, onDispose }, { client, navigat
   const feedback = page.createElement('p');
   feedback.setAttribute('role', 'status');
   feedback.setAttribute('aria-live', 'polite');
+  feedback.tabIndex = -1;
   feedback.textContent = 'Loading Page A…';
   section.append(heading, feedback);
   outlet.replaceChildren(section);
@@ -35,7 +36,9 @@ export function showPageA({ page, outlet, signal, onDispose }, { client, navigat
           feedback.focus?.();
         } catch (error) {
           if (!signal.aborted && error?.name !== 'AbortError') {
+            feedback.setAttribute('role', 'alert');
             feedback.textContent = error?.message || 'Unable to record the action.';
+            feedback.focus?.();
             button.disabled = false;
           }
         }

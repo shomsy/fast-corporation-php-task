@@ -100,6 +100,7 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
   const status = page.createElement('p');
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
+  status.tabIndex = -1;
   status.textContent = 'Loading…';
   section.append(heading, status);
   outlet.replaceChildren(section);
@@ -147,6 +148,7 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
       status.setAttribute('role', 'alert');
       status.textContent = error?.status === 403 ? 'Forbidden.' :
         error?.message || 'Unable to load activity.';
+      status.focus?.();
     }
   }
   void load();

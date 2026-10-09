@@ -49,6 +49,7 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
     const feedback = page.createElement('p');
     feedback.setAttribute('role', 'alert');
     feedback.setAttribute('aria-live', 'assertive');
+    feedback.tabIndex = -1;
     form.append(usernameLabel, username, passwordLabel, password, submitButton, feedback);
     section.append(form);
     username.focus?.();
