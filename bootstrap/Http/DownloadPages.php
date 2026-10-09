@@ -91,7 +91,7 @@ final readonly class DownloadPages
         }
 
         try {
-            $body = $this->downloads->read(actorId: $account->id, actorLabel: $account->username);
+            $body = $this->downloads->prepareDownload(actorId: $account->id, actorLabel: $account->username);
 
             return new Response(body: $body, status: 200, headers: [
                 'Content-Type'           => 'application/octet-stream',

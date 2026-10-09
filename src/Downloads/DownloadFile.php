@@ -50,7 +50,7 @@ final readonly class DownloadFile
     }
 
     /**
-     * Load a fixed server-owned artifact before recording the download click. No activity event is written if the artifact cannot be read.
+     * Prepare a fixed server-owned artifact and record the accepted download click after reading it. No activity event is written if the artifact cannot be read.
      *
      * @param int $actorId Stable numeric identity associated with the audit event.
      * @param string $actorLabel Historical username snapshot written alongside the event.
@@ -58,7 +58,7 @@ final readonly class DownloadFile
      * @throws ArtifactUnavailable When the configured artifact cannot be read completely.
      * @throws PDOException When the underlying SQLite operation fails.
      */
-    public function read(int $actorId, string $actorLabel): string
+    public function prepareDownload(int $actorId, string $actorLabel): string
     {
         if (is_link(filename: $this->artifactPath) || ! is_file(filename: $this->artifactPath)
             || ! is_readable(filename: $this->artifactPath)) {

@@ -43,7 +43,7 @@ final class DownloadFileTest extends TestCase
             self::assertNotFalse(file_put_contents(filename: $path, data: 'harmless fixed artifact'));
             $download = new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $path);
             $download->view(actorId: 9, actorLabel: 'bob');
-            self::assertSame('harmless fixed artifact', $download->read(actorId: 9, actorLabel: 'bob'));
+            self::assertSame('harmless fixed artifact', $download->prepareDownload(actorId: 9, actorLabel: 'bob'));
 
             $statement = $this->pdo->query(query: 'SELECT action, target FROM activity_events ORDER BY id');
             self::assertNotFalse($statement);
@@ -72,7 +72,7 @@ final class DownloadFileTest extends TestCase
             $download = new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $path);
 
             $this->expectException(PDOException::class);
-            $download->read(actorId: 9, actorLabel: 'bob');
+            $download->prepareDownload(actorId: 9, actorLabel: 'bob');
         } finally {
             unlink(filename: $path);
         }
@@ -90,7 +90,7 @@ final class DownloadFileTest extends TestCase
         $download->view(actorId: 9, actorLabel: 'bob');
 
         try {
-            $download->read(actorId: 9, actorLabel: 'bob');
+            $download->prepareDownload(actorId: 9, actorLabel: 'bob');
             self::fail('Missing artifact must not be downloadable.');
         } catch (ArtifactUnavailable $exception) {
             self::assertSame('Download is temporarily unavailable.', $exception->getMessage());
@@ -118,7 +118,7 @@ final class DownloadFileTest extends TestCase
                 expectedSha256: hash(algo: 'sha256', data: 'original bytes'),
             );
             $this->expectException(ArtifactUnavailable::class);
-            $download->read(actorId: 9, actorLabel: 'bob');
+            $download->prepareDownload(actorId: 9, actorLabel: 'bob');
         } finally {
             unlink(filename: $path);
             $statement = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE action = 'button-click'");
@@ -144,7 +144,7 @@ final class DownloadFileTest extends TestCase
                 maxBytes: 1024,
             );
             $this->expectException(ArtifactUnavailable::class);
-            $download->read(actorId: 9, actorLabel: 'bob');
+            $download->prepareDownload(actorId: 9, actorLabel: 'bob');
         } finally {
             unlink(filename: $path);
             $statement = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE action = 'button-click'");
@@ -171,7 +171,7 @@ final class DownloadFileTest extends TestCase
                 artifactPath: $link,
             );
             $this->expectException(ArtifactUnavailable::class);
-            $download->read(actorId: 9, actorLabel: 'bob');
+            $download->prepareDownload(actorId: 9, actorLabel: 'bob');
         } finally {
             if (is_link(filename: $link)) {
                 unlink(filename: $link);

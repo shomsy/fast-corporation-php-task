@@ -28,7 +28,7 @@ $download = new DownloadFile(
     artifactPath: $root . '/assets/sample.exe',
     expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
 );
-$bytes = $download->read(actorId: 1, actorLabel: 'probe');
+$bytes = $download->prepareDownload(actorId: 1, actorLabel: 'probe');
 
 fwrite(stream: STDOUT, data: (string) json_encode(value: [
     'body_bytes' => strlen(string: $bytes),
