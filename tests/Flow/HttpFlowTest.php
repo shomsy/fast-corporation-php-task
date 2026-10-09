@@ -216,6 +216,31 @@ final class HttpFlowTest extends TestCase
     }
 
     /**
+     * Rejected authentication is a security diagnostic, not an accepted business activity event.
+     *
+     * @return void No return value.
+     */
+    public function testRejectedUnknownLoginDoesNotProduceBusinessActivity(): void
+    {
+        $result = $this->accountPages->loginSubmit(request: new Request(
+            method: 'POST',
+            path: '/login',
+            post: [
+                'username'   => 'nobody',
+                'password'   => 'incorrect-password',
+                'csrf_token' => $this->csrf->token(),
+            ],
+        ));
+
+        self::assertSame(401, $result->status());
+        self::assertNull($this->identity->current());
+
+        $statement = $this->pdo->query(query: 'SELECT COUNT(*) FROM activity_events');
+        self::assertNotFalse($statement);
+        self::assertSame(0, (int) $statement->fetchColumn());
+    }
+
+    /**
      * Verify csrf rejects every state changing route and does not write events through the public behavior.
      *
      * @return void No return value.

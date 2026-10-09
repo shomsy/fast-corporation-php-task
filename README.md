@@ -73,7 +73,8 @@ require a session-backed CSRF token, and access is checked server-side. Template
 prepared statements, and downloads use a fixed server-side path rather than input from the request.
 
 An append-only activity history stores account ID, historical username snapshot, action, optional target and UTC
-timestamp. `view-page` means an accepted authorized request (not confirmation of browser rendering);
+timestamp. The accepted-event contract, caller authority, retention and tamper limits are documented in
+[ADR-0003](docs/architecture/ADR-0003-accepted-activity-events.md). `view-page` means an accepted authorized request (not confirmation of browser rendering);
 `button-click/buy-cow` means accepted authorized interaction; `button-click/download` means a server-side file was
 available/read and a response was prepared, not proof the client finished transfer. Account registration and its event
 are committed in one local database transaction; `AccountLifecycle::register()` returns no private account object.
