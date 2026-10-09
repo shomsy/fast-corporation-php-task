@@ -7,6 +7,7 @@ namespace InterviewTask\Tests\Infrastructure;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
 use LogicException;
+use Override;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -59,6 +60,7 @@ final class TransactionFailureTest extends TestCase
              *
              * @return bool Rollback is deliberately never completed.
              */
+            #[Override]
             public function rollBack(): bool
             {
                 throw new RuntimeException(message: 'secondary rollback failure');
@@ -104,6 +106,7 @@ final class TransactionFailureTest extends TestCase
              *
              * @return bool Commit is deliberately refused.
              */
+            #[Override]
             public function commit(): bool
             {
                 throw $this->failure;
@@ -114,6 +117,7 @@ final class TransactionFailureTest extends TestCase
              *
              * @return bool Rollback is deliberately refused.
              */
+            #[Override]
             public function rollBack(): bool
             {
                 throw new RuntimeException(message: 'secondary rollback failure');

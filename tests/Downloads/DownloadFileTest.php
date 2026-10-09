@@ -128,6 +128,33 @@ final class DownloadFileTest extends TestCase
     }
 
     /**
+     * A matching pinned SHA-256 allows the fixed artifact and records exactly one accepted click.
+     *
+     * @return void No return value.
+     */
+    public function testMatchingArtifactHashAllowsDownloadAndOneAuditEvent(): void
+    {
+        $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-hash-valid-');
+        self::assertNotFalse($path);
+
+        try {
+            $contents = 'known artifact bytes';
+            self::assertNotFalse(file_put_contents(filename: $path, data: $contents));
+            $download = new DownloadFile(
+                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                artifactPath: $path,
+                expectedSha256: hash(algo: 'sha256', data: $contents),
+            );
+            self::assertSame($contents, $download->prepareDownload(actorId: 9, actorLabel: 'bob'));
+            $count = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE action = 'button-click' AND target = 'download'");
+            self::assertNotFalse($count);
+            self::assertSame(1, (int) $count->fetchColumn());
+        } finally {
+            unlink(filename: $path);
+        }
+    }
+
+    /**
      * Files beyond the configured size budget fail closed without reading the whole file.
      *
      * @return void No return value.

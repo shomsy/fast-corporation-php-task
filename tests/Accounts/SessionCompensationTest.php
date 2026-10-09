@@ -15,6 +15,7 @@ use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Time\SystemClock;
+use Override;
 use PDOException;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
@@ -51,6 +52,7 @@ final class SessionCompensationTest extends TestCase
              * @param string $id Session identifier.
              * @return bool Native session destroy result when not faulted.
              */
+            #[Override]
             public function destroy(string $id): bool
             {
                 if ($this->failDestroy) {

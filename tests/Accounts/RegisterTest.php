@@ -71,6 +71,22 @@ final class RegisterTest extends AccountsTestCase
     }
 
     /**
+     * Preserve the optional original cause when reporting duplicate usernames.
+     *
+     * @return void No return value.
+     */
+    public function testUsernameTakenAllowsNullablePreviousCause(): void
+    {
+        $withoutCause = new UsernameTaken();
+        self::assertNull($withoutCause->getPrevious());
+
+        $cause = new PDOException(message: 'UNIQUE constraint failed');
+        $withCause = new UsernameTaken(previous: $cause);
+        self::assertSame($cause, $withCause->getPrevious());
+        self::assertSame('Username is already taken.', $withCause->getMessage());
+    }
+
+    /**
      * Verify non unique s q lite constraint failure is not reported as username taken through the public behavior.
      *
      * @return void No return value.

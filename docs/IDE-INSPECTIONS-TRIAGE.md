@@ -119,3 +119,8 @@ Post-change gates: composer quality PASS (158 PHPUnit tests, 6,737 assertions, P
 ## 2026-10-09 new full-project XML export
 
 The new raw Inspect Code XML files are present in the project root as untracked user-owned artifacts. All 61 inspection families and 5,368 findings were parsed and triaged in [full export triage](INSPECTION-EXPORT-TRIAGE-2026-10-09.md). This supersedes the **scope** of the earlier per-file MCP sample, but is a pre-fix baseline, not a verified zero-warning report.
+
+
+## 2026-10-09 dedicated PHP Hammer follow-up
+
+The previous export-wide triage was insufficiently specific about PHP Hammer. The dedicated [87-finding PHP Hammer ledger](PHP-HAMMER-FINDINGS-2026-10-09.md) enumerates every finding by inspection, file and line, with source fixes and evidence-based decisions. Six missing overrides and one optional hash comparison were addressed; two regression tests were added. The original exported XML is preserved. All other entries are expressly reviewed, not incorrectly claimed to have disappeared. The MOI scheme remains authoritative; the installed plugin requires a new full Inspect Code export to measure post-change diagnostics.

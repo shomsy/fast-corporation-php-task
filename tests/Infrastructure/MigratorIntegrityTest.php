@@ -6,6 +6,7 @@ namespace InterviewTask\Tests\Infrastructure;
 
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
+use Override;
 use PDO;
 use PDOException;
 use PHPUnit\Framework\TestCase;
@@ -30,6 +31,7 @@ final class MigratorIntegrityTest extends TestCase
      *
      * @return void No return value.
      */
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -42,6 +44,7 @@ final class MigratorIntegrityTest extends TestCase
      *
      * @return void No return value.
      */
+    #[Override]
     protected function tearDown(): void
     {
         foreach (glob(pattern: $this->directory . '/*') ?: [] as $file) {

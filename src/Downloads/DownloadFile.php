@@ -86,11 +86,16 @@ final readonly class DownloadFile
         }
 
         if (! is_string(value: $contents) || strlen(string: $contents) !== $size
-            || strlen(string: $contents) > $this->maxBytes
-            || ($this->expectedSha256 !== null && ! hash_equals(
-                known_string: $this->expectedSha256,
-                user_string: hash(algo: 'sha256', data: $contents),
-            ))) {
+            || strlen(string: $contents) > $this->maxBytes) {
+            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
+        }
+
+        // Narrow the optional pinned digest before the constant-time comparison.
+        $expectedSha256 = $this->expectedSha256;
+        if ($expectedSha256 !== null && ! hash_equals(
+            known_string: $expectedSha256,
+            user_string: hash(algo: 'sha256', data: $contents),
+        )) {
             throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 
