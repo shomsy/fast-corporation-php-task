@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Downloads;
 
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Bootstrap\Http\DownloadApi;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\Migrator;
@@ -53,7 +57,7 @@ final class DownloadApiTest extends TestCase
      */
     public function testBinaryAttachmentHasCorrectHeadersAndOneAcceptedAudit() : void
     {
-        $api = $this->api(artifact: dirname(path: __DIR__, levels: 2) . '/assets/sample.exe');
+        $api      = $this->api(artifact: dirname(path: __DIR__, levels: 2) . '/assets/sample.exe');
         $response = $api->download();
         self::assertSame(200, $response->status());
         self::assertSame(1024, strlen(string: $response->body()));
@@ -104,8 +108,8 @@ final class DownloadApiTest extends TestCase
     private function api(string $artifact) : DownloadApi
     {
         return new DownloadApi(
-            downloads: new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $artifact),
-            signedIn: new RequireSignedIn(identity: $this->identity),
+            downloads: new DownloadFile(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()), artifactPath: $artifact),
+            signedIn : new RequireSignedIn(identity: $this->identity),
         );
     }
 
@@ -126,14 +130,14 @@ final class DownloadApiTest extends TestCase
 
         $this->pdo = SqliteConnection::memory();
         (new Migrator(pdo: $this->pdo, migrationDirectories: [
-            'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
+            'Accounts'         => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
-        $this->session = new PhpSession(name: 'download_api_test', secureCookie: false);
-        $clock = new SystemClock();
-        $accounts = new Accounts(pdo: $this->pdo);
+        $this->session  = new PhpSession(name: 'download_api_test', secureCookie: false);
+        $clock          = new SystemClock();
+        $accounts       = new Accounts(storage: new SqliteAccounts(pdo: $this->pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $this->identity = new SessionIdentity(session: $this->session, accounts: $accounts, clock: $clock);
-        $account = (new Register(accounts: $accounts, clock: $clock))->register(username: 'downloaduser', password: 'strong-password');
+        $account        = (new Register(accounts: $accounts, clock: $clock))->register(username: 'downloaduser', password: 'strong-password');
         $this->identity->signIn(account: $account);
     }
 

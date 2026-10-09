@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
@@ -19,7 +22,9 @@ use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\ActivityTracking\DailyReports;
+use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Bootstrap\Http\AccountApi;
 use InterviewTask\Bootstrap\Http\SessionApi;
@@ -60,13 +65,13 @@ return static function (Router $router) use ($config) : void {
     if ($migrated === false || (int) $migrated->fetchColumn() < 3) {
         throw new RuntimeException(message: 'Database migrations have not been applied.');
     }
-    $accounts = new Accounts(pdo: $pdo);
+    $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
     $session  = new PhpSession(secureCookie: $config['sessionCookieSecure'], savePath: $config['sessionStoragePath']);
     $clock    = new SystemClock();
     $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
     $current  = new CurrentAccount(identity: $identity);
     $csrf     = new Csrf(session: $session);
-    $activity = new ActivityLog(pdo: $pdo, clock: $clock);
+    $activity = new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: $clock);
     $signedIn = new RequireSignedIn(identity: $identity);
 
     // One explicit transport policy owns both access and CSRF before any handler runs.
@@ -90,7 +95,7 @@ return static function (Router $router) use ($config) : void {
     );
     $downloadApi  = new DownloadApi(downloads: $downloadFile, signedIn: $signedIn);
     $statistics   = new Statistics(pdo: $pdo);
-    $reports      = new DailyReports(pdo: $pdo);
+    $reports      = new DailyReports(reader: new ReadDailyActivity(pdo: $pdo));
     $admin        = new RequireAdmin(identity: $identity);
     $activityApi  = new ActivityApi(statistics: $statistics, reports: $reports, admin: $admin, session: $session);
 

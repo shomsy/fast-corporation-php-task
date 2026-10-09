@@ -6,10 +6,14 @@ namespace InterviewTask\Tests\Accounts;
 
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
@@ -71,7 +75,7 @@ final class SessionCompensationTest extends TestCase
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
-        $accounts  = new Accounts(pdo: $pdo);
+        $accounts  = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $clock     = new SystemClock();
         $session   = new PhpSession(name: 'cleanup-regression', secureCookie: false);
         $identity  = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
@@ -79,7 +83,7 @@ final class SessionCompensationTest extends TestCase
             register   : new Register(accounts: $accounts, clock: $clock),
             login      : new Login(accounts: $accounts, identity: $identity),
             identity   : $identity,
-            activity   : new ActivityLog(pdo: $pdo, clock: $clock),
+            activity   : new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: $clock),
             transaction: new Transaction(pdo: $pdo),
         );
         $lifecycle->register(username: 'cleanup-tester', password: 'strong-password');

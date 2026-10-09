@@ -11,6 +11,9 @@ declare(strict_types=1);
  */
 
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
@@ -81,7 +84,7 @@ if ($password === '') {
 $config = require dirname(path: __DIR__) . '/bootstrap/config.php';
 
 try {
-    (new CreateAdmin(accounts: new Accounts(pdo: SqliteConnection::open(path: $config['databasePath'])), clock: new SystemClock()))
+    (new CreateAdmin(accounts: new Accounts(storage: new SqliteAccounts(pdo: SqliteConnection::open(path: $config['databasePath'])), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords()), clock: new SystemClock()))
         ->create(username: $username, password: $password);
 } catch (UsernameTaken) {
     fwrite(stream: STDERR, data: "Username is already taken.\n");

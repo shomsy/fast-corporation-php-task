@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Downloads;
 
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Downloads\ArtifactUnavailable;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\Migrator;
@@ -41,7 +42,7 @@ final class DownloadFileTest extends TestCase
 
         try {
             self::assertNotFalse(file_put_contents(filename: $path, data: 'harmless fixed artifact'));
-            $download = new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $path);
+            $download = new DownloadFile(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()), artifactPath: $path);
             $download->view(actorId: 9, actorLabel: 'bob');
             self::assertSame('harmless fixed artifact', $download->prepareDownload(actorId: 9, actorLabel: 'bob'));
 
@@ -69,7 +70,7 @@ final class DownloadFileTest extends TestCase
         try {
             self::assertNotFalse(file_put_contents(filename: $path, data: 'valid artifact'));
             $this->pdo->exec(statement: 'DROP TABLE activity_events');
-            $download = new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $path);
+            $download = new DownloadFile(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()), artifactPath: $path);
 
             $this->expectException(PDOException::class);
             $download->prepareDownload(actorId: 9, actorLabel: 'bob');
@@ -86,7 +87,7 @@ final class DownloadFileTest extends TestCase
     public function testMissingArtifactDoesNotClaimSuccessfulDownload() : void
     {
         $path     = sys_get_temp_dir() . '/fast-task-absent-artifact-does-not-exist.exe';
-        $download = new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $path);
+        $download = new DownloadFile(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()), artifactPath: $path);
         $download->view(actorId: 9, actorLabel: 'bob');
 
         try {
@@ -113,7 +114,7 @@ final class DownloadFileTest extends TestCase
         try {
             self::assertNotFalse(file_put_contents(filename: $path, data: 'unexpected bytes'));
             $download = new DownloadFile(
-                activityLog   : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                activityLog   : new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()),
                 artifactPath  : $path,
                 expectedSha256: hash(algo: 'sha256', data: 'original bytes'),
             );
@@ -141,7 +142,7 @@ final class DownloadFileTest extends TestCase
             $contents = 'known artifact bytes';
             self::assertNotFalse(file_put_contents(filename: $path, data: $contents));
             $download = new DownloadFile(
-                activityLog   : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                activityLog   : new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()),
                 artifactPath  : $path,
                 expectedSha256: hash(algo: 'sha256', data: $contents),
             );
@@ -166,7 +167,7 @@ final class DownloadFileTest extends TestCase
         try {
             self::assertNotFalse(file_put_contents(filename: $path, data: str_repeat(string: 'z', times: 4096)));
             $download = new DownloadFile(
-                activityLog : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                activityLog : new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()),
                 artifactPath: $path,
                 maxBytes    : 1024,
             );
@@ -194,7 +195,7 @@ final class DownloadFileTest extends TestCase
             self::assertNotFalse(file_put_contents(filename: $real, data: 'target'));
             self::assertTrue(symlink(target: $real, link: $link));
             $download = new DownloadFile(
-                activityLog : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                activityLog : new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: new SystemClock()),
                 artifactPath: $link,
             );
             $this->expectException(ArtifactUnavailable::class);

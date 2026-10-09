@@ -6,7 +6,7 @@ namespace InterviewTask\ActivityTracking;
 
 use DateTimeImmutable;
 use InvalidArgumentException;
-use PDO;
+use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use PDOException;
 use RuntimeException;
 
@@ -31,9 +31,9 @@ final readonly class DailyReports
     /**
      * Bind the daily reporting query to the activity database.
      *
-     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     * @param ReadDailyActivity $reader Owner-private bounded daily SQLite projection.
      */
-    public function __construct(private PDO $pdo) {}
+    public function __construct(private ReadDailyActivity $reader) {}
 
     /**
      * Aggregate the last 30 days with qualifying events, ascending by UTC date. The optional inclusive bounds filter
@@ -70,32 +70,6 @@ final readonly class DailyReports
             throw new InvalidArgumentException(message: 'Report date range must be ascending.');
         }
 
-        $conditions = ["((action = 'view-page' AND target IN ('page-a', 'page-b')) OR (action = 'button-click' AND target IN ('buy-cow', 'download')))"];
-        if (isset($parameters['from'])) {
-            $conditions[] = 'substr(occurred_at, 1, 10) >= :from';
-        }
-        if (isset($parameters['to'])) {
-            $conditions[] = 'substr(occurred_at, 1, 10) <= :to';
-        }
-        $query     = <<<'SQL'
-            SELECT substr(occurred_at, 1, 10) AS date,
-                SUM(CASE WHEN action = 'view-page' AND target = 'page-a' THEN 1 ELSE 0 END) AS page_a_views,
-                SUM(CASE WHEN action = 'view-page' AND target = 'page-b' THEN 1 ELSE 0 END) AS page_b_views,
-                SUM(CASE WHEN action = 'button-click' AND target = 'buy-cow' THEN 1 ELSE 0 END) AS buy_cow_clicks,
-                SUM(CASE WHEN action = 'button-click' AND target = 'download' THEN 1 ELSE 0 END) AS download_clicks
-            FROM activity_events WHERE
-            SQL;
-        $query     .= implode(separator: ' AND ', array: $conditions);
-        $query     .= ' GROUP BY substr(occurred_at, 1, 10) ORDER BY date DESC LIMIT ' . self::MAX_DAYS;
-        $statement = $this->pdo->prepare(query: 'SELECT * FROM (' . $query . ') ORDER BY date ASC');
-        if ($statement === false) {
-            throw new RuntimeException(message: 'Unable to prepare daily activity report.');
-        }
-        $statement->execute(params: $parameters);
-
-        /** @var list<DailyActivityRow> $rows */
-        $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
-
-        return $rows;
+        return $this->reader->read(parameters: $parameters);
     }
 }

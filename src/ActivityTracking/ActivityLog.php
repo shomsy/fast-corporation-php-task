@@ -6,7 +6,7 @@ namespace InterviewTask\ActivityTracking;
 
 use DateTimeZone;
 use InvalidArgumentException;
-use PDO;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use PDOException;
 use Psr\Clock\ClockInterface;
 use RuntimeException;
@@ -23,11 +23,11 @@ final readonly class ActivityLog
     /**
      * Provide the activity writer with SQLite and a deterministic clock.
      *
-     * @param PDO            $pdo   SQLite PDO connection with configured driver settings.
-     * @param ClockInterface $clock Wall-clock source used for deterministic timestamps.
+     * @param RecordActivity $writer Private SQLite event append implementation.
+     * @param ClockInterface $clock  Wall-clock source used for deterministic timestamps.
      */
     public function __construct(
-        private PDO            $pdo,
+        private RecordActivity $writer,
         private ClockInterface $clock,
     ) {}
 
@@ -73,22 +73,13 @@ final readonly class ActivityLog
             throw new InvalidArgumentException(message: 'Actor label cannot be blank.');
         }
 
-        $statement = $this->pdo->prepare(
-            query: 'INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at)
-             VALUES (:actor_id, :actor_label, :action, :target, :occurred_at)',
+        $this->writer->append(
+            actorId   : $actorId,
+            actorLabel: $actorLabel,
+            action    : $action,
+            target    : $target,
+            occurredAt: $this->clock->now()->setTimezone(timezone: new DateTimeZone(timezone: 'UTC'))->format(format: DATE_ATOM),
         );
-
-        if ($statement === false) {
-            throw new RuntimeException(message: 'Unable to prepare activity recording.');
-        }
-
-        $statement->execute(params: [
-                                        'actor_id'    => $actorId,
-                                        'actor_label' => $actorLabel,
-                                        'action'      => $action->value,
-                                        'target'      => $target,
-                                        'occurred_at' => $this->clock->now()->setTimezone(timezone: new DateTimeZone(timezone: 'UTC'))->format(format: DATE_ATOM),
-                                    ]);
     }
 
     /**

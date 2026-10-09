@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeZone;
 use InterviewTask\ActivityTracking\ActivityAction;
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\ActivityTracking\TrackedButton;
 use InterviewTask\ActivityTracking\TrackedPage;
 use InterviewTask\Infrastructure\Database\Migrator;
@@ -175,6 +176,6 @@ final class ActivityLogTest extends TestCase
             }
         };
 
-        $this->log = new ActivityLog(pdo: $this->pdo, clock: $clock);
+        $this->log = new ActivityLog(writer: new RecordActivity(pdo: $this->pdo), clock: $clock);
     }
 }

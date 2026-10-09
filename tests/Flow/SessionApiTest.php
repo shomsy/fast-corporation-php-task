@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Flow;
 
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Bootstrap\Http\SessionApi;
@@ -36,7 +39,7 @@ final class SessionApiTest extends TestCase
         ]))->migrate();
         $session  = new PhpSession();
         $csrf     = new Csrf(session: $session);
-        $accounts = new Accounts(pdo: $pdo);
+        $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: new SystemClock());
         $api      = new SessionApi(identity: new CurrentAccount(identity: $identity), csrf: $csrf);
 

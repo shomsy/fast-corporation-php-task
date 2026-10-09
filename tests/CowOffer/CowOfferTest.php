@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\CowOffer;
 
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
@@ -31,7 +32,7 @@ final class CowOfferTest extends TestCase
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
-        $offer = new CowOffer(activityLog: new ActivityLog(pdo: $pdo, clock: new SystemClock()));
+        $offer = new CowOffer(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: new SystemClock()));
         $offer->view(actorId: 7, actorLabel: 'alice');
         self::assertSame('thankYou', $offer->buy(actorId: 7, actorLabel: 'alice'));
 

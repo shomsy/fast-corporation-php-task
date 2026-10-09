@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
@@ -24,7 +25,7 @@ $pdo  = SqliteConnection::memory();
     'ActivityTracking' => $root . '/src/ActivityTracking/migrations',
 ]))->migrate();
 $download = new DownloadFile(
-    activityLog   : new ActivityLog(pdo: $pdo, clock: new SystemClock()),
+    activityLog   : new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: new SystemClock()),
     artifactPath  : $root . '/assets/sample.exe',
     expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
 );
@@ -32,6 +33,6 @@ $bytes    = $download->prepareDownload(actorId: 1, actorLabel: 'probe');
 
 fwrite(stream: STDOUT, data: (string) json_encode(value: [
                                                              'body_bytes' => strlen(string: $bytes),
-                                                                                                                                                                                                                                                                                                                                                                                                                                               'php_allocated_peak_bytes' => memory_get_peak_usage(real_usage: true),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             'max_artifact_bytes' => 2097152,
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                   'php_allocated_peak_bytes' => memory_get_peak_usage(real_usage: true),
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           'max_artifact_bytes' => 2097152,
                                                          ], flags: JSON_THROW_ON_ERROR) . PHP_EOL);

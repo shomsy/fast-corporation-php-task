@@ -6,6 +6,7 @@ namespace InterviewTask\Tests\ActivityTracking;
 
 use DateTimeImmutable;
 use InterviewTask\ActivityTracking\DailyReports;
+use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
@@ -385,7 +386,7 @@ final class StatisticsReportsTest extends TestCase
         ]))->migrate();
 
         $this->statistics = new Statistics(pdo: $this->pdo);
-        $this->reports    = new DailyReports(pdo: $this->pdo);
+        $this->reports    = new DailyReports(reader: new ReadDailyActivity(pdo: $this->pdo));
 
         foreach ([
                      [1, 'alice', 'view-page', 'page-a', '2026-10-07T10:00:00+00:00'],

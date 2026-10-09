@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\ActivityTracking;
 
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\DailyReports;
+use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Bootstrap\Http\ActivityApi;
 use InterviewTask\Infrastructure\Database\Migrator;
@@ -39,11 +43,11 @@ final class ActivityApiTest extends TestCase
         ]))->migrate();
         $session  = new PhpSession();
         $clock    = new SystemClock();
-        $accounts = new Accounts(pdo: $pdo);
+        $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
         $api      = new ActivityApi(
             statistics: new Statistics(pdo: $pdo),
-            reports   : new DailyReports(pdo: $pdo),
+            reports   : new DailyReports(reader: new ReadDailyActivity(pdo: $pdo)),
             admin     : new RequireAdmin(identity: $identity),
             session   : $session,
         );

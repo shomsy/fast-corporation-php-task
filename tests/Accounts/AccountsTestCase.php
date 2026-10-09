@@ -7,6 +7,9 @@ namespace InterviewTask\Tests\Accounts;
 use DateTimeImmutable;
 use DateTimeZone;
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Session\PhpSession;
@@ -64,7 +67,7 @@ abstract class AccountsTestCase extends TestCase
             'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
         ]))->migrate();
 
-        $this->accounts = new Accounts(pdo: $this->pdo);
+        $this->accounts = new Accounts(storage: new SqliteAccounts(pdo: $this->pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $this->clock    = new FixedClock(
             now: new DateTimeImmutable(datetime: '2026-10-08T00:00:00+00:00', timezone: new DateTimeZone(timezone: 'UTC')),
         );

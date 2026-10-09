@@ -5,50 +5,40 @@ declare(strict_types=1);
 namespace InterviewTask\Accounts;
 
 use DateTimeImmutable;
-use PDO;
-use PDOException;
-use RuntimeException;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use SensitiveParameter;
 
 /**
- * Owns credential storage, password policy and account reconstruction.
+ * Owner API for credential policy, account creation and authentication; never knows SQL or PDO.
  *
  * @package InterviewTask\Accounts
  */
 final readonly class Accounts
 {
     /**
-     * Frozen bcrypt work factor to avoid version-dependent defaults.
+     * Bind private owner policy and concrete persistence without introducing ceremonial interfaces.
      *
-     * @var int
+     * @param SqliteAccounts     $storage     Owner-private SQLite representation.
+     * @param AccountCredentials $credentials Business credential/username policy.
+     * @param BcryptPasswords    $bcrypt      Owner-private hashing realization.
      */
-    private const int BCRYPT_COST = 12;
+    public function __construct(
+        private SqliteAccounts     $storage,
+        private AccountCredentials $credentials,
+        private BcryptPasswords    $bcrypt,
+    ) {}
 
     /**
-     * Fixed-cost dummy hash for unknown usernames. Never represents a real account.
+     * Create a regular user subject to the owner's authoritative credential policy.
      *
-     * @var string
-     */
-    private const string UNKNOWN_USER_HASH = '$2y$12$m75UX8xqNpe8KeCsn9hILeogdQ76jM3GTqAxJmooNGoZvJ4MHo69q';
-
-    /**
-     * Bind account persistence to a configured PDO connection.
+     * @param string            $username  Validated identifier candidate.
+     * @param string            $password  Secret; never logged.
+     * @param DateTimeImmutable $createdAt Creation timestamp.
      *
-     * @param PDO $pdo SQLite PDO connection with configured driver settings.
-     */
-    public function __construct(private PDO $pdo) {}
-
-    /**
-     * Persist a regular user with a bcrypt hash, never a plaintext password.
-     *
-     * @param string            $username  Username submitted or persisted for the account.
-     * @param string            $password  Secret credential; never log, echo, or include it in diagnostics.
-     * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
-     *
-     * @return Account The created user account with authoritative identifier and role.
-     * @throws PasswordRejected When the password violates the bcrypt input policy.
-     * @throws UsernameTaken When the persisted username already exists.
-     * @throws UsernameRejected When a new username is invalid.
+     * @return Account Created account.
+     * @throws PasswordRejected If password violates policy.
+     * @throws UsernameRejected If username violates policy.
+     * @throws UsernameTaken If SQLite enforces username uniqueness.
      */
     public function createUser(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt) : Account
     {
@@ -56,95 +46,42 @@ final readonly class Accounts
     }
 
     /**
-     * Enforce the one account-creation path for both user and administrator roles. Reject bcrypt's silent truncation
-     * of input beyond 72 bytes.
+     * Apply one rule set to users and administrators.
      *
-     * @param string            $username  Username submitted or persisted for the account.
-     * @param string            $password  Secret credential; never log, echo, or include it in diagnostics.
-     * @param Role              $role      Explicit business role assigned to the account.
-     * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     * @param string            $username  Proposed username.
+     * @param string            $password  Proposed password.
+     * @param Role              $role      Trusted role assigned by the appropriate behavior.
+     * @param DateTimeImmutable $createdAt Creation timestamp.
      *
-     * @return Account The newly persisted account snapshot.
-     * @throws PasswordRejected When the password violates the bcrypt input policy.
-     * @throws UsernameTaken When the persisted username already exists.
-     * @throws UsernameRejected When a new username is invalid.
-     * @throws PDOException When the underlying SQLite operation fails.
+     * @return Account New account.
+     * @throws PasswordRejected If password violates policy.
+     * @throws UsernameRejected If username violates policy.
+     * @throws UsernameTaken If SQLite enforces username uniqueness.
      */
-    private function create(
-        string            $username,
-        #[SensitiveParameter]
-        string            $password,
-        Role              $role,
-        DateTimeImmutable $createdAt,
-    ) : Account
+    private function create(string $username, #[SensitiveParameter] string $password, Role $role, DateTimeImmutable $createdAt) : Account
     {
-        // SQLite NOCASE uniqueness is ASCII-based; restrict new identifiers to that same alphabet.
-        // Existing stored identifiers remain readable/authenticatable without forced migration.
-        if (preg_match(pattern: '/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/', subject: $username) !== 1) {
-            throw new UsernameRejected(message: 'Username must be 1-64 ASCII letters, digits, dots, underscores or hyphens, starting with a letter or digit.');
-        }
+        $this->credentials->validateUsername(username: $username);
+        $this->credentials->validatePassword(password: $password);
 
-        if (str_contains(haystack: $password, needle: "\0")) {
-            throw new PasswordRejected(message: 'Password must not contain NUL bytes.');
-        }
-
-        if (strlen(string: $password) < 12) {
-            throw new PasswordRejected(message: 'Password must contain at least 12 bytes.');
-        }
-
-        // Bcrypt silently ignores bytes after 72. Reject rather than truncate credentials.
-        if (strlen(string: $password) > 72) {
-            throw new PasswordRejected(message: 'Password must not exceed 72 bytes.');
-        }
-
-        $passwordHash = password_hash(password: $password, algo: PASSWORD_BCRYPT, options: ['cost' => self::BCRYPT_COST]);
-
-        try {
-            $statement = $this->pdo->prepare(
-                query: <<<'SQL'
-                    INSERT INTO accounts (username, password_hash, role, created_at)
-                    VALUES (:username, :password_hash, :role, :created_at)
-                    SQL,
-            );
-            $statement->execute(params: [
-                                            'username'      => $username,
-                                            'password_hash' => $passwordHash,
-                                            'role'          => $role->value,
-                                            'created_at'    => $createdAt->format(format: 'c'),
-                                        ]);
-        } catch (PDOException $exception) {
-            // SQLite code 19 also covers CHECK, NOT NULL, FK and trigger failures.
-            // Only the named username UNIQUE constraint is a duplicate username.
-            $driverCode    = $exception->errorInfo[1] ?? null;
-            $driverMessage = $exception->errorInfo[2] ?? null;
-            if (
-                $driverMessage === 'UNIQUE constraint failed: accounts.username'
-                && in_array(needle: $driverCode, haystack: [19, 2067, '19', '2067'], strict: true)
-                && $this->pdo->getAttribute(attribute: PDO::ATTR_DRIVER_NAME) === 'sqlite'
-            ) {
-                throw new UsernameTaken(previous: $exception);
-            }
-
-            throw $exception;
-        }
-
-        $id = (int) $this->pdo->lastInsertId();
-
-        return new Account(id: $id, username: $username, role: $role, createdAt: $createdAt);
+        return $this->storage->insert(
+            username : $username,
+            hash     : $this->bcrypt->hash(password: $password),
+            role     : $role,
+            createdAt: $createdAt,
+        );
     }
 
     /**
-     * Create a privileged account through the same credential policy as users. This capability is invoked by the
-     * trusted CLI, not public registration.
+     * Trusted CLI creates administrators with the same invariants.
      *
-     * @param string            $username  Username submitted or persisted for the account.
-     * @param string            $password  Secret credential; never log, echo, or include it in diagnostics.
-     * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     * @param string            $username  Proposed administrator username.
+     * @param string            $password  Secret password.
+     * @param DateTimeImmutable $createdAt Creation timestamp.
      *
-     * @return Account The created administrator account with authoritative identifier and role.
-     * @throws PasswordRejected When the password violates the bcrypt input policy.
-     * @throws UsernameTaken When the persisted username already exists.
-     * @throws UsernameRejected When a new username is invalid.
+     * @return Account Created administrator.
+     * @throws PasswordRejected If password violates policy.
+     * @throws UsernameRejected If username violates policy.
+     * @throws UsernameTaken If SQLite enforces username uniqueness.
      */
     public function createAdmin(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt) : Account
     {
@@ -152,101 +89,53 @@ final readonly class Accounts
     }
 
     /**
-     * Return null on invalid credentials; malformed stored account data is an error. Password hashes may be
-     * transparently upgraded after successful verification.
+     * Verify credentials without timing shortcut for unknown users, and upgrade old bcrypt cost with CAS.
      *
-     * @param string $username Username submitted or persisted for the account.
-     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @param string $username Submitted username.
+     * @param string $password Secret credential.
      *
-     * @return Account|null The verified account, or null for invalid credentials.
-     * @throws PDOException When credential lookup or hash upgrade persistence fails.
+     * @return Account|null Verified account, or null for invalid credentials.
      */
     public function authenticate(string $username, #[SensitiveParameter] string $password) : Account|null
     {
-        if (strlen(string: $password) > 72 || str_contains(haystack: $password, needle: "\0")) {
+        if (! $this->credentials->canAuthenticate(password: $password)) {
             return null;
         }
 
-        $statement = $this->pdo->prepare(
-            query: 'SELECT id, username, password_hash, role, created_at FROM accounts WHERE username = :username LIMIT 1',
-        );
-        $statement->execute(params: ['username' => $username]);
-
-        $row = $statement->fetch(mode: PDO::FETCH_ASSOC);
-
-        if (! is_array(value: $row)) {
-            // The unknown-account path must pay the same configured bcrypt cost.
-            password_verify(password: $password, hash: self::UNKNOWN_USER_HASH);
+        $stored = $this->storage->credentialsFor(username: $username);
+        if ($stored === null) {
+            // Deliberately pay the bcrypt cost even for unknown accounts.
+            $this->bcrypt->verify(password: $password, hash: null);
 
             return null;
         }
 
-        $hash = $row['password_hash'] ?? null;
-
-        if (! is_string(value: $hash) || ! password_verify(password: $password, hash: $hash)) {
+        $hash = $stored['hash'];
+        if (! $this->bcrypt->verify(password: $password, hash: $hash)) {
             return null;
         }
 
-        $account = $this->accountFromRow(row: $row);
-
-        if (password_needs_rehash(hash: $hash, algo: PASSWORD_BCRYPT, options: ['cost' => self::BCRYPT_COST])) {
-            $rehash = password_hash(password: $password, algo: PASSWORD_BCRYPT, options: ['cost' => self::BCRYPT_COST]);
-            // Compare-and-swap: never overwrite a password changed by another request.
-            $update = $this->pdo->prepare(query: 'UPDATE accounts SET password_hash = :hash WHERE id = :id AND password_hash = :previous');
-            $update->execute(params: ['hash' => $rehash, 'id' => $account->id, 'previous' => $hash]);
+        $account = $stored['account'];
+        if ($hash !== null && $this->bcrypt->needsRehash(hash: $hash)) {
+            $this->storage->upgradeHash(
+                id          : $account->id,
+                newHash     : $this->bcrypt->hash(password: $password),
+                previousHash: $hash,
+            );
         }
 
         return $account;
     }
 
     /**
-     * Validate untrusted database fields before constructing an Account.
+     * Resolve current account from authoritative storage (including role revocation).
      *
-     * @param array<array-key, mixed> $row Raw SQLite result with unchecked values.
+     * @param int $id Authenticated account ID.
      *
-     * @return Account Reconstructed typed account from persisted fields.
-     * @throws RuntimeException When a required external resource or stored value is invalid.
-     */
-    private function accountFromRow(array $row) : Account
-    {
-        $id        = $row['id'] ?? null;
-        $username  = $row['username'] ?? null;
-        $role      = $row['role'] ?? null;
-        $createdAt = $row['created_at'] ?? null;
-
-        if (
-            (! is_int(value: $id) && ! is_string(value: $id))
-            || ! is_string(value: $username)
-            || ! is_string(value: $role)
-            || ! is_string(value: $createdAt)
-        ) {
-            throw new RuntimeException(message: 'Stored account row is invalid.');
-        }
-
-        return new Account(
-            id       : (int) $id,
-            username : $username,
-            role     : Role::from(value: $role),
-            createdAt: new DateTimeImmutable(datetime: $createdAt),
-        );
-    }
-
-    /**
-     * Resolve the current account from authoritative storage, or null if deleted.
-     *
-     * @param int $id Input value for id.
-     *
-     * @return Account|null The stored account, or null when no such account exists.
+     * @return Account|null Stored account, or null if deleted.
      */
     public function findById(int $id) : Account|null
     {
-        $statement = $this->pdo->prepare(
-            query: 'SELECT id, username, role, created_at FROM accounts WHERE id = :id LIMIT 1',
-        );
-        $statement->execute(params: ['id' => $id]);
-
-        $row = $statement->fetch(mode: PDO::FETCH_ASSOC);
-
-        return is_array(value: $row) ? $this->accountFromRow(row: $row) : null;
+        return $this->storage->findById(id: $id);
     }
 }

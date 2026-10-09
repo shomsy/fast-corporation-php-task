@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\CowOffer;
 
 use InterviewTask\Accounts\Accounts;
+use InterviewTask\Accounts\AccountCredentials;
+use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
+use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Bootstrap\Http\CowOfferApi;
 use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Infrastructure\Database\Migrator;
@@ -39,10 +43,10 @@ final class CowOfferApiTest extends TestCase
         ]))->migrate();
         $session  = new PhpSession();
         $clock    = new SystemClock();
-        $accounts = new Accounts(pdo: $pdo);
+        $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
         $api      = new CowOfferApi(
-            cow     : new CowOffer(activityLog: new ActivityLog(pdo: $pdo, clock: $clock)),
+            cow     : new CowOffer(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: $clock)),
             signedIn: new RequireSignedIn(identity: $identity),
         );
 

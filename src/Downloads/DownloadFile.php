@@ -7,6 +7,7 @@ namespace InterviewTask\Downloads;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\TrackedButton;
 use InterviewTask\ActivityTracking\TrackedPage;
+use InterviewTask\Downloads\Storage\ReadArtifact;
 use PDOException;
 
 /**
@@ -30,15 +31,20 @@ final readonly class DownloadFile
      */
     public function __construct(
         private ActivityLog $activityLog,
-        private string      $artifactPath,
-        private string|null $expectedSha256 = null,
-        private int         $maxBytes = 2097152,
+        string              $artifactPath,
+        string|null         $expectedSha256 = null,
+        int                 $maxBytes = 2097152,
     )
     {
-        if ($maxBytes < 1 || ($expectedSha256 !== null && preg_match(pattern: '/\\A[a-f0-9]{64}\\z/', subject: $expectedSha256) !== 1)) {
-            throw new \InvalidArgumentException(message: 'Invalid trusted download artifact policy.');
-        }
+        $this->artifact = new ReadArtifact(path: $artifactPath, expectedSha256: $expectedSha256, maxBytes: $maxBytes);
     }
+
+    /**
+     * Private storage implementation; DownloadFile itself owns only accepted activity semantics.
+     *
+     * @var ReadArtifact
+     */
+    private ReadArtifact $artifact;
 
     /**
      * Record the authorized display of Page B.
@@ -66,44 +72,7 @@ final readonly class DownloadFile
      */
     public function prepareDownload(int $actorId, string $actorLabel) : string
     {
-        if (is_link(filename: $this->artifactPath) || ! is_file(filename: $this->artifactPath)
-            || ! is_readable(filename: $this->artifactPath)) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
-        }
-
-        clearstatcache(clear_realpath_cache: true, filename: $this->artifactPath);
-        $size = filesize(filename: $this->artifactPath);
-
-        if (! is_int(value: $size) || $size < 1 || $size > $this->maxBytes) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
-        }
-
-        $stream = fopen(filename: $this->artifactPath, mode: 'rb');
-
-        if ($stream === false) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
-        }
-
-        try {
-            // A bounded read detects a file replaced/grown after its initial size check.
-            $contents = stream_get_contents(stream: $stream, length: $this->maxBytes + 1);
-        } finally {
-            fclose(stream: $stream);
-        }
-
-        if (! is_string(value: $contents) || strlen(string: $contents) !== $size
-            || strlen(string: $contents) > $this->maxBytes) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
-        }
-
-        // Narrow the optional pinned digest before the constant-time comparison.
-        $expectedSha256 = $this->expectedSha256;
-        if ($expectedSha256 !== null && ! hash_equals(
-                known_string: $expectedSha256,
-                user_string : hash(algo: 'sha256', data: $contents),
-            )) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
-        }
+        $contents = $this->artifact->read();
 
         $this->activityLog->recordButtonClick(actorId: $actorId, actorLabel: $actorLabel, button: TrackedButton::Download);
 
