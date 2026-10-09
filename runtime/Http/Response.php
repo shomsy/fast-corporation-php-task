@@ -56,6 +56,23 @@ final readonly class Response
     }
 
     /**
+     * Encode a trusted PHP payload as an HTML-safe JSON HTTP response.
+     *
+     * @param array<string, mixed> $payload Transport projection, never a raw domain object.
+     * @param int $status Response status code.
+     * @return self JSON response with explicit content type.
+     * @throws \JsonException When payload serialization is invalid.
+     */
+    public static function json(array $payload, int $status = 200): self
+    {
+        return new self(
+            body: json_encode(value: $payload, flags: JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS),
+            status: $status,
+            headers: ['Content-Type' => 'application/json; charset=UTF-8'],
+        );
+    }
+
+    /**
      * Build a redirect response with the requested Location.
      *
      * @param string $location Redirect destination (Location header).

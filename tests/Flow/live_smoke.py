@@ -5,6 +5,7 @@ from urllib.request import build_opener, HTTPCookieProcessor, HTTPRedirectHandle
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from pathlib import Path
+import json
 import os
 import re
 import socket
@@ -126,6 +127,14 @@ def main():
                         )
                     time.sleep(0.08)
             assert status == 200
+            api_status, api_headers, api_body = request(user, base, "/api/session")
+            assert api_status == 200
+            assert api_headers["Content-Type"] == "application/json; charset=UTF-8"
+            assert json.loads(api_body) == {"user": None}
+            api_status, api_headers, api_body = request(user, base, "/api/csrf")
+            assert api_status == 200 and api_headers["Cache-Control"] == "no-store"
+            prelogin_api_token = json.loads(api_body)["csrfToken"]
+            assert re.fullmatch(r"[a-f0-9]{64}", prelogin_api_token)
             healthy, live_headers, live_body = request(user, base, "/healthz")
             assert healthy == 200 and live_body == b"ok"
             assert "Set-Cookie" not in live_headers
@@ -149,6 +158,15 @@ def main():
                 "username": "review-user", "password": "review-password",
                 "csrf_token": anonymous_token})
             assert status == 303 and headers.get("Location") == "/"
+            api_status, _, api_body = request(user, base, "/api/session")
+            assert api_status == 200
+            current_user = json.loads(api_body)["user"]
+            assert current_user["username"] == "review-user" and current_user["role"] == "user"
+            assert isinstance(current_user["id"], int)
+            assert b"password_hash" not in api_body and b"csrfToken" not in api_body
+            api_status, _, api_body = request(user, base, "/api/csrf")
+            assert api_status == 200
+            assert json.loads(api_body)["csrfToken"] != prelogin_api_token
             status, denial_headers, _ = request(user, base, "/buy-cow", {"csrf_token": anonymous_token})
             assert status == 403, "Pre-login CSRF token remained valid after authentication"
             csrf_denied_id = denial_headers.get("X-Request-ID")
@@ -172,6 +190,8 @@ def main():
             status, _, body = request(user, base, "/")
             status, headers, _ = request(user, base, "/logout", {"csrf_token": csrf(body)})
             assert status == 303 and headers.get("Location") == "/login"
+            api_status, _, api_body = request(user, base, "/api/session")
+            assert api_status == 200 and json.loads(api_body) == {"user": None}
 
             admin_user = client()
             status, _, body = request(admin_user, base, "/login")
