@@ -94,6 +94,10 @@ correlation IDs; product activity tracking remains independent. See
 [security diagnostics](docs/security/SECURITY-DIAGNOSTICS.md) for remaining
 production log retention and alerting work.
 
+## Operational health and recovery
+
+The independent `GET /healthz` probe reports process liveness without opening the database; `GET /readyz` checks the configured SQLite database, owner schema and current migration SHA-256 values. Missing or invalid dependencies return a generic 503 instead of leaking SQL errors. Neither probe starts a session or records user activity. See [Deployment and Recovery Runbook](docs/DEPLOYMENT-RECOVERY-RUNBOOK.md) for the reference setup, safe rollback/forward, protected WAL backup and restore rehearsal; **public production is still NO-GO** until real ingress, retention, rate limiting and recovery objectives are verified.
+
 ## Validation
 
 ```bash

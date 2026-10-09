@@ -126,6 +126,12 @@ def main():
                         )
                     time.sleep(0.08)
             assert status == 200
+            healthy, live_headers, live_body = request(user, base, "/healthz")
+            assert healthy == 200 and live_body == b"ok"
+            assert "Set-Cookie" not in live_headers
+            ready, ready_headers, ready_body = request(user, base, "/readyz")
+            assert ready == 200 and ready_body == b"ready"
+            assert "Set-Cookie" not in ready_headers
             status, headers, _ = request(user, base, "/register", {
                 "username": "review-user", "password": "review-password",
                 "csrf_token": csrf(body)})
@@ -218,6 +224,12 @@ def main():
             status, headers, failure_body = request(admin_user, base, "/download", {
                 "csrf_token": csrf(download_form)})
             assert status == 500, "Audit database failure was masked as an artifact failure"
+            health_after_failure, _, health_body = request(user, base, "/healthz")
+            assert health_after_failure == 200 and health_body == b"ok"
+            readiness_after_failure, readiness_headers, readiness_body = request(user, base, "/readyz")
+            assert readiness_after_failure == 503 and readiness_body == b"Not Ready"
+            assert "no such table" not in readiness_body.decode()
+            assert "Set-Cookie" not in readiness_headers
             audit_request_id = headers.get("X-Request-ID")
             assert re.fullmatch(r"[0-9a-f]{24}", audit_request_id or ""), "Missing 500 request correlation ID"
             assert failure_body == b"Internal Server Error"

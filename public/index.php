@@ -10,6 +10,7 @@ declare(strict_types=1);
  * @package InterviewTask\Runtime\Http
  */
 
+use InterviewTask\Bootstrap\Http\HealthProbes;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Router;
 use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
@@ -30,6 +31,13 @@ try {
 }
 
 try {
+    $probe = HealthProbes::respond(request: $request);
+    if ($probe !== null) {
+        $probe->send();
+
+        return;
+    }
+
     /** @var Router $router */
     $router = require dirname(path: __DIR__) . '/bootstrap/app.php';
 
