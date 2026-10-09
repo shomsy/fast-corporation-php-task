@@ -1,6 +1,7 @@
 import { createNavigator, showPlaceholder } from './navigate.js';
 import { createHttpClient } from './requestJson.js';
 import { renderAccounts } from './Accounts/showAccounts.js';
+import { showPageA } from './CowOffer/showPageA.js';
 
 /**
  * Start the deliberately small application shell without taking ownership of SSR features.
@@ -35,6 +36,8 @@ export function startNavigation(page, win) {
   navigator = createNavigator({ page, win, outlet, render(screen, lifecycle) {
     if (['/app', '/app/home', '/app/login', '/app/register'].includes(screen.path)) {
       renderAccounts(screen, lifecycle, { client, navigate: (path) => navigator.navigate(path) });
+    } else if (screen.path === '/app/page-a') {
+      showPageA(lifecycle, { client, navigate: (path) => navigator.navigate(path) });
     } else {
       showPlaceholder(screen, lifecycle);
     }

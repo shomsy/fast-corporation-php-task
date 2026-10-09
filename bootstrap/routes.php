@@ -26,6 +26,7 @@ use InterviewTask\Bootstrap\Http\AccountApi;
 use InterviewTask\Bootstrap\Http\AccountPages;
 use InterviewTask\Bootstrap\Http\SessionApi;
 use InterviewTask\Bootstrap\Http\ActivityPages;
+use InterviewTask\Bootstrap\Http\CowOfferApi;
 use InterviewTask\Bootstrap\Http\CowOfferPages;
 use InterviewTask\Bootstrap\Http\DownloadPages;
 use InterviewTask\Bootstrap\Http\HtmlPage;
@@ -116,7 +117,9 @@ return static function (Router $router) use ($config): void {
     $accountPages  = new AccountPages(lifecycle: $lifecycle, identity: $current, csrf: $csrf, html: $html);
     $sessionApi    = new SessionApi(identity: $current, csrf: $csrf);
     $accountApi    = new AccountApi(lifecycle: $lifecycle, csrf: $csrf);
-    $cowPages      = new CowOfferPages(cow: new CowOffer(activityLog: $activity), signedIn: $signedIn, csrf: $csrf, html: $html);
+    $cowOffer      = new CowOffer(activityLog: $activity);
+    $cowPages      = new CowOfferPages(cow: $cowOffer, signedIn: $signedIn, csrf: $csrf, html: $html);
+    $cowOfferApi   = new CowOfferApi(cow: $cowOffer, signedIn: $signedIn);
     $downloadPages = new DownloadPages(
         downloads: new DownloadFile(
             activityLog: $activity,
@@ -155,6 +158,7 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'GET', path: '/app/navigate.js', handler: static fn(): Response => $spaFile('app/navigate.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/requestJson.js', handler: static fn(): Response => $spaFile('app/requestJson.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/Accounts/showAccounts.js', handler: static fn(): Response => $spaFile('app/Accounts/showAccounts.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/CowOffer/showPageA.js', handler: static fn(): Response => $spaFile('app/CowOffer/showPageA.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
@@ -163,6 +167,8 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'POST', path: '/api/accounts/register', handler: static fn(Request $request): Response => $accountApi->register(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/api/accounts/login', handler: static fn(Request $request): Response => $accountApi->login(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/api/accounts/logout', handler: static fn(): Response => $accountApi->logout(), access: RouteAccess::SignedIn);
+    $router->add(method: 'POST', path: '/api/cow-offer/view', handler: static fn(): Response => $cowOfferApi->view(), access: RouteAccess::SignedIn);
+    $router->add(method: 'POST', path: '/api/cow-offer/buy', handler: static fn(): Response => $cowOfferApi->buy(), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm(), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);
