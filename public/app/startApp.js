@@ -3,6 +3,7 @@ import { createHttpClient } from './requestJson.js';
 import { renderAccounts } from './Accounts/showAccounts.js';
 import { showPageA } from './CowOffer/showPageA.js';
 import { showPageB } from './Downloads/showPageB.js';
+import { showActivity } from './ActivityTracking/showActivity.js';
 
 /**
  * Start the deliberately small application shell without taking ownership of SSR features.
@@ -41,6 +42,8 @@ export function startNavigation(page, win) {
       showPageA(lifecycle, { client, navigate: (path) => navigator.navigate(path) });
     } else if (screen.path === '/app/page-b') {
       showPageB(lifecycle, { client, navigate: (path) => navigator.navigate(path) });
+    } else if (['/app/statistics', '/app/reports'].includes(screen.path)) {
+      showActivity(screen, lifecycle, { client, query: win.location.search, navigate: (path) => navigator.navigate(path) });
     } else {
       showPlaceholder(screen, lifecycle);
     }

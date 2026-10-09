@@ -25,6 +25,7 @@ use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Bootstrap\Http\AccountApi;
 use InterviewTask\Bootstrap\Http\AccountPages;
 use InterviewTask\Bootstrap\Http\SessionApi;
+use InterviewTask\Bootstrap\Http\ActivityApi;
 use InterviewTask\Bootstrap\Http\ActivityPages;
 use InterviewTask\Bootstrap\Http\CowOfferApi;
 use InterviewTask\Bootstrap\Http\CowOfferPages;
@@ -133,10 +134,14 @@ return static function (Router $router) use ($config): void {
         html: $html,
     );
     $downloadApi   = new DownloadApi(downloads: $downloadFile, signedIn: $signedIn);
+    $statistics    = new Statistics(pdo: $pdo);
+    $reports       = new DailyReports(pdo: $pdo);
+    $admin         = new RequireAdmin(identity: $identity);
+    $activityApi   = new ActivityApi(statistics: $statistics, reports: $reports, admin: $admin, session: $session);
     $activityPages = new ActivityPages(
-        statistics: new Statistics(pdo: $pdo),
-        reports: new DailyReports(pdo: $pdo),
-        admin: new RequireAdmin(identity: $identity),
+        statistics: $statistics,
+        reports: $reports,
+        admin: $admin,
         identity: $current,
         html: $html,
         session: $session,
@@ -163,6 +168,8 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'GET', path: '/app/Accounts/showAccounts.js', handler: static fn(): Response => $spaFile('app/Accounts/showAccounts.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/CowOffer/showPageA.js', handler: static fn(): Response => $spaFile('app/CowOffer/showPageA.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/Downloads/showPageB.js', handler: static fn(): Response => $spaFile('app/Downloads/showPageB.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/ActivityTracking/showActivity.js', handler: static fn(): Response => $spaFile('app/ActivityTracking/showActivity.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/ActivityTracking/drawChart.js', handler: static fn(): Response => $spaFile('app/ActivityTracking/drawChart.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
@@ -184,6 +191,8 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'POST', path: '/buy-cow', handler: static fn(Request $request): Response => $cowPages->buyCow(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/page-b', handler: static fn(Request $request): Response => $downloadPages->pageB(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/download', handler: static fn(Request $request): Response => $downloadPages->download(request: $request), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/api/activity/statistics', handler: static fn(Request $request): Response => $activityApi->statistics(request: $request), access: RouteAccess::Admin);
+    $router->add(method: 'GET', path: '/api/activity/reports', handler: static fn(Request $request): Response => $activityApi->reports(request: $request), access: RouteAccess::Admin);
     $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request), access: RouteAccess::Admin);
     $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request), access: RouteAccess::Admin);
 };

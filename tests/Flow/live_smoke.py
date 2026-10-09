@@ -198,6 +198,11 @@ def main():
             assert re.fullmatch(r"[0-9a-f]{24}", csrf_denied_id or ""), "CSRF denial lacks correlation ID"
             status, admin_headers, _ = request(user, base, "/statistics")
             assert status == 403
+            for endpoint in ("/api/activity/statistics", "/api/activity/reports"):
+                denied_status, denied_headers, denied = request(user, base, endpoint)
+                assert denied_status == 403
+                assert denied_headers["Content-Type"].startswith("application/json")
+                assert json.loads(denied)["error"]["code"] == "forbidden"
             admin_denied_id = admin_headers.get("X-Request-ID")
             assert re.fullmatch(r"[0-9a-f]{24}", admin_denied_id or ""), "Authorization denial lacks correlation ID"
             status, _, body = request(user, base, "/")
@@ -235,6 +240,34 @@ def main():
             status, _, body = request(admin_user, base, "/reports")
             assert status == 200
             assert b"<svg" in body and b"<polyline" in body and b"Daily totals" in body
+
+            anonymous = client()
+            for endpoint in ("/api/activity/statistics", "/api/activity/reports"):
+                code, response_headers, denied = request(anonymous, base, endpoint)
+                assert code == 401
+                assert response_headers["Content-Type"].startswith("application/json")
+                assert json.loads(denied)["error"]["code"] == "unauthenticated"
+
+            code, headers, result = request(admin_user, base,
+                "/api/activity/statistics?user=review-user&action=button-click")
+            assert code == 200 and headers["Content-Type"].startswith("application/json")
+            events = json.loads(result)["events"]
+            assert len(events) == 2 and all(event["action"] == "button-click" for event in events)
+            assert all(event["actor_label"] == "review-user" for event in events)
+            code, _, result = request(admin_user, base, "/api/activity/statistics?date=2026-02-30")
+            assert code == 422 and json.loads(result)["error"]["code"] == "invalid_filters"
+            code, _, result = request(admin_user, base, "/api/activity/reports")
+            assert code == 200
+            days = json.loads(result)["days"]
+            assert sum(day["pageAViews"] for day in days) == 1
+            assert sum(day["pageBViews"] for day in days) == 1
+            assert sum(day["buyCowClicks"] for day in days) == 1
+            assert sum(day["downloadClicks"] for day in days) == 1
+            code, _, result = request(admin_user, base, "/api/activity/reports?from=2026-02-30")
+            assert code == 422 and json.loads(result)["error"]["code"] == "invalid_dates"
+            for asset in ("/app/ActivityTracking/showActivity.js", "/app/ActivityTracking/drawChart.js"):
+                code, headers, _ = request(admin_user, base, asset)
+                assert code == 200 and "javascript" in headers["Content-Type"]
             status, headers, body = request(user, base, "/logout")
             assert status == 405 and headers.get("Allow") == "POST, OPTIONS"
             assert b"Method Not Allowed" in body

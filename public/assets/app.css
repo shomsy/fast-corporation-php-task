@@ -33,3 +33,9 @@ a:focus-visible, .skip-link:focus-visible {
 .app-content button:disabled { opacity: 0.65; cursor: wait; }
 .app-content button:focus-visible, .app-content input:focus-visible { outline: 3px solid #1248b9; outline-offset: 3px; }
 .app-content [role="alert"] { color: #8c1818; }
+
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+.app-content table { width: 100%; border-collapse: collapse; }
+.app-content td, .app-content th { padding: 0.65rem; border-bottom: 1px solid #d7dfe9; text-align: left; }
+.app-content svg[role="img"] { width: 100%; height: auto; border: 1px solid #d7dfe9; border-radius: 0.4rem; }
+.app-content nav a { margin-right: 1rem; }
