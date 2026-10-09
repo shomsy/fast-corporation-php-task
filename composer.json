@@ -8,6 +8,7 @@
     "ext-pdo": "*",
     "ext-pdo_sqlite": "*",
     "ext-session": "*",
+    "ext-sqlite3": "*",
     "psr/clock": "^1.0"
   },
   "require-dev": {

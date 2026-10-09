@@ -6,7 +6,7 @@ JavaScript build process is required.
 
 ## Requirements
 
-- PHP **8.3 or newer**, with `pdo_sqlite` and `session` extensions
+- PHP **8.3 or newer**, with `pdo_sqlite`, `sqlite3` (online backup), and `session` extensions
 - Composer 2
 - Python 3 (standard library only) **optional**, for the live reviewer smoke test
 

@@ -114,3 +114,8 @@ Follow-up MCP get_file_problems returned empty error arrays for all four paths, 
 The 25 PHP-CS-Fixer file differences and 34 Rector dry-run refactoring candidates are advisory only. MOI remains the sole authoritative PHP formatter. Blind bulk application would introduce unrelated, behavior-irrelevant formatting and refactor churn. These observations are not misrepresented as regressions.
 
 Post-change gates: composer quality PASS (158 PHPUnit tests, 6,737 assertions, PHPStan/Deptrac/Composer audit/PHPDoc), npm run test:frontend PASS (21), npm run test:browser PASS, and python3 tests/Flow/live_smoke.py PASS. Public-production host gates remain unverified and NO-GO.
+
+
+## 2026-10-09 new full-project XML export
+
+The new raw Inspect Code XML files are present in the project root as untracked user-owned artifacts. All 61 inspection families and 5,368 findings were parsed and triaged in [full export triage](INSPECTION-EXPORT-TRIAGE-2026-10-09.md). This supersedes the **scope** of the earlier per-file MCP sample, but is a pre-fix baseline, not a verified zero-warning report.
