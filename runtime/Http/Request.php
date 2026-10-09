@@ -17,7 +17,7 @@ final readonly class Request
      * Capture the HTTP method, path and raw input containers without coercing values.
      *
      * @param string $method HTTP request method or route verb.
-     * @param string $path Absolute route, request path, or trusted local filesystem path.
+     * @param string $path Parsed HTTP request pathname, never a filesystem path.
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, mixed> $server

@@ -40,7 +40,7 @@ final readonly class DownloadPages
      *
      * @param ?Request $request Optional request for speculative-load detection.
      *
-     * @return Response Result described by the native PHP return type.
+     * @return Response Page B form after an accepted view; 204 for prefetch, or login redirect.
      */
     public function pageB(?Request $request = null): Response
     {
@@ -78,7 +78,7 @@ final readonly class DownloadPages
      * Validate access and CSRF before sending a fixed binary artifact; map only artifact failure to 503.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
-     * @return Response Result described by the native PHP return type.
+     * @return Response Attachment only after artifact check and audit write; 503 if artifact unavailable, 403 CSRF.
      */
     public function download(Request $request): Response
     {

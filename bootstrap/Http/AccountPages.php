@@ -25,7 +25,7 @@ final readonly class AccountPages
     /**
      * Receive the Accounts lifecycle, current identity, CSRF guard and HTML renderer.
      *
-     * @param AccountLifecycle $lifecycle Input value for lifecycle.
+     * @param AccountLifecycle $lifecycle Coordinates registration/login/logout with required business audit history.
      * @param CurrentAccount $identity Server-side authenticated identity access boundary.
      * @param Csrf $csrf CSRF token generation and verification component.
      * @param HtmlPage $html Trusted HTML response adapter.
@@ -40,7 +40,7 @@ final readonly class AccountPages
     /**
      * Render the registration form with a session CSRF token.
      *
-     * @return Response Result described by the native PHP return type.
+     * @return Response HTML registration form with session-scoped CSRF token.
      */
     public function registerForm(): Response
     {
@@ -53,7 +53,7 @@ final readonly class AccountPages
      * Validate CSRF and registration input, translating known business outcomes into HTTP.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
-     * @return Response Result described by the native PHP return type.
+     * @return Response Redirect 303 after accepted registration; 403 CSRF, 409 duplicate name, 422 invalid form.
      */
     public function registerSubmit(Request $request): Response
     {
@@ -91,7 +91,7 @@ final readonly class AccountPages
     /**
      * Convert a missing field to empty, reject non-strings and bound submitted strings to 4096 bytes.
      *
-     * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
+     * @param mixed $value Untrusted form field; only strings up to 4096 bytes pass.
      * @return string A bounded string for business-level credential validation.
      * @throws InvalidArgumentException When a credential field has an invalid type or exceeds the transport budget.
      */
@@ -112,7 +112,7 @@ final readonly class AccountPages
      * Render the login form and optional post-registration notice.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
-     * @return Response Result described by the native PHP return type.
+     * @return Response Login HTML with post-registration notice only when query flag is valid.
      */
     public function loginForm(Request $request): Response
     {
@@ -126,7 +126,7 @@ final readonly class AccountPages
      * Validate CSRF and sign-in credentials, translating failure to HTTP 401.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
-     * @return Response Result described by the native PHP return type.
+     * @return Response Redirect 303 after login; 403 CSRF, 422 invalid input, 401 invalid credentials.
      */
     public function loginSubmit(Request $request): Response
     {
@@ -160,7 +160,7 @@ final readonly class AccountPages
      * Validate CSRF, revoke authentication and redirect to the login page.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
-     * @return Response Result described by the native PHP return type.
+     * @return Response Redirect 303 after session invalidation, or 403 on rejected CSRF.
      */
     public function logoutSubmit(Request $request): Response
     {
@@ -176,7 +176,7 @@ final readonly class AccountPages
     /**
      * Render the home page for the current verified account.
      *
-     * @return Response Result described by the native PHP return type.
+     * @return Response Account home HTML, or login redirect when identity has expired.
      */
     public function home(): Response
     {

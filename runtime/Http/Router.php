@@ -17,7 +17,7 @@ use InvalidArgumentException;
 final class Router
 {
     /**
-     * Internal state or dependency owned by Router.
+     * Exact registered method/path handlers, including their explicit access policies.
      *
      * @var array<string, array<string, array{handler: Closure(Request): Response, access: RouteAccess}>>
      */
@@ -45,8 +45,8 @@ final class Router
      * Register or replace an exact HTTP method-and-path handler.
      *
      * @param string $method HTTP request method or route verb.
-     * @param string $path Absolute route, request path, or trusted local filesystem path.
-     * @param callable(Request): Response $handler
+     * @param string $path Exact HTTP route path beginning with /; never a filesystem path.
+     * @param callable(Request): Response $handler Handler invoked only after centralized authorization and CSRF.
      * @param RouteAccess $access Required permission; defaults to signed-in, never public.
      * @return void No return value.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.

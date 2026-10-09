@@ -39,7 +39,7 @@ final readonly class CowOfferPages
      *
      * @param ?Request $request Optional request for speculative-load detection.
      *
-     * @return Response Result described by the native PHP return type.
+     * @return Response Page A HTML after an accepted view; 204 for prefetch, or login redirect.
      */
     public function pageA(?Request $request = null): Response
     {
@@ -77,7 +77,7 @@ final readonly class CowOfferPages
      * Validate login and CSRF, record the click, then render the thank-you view.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
-     * @return Response Result described by the native PHP return type.
+     * @return Response Thank-you HTML only after an accepted audit write; 403 CSRF or login redirect.
      */
     public function buyCow(Request $request): Response
     {
