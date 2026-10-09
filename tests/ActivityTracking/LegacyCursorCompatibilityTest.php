@@ -8,6 +8,7 @@ use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
+use InvalidArgumentException;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
@@ -46,7 +47,7 @@ final class LegacyCursorCompatibilityTest extends TestCase
         $json         = json_encode(value: [
                                                'v' => 1, 't' => '2026-10-09T12:00:00+00:00', 'id' => 12, 'd' => 'before', 'f' => $fingerprint,
                                            ], flags: JSON_THROW_ON_ERROR);
-        $encoded      = rtrim(string: strtr(string: base64_encode(string: $json), from: '+/', to: '-_'), characters: '=');
+        $encoded      = rtrim(string: strtr(base64_encode(string: $json), '+/', '-_'), characters: '=');
         $legacyCursor = $encoded . '.' . hash_hmac(algo: 'sha256', data: $encoded, key: $key);
 
         self::assertSame($legacyCursor, $first['nextCursor']);
@@ -55,4 +56,47 @@ final class LegacyCursorCompatibilityTest extends TestCase
         self::assertSame(11, $second['events'][0]['id']);
         self::assertNull($second['nextCursor']);
     }
+
+    /**
+     * Malformed JSON with a valid session HMAC must not leak JsonException outside the cursor contract.
+     *
+     * @return void No return value.
+     */
+    public function testMalformedJsonWithValidHmacStillFailsAsInvalidCursor() : void
+    {
+        $pdo        = SqliteConnection::memory();
+        $statistics = new Statistics(reader: new ReadActivityHistory(pdo: $pdo));
+        $key        = 'a-valid-session-secret';
+        $json       = '{"v":1';
+        $body       = rtrim(string: strtr(base64_encode(string: $json), '+/', '-_'), characters: '=');
+        $cursor     = $body . '.' . hash_hmac(algo: 'sha256', data: $body, key: $key);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid activity cursor.');
+        $statistics->cursorPage(cursor: $cursor, key: $key);
+    }
+
+    /**
+     * Omitted, null and empty signing contexts all fail with the documented domain exception.
+     *
+     * @return void No return value.
+     */
+    public function testMissingSigningContextFailsClosed() : void
+    {
+        $statistics = new Statistics(reader: new ReadActivityHistory(pdo: SqliteConnection::memory()));
+
+        foreach ([
+                     static fn () : array => $statistics->cursorPage(),
+                     static fn () : array => $statistics->cursorPage(key: null),
+                     static fn () : array => $statistics->cursorPage(key: ''),
+                 ] as $call) {
+            try {
+                $call();
+                self::fail('A cursor without a session signing key cannot be accepted.');
+            } catch (InvalidArgumentException $exception) {
+                self::assertSame('Missing cursor signing context.', $exception->getMessage());
+            }
+        }
+    }
+
 }
