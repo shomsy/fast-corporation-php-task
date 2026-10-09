@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02/M03/M06/M07 IN PROGRESS; M04/M05 DONE at local evidence; M11 IN PROGRESS. 35/48 complete. Public production not certified.
+**Status:** M00/M01 DONE; M02/M03/M06/M07 IN PROGRESS; M04/M05 DONE at local evidence; M11 IN PROGRESS. 38/48 complete. Public production not certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** 0eb0a2764af7e64d27f92948400590aa40ca399a (C-39); C-38 407a977113e329ba4ad0221d8b66116a80f936f9; C-37 a69a5013f8faa26be622c19923242a388b626e79.
-**Next legal action:** M08 C-40 Accounts SPA JSON adapter and frontend registration/login/logout/home vertical slice, with scoped regression and real browser/smoke checks, then C-41/C-42. C-38 and C-39 are committed and must not be repeated. In this turn, a C-40 regression-file creation attempt was blocked pre-dispatch; incomplete C-40 changes were rolled back, so C-40 remains OPEN. Public C-05 and C-47 deployment gates remain.
+**Last implementation commit:** cae5010ffd2370591b6d3c1589a1c998d2312859 (C-42); C-41 4fa0fb1a3367a1311bd8ace283ac8554ab547be2; C-40 720b67721aabf497020a0128f78f0f6e24785ebf.
+**Next legal action:** M09 C-43: implement admin-only statistics and reports JSON endpoints backed by existing ActivityTracking queries and accessible SPA table/chart; reproduce failing API contracts first. Then C-44 safe DOM/keyboard/focus/contrast and C-45 real browser E2E; M10 C-46 reversible cutover only after complete parity. Do not repeat C-40/C-41/C-42. Public C-05 proxy rate limiting and C-47 deployment RPO/RTO/FPM/HTTPS gates remain unverified. Other OPEN C-20/C-35/C-36/C-48 require explicit scope and evidence decisions.
 
 ## Milestone status
 
@@ -20,12 +20,12 @@
 | M05 | Analytics/performance | **DONE (local acceptance)** | C-14/C-15/C-16/C-17/C-28 complete; report query plans, actor indexes, signed keyset, UTC chart, 4-client/176-request p95/p99 baseline `84c734a`, SQLite lock and bounded PHP heap. No public PHP-FPM load SLO claimed. |
 | M06 | Backend LLD & API | **IN PROGRESS — C-29/C-30/C-33/C-34 DONE** | Session/CSRF JSON, explicit audit side effect, tooling ADR; `9917d65` truthful PHPDoc and named-argument compatibility regression, quality 151 tests/6614 checks and HTTP smoke PASS. |
 | M07 | SPA shell & security | **IN PROGRESS — C-37/C-38/C-39 DONE; C-44 OPEN** | `a69a501` SPA shell; `407a977` History/deep links, popstate and bounded lifecycle with navigation 3/3; `0eb0a27` same-origin cookie/CSRF JSON client and typed errors. Node 8/8, PHPUnit 152/6618, PHPStan/Deptrac/audit and real HTTP smoke PASS. SSR unchanged; browser E2E remains C-45. |
-| M08 | User screens | NOT STARTED | — |
+| M08 | User screens | **DONE (local API/component acceptance; browser C-45 OPEN)** | C-40 `720b677` Accounts JSON+SPA, C-41 `4fa0fb1` CowOffer SPA/view+click, C-42 `cae5010` Download native form with fixed PE. PHP 157/6655, Node 12/12, existing SSR live smoke and isolated user-slices real HTTP/SQLite exact audit + SHA PASS. No SSR removal. |
 | M09 | Admin screens/tests | NOT STARTED | — |
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | **IN PROGRESS — C-23/C-26 DONE** | `ceb12f8` fixed 2 MiB SHA-pinned PE; `857926e` liveness/readiness schema hashes and deployment recovery runbook, HTTP and local backup failure tests PASS. Final C-47 and deployment GO remain OPEN. |
 
-## Canonical packet status — 35 DONE / 48 TOTAL (13 OPEN)
+## Canonical packet status — 38 DONE / 48 TOTAL (10 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -66,9 +66,9 @@
 - [x] **C-37** — Introduce no-framework, no-bundler ES-module SPA shell served from same origin. DONE `a69a5013f8faa26be622c19923242a388b626e79`: public/app/index.html and startApp.js with local public/assets/app.css, fixed allowlisted /app and /app/login routes and JS/CSS MIME; CSP allows same-origin CSS. Before-fix real HTTP shell 404 RED, then real HTTP assets/SSR smoke PASS and native Node 2/2 ESM tests PASS; PHP quality 151/6614, security audit clear. No user feature/navigation cutover yet, SSR unchanged; browser E2E belongs to C-45.
 - [x] **C-38** — History navigation, bounded mount/dispose and cancel lifecycle. DONE `407a977113e329ba4ad0221d8b66116a80f936f9`: allowlisted SPA deep links and server 404 for unknown routes; native navigation tests 3/3 (history, modifier links, cleanup), real HTTP smoke PASS; no SSR cutover.
 - [x] **C-39** — Same-origin JSON HTTP client with cookies, CSRF bootstrap, error contract, cancellation and no automatic unsafe retry. DONE `0eb0a2764af7e64d27f92948400590aa40ca399a`: Request::csrfToken selects API header only with application/json and legacy form field otherwise; central guard JSON denials, static allowlisted JS. RED 1 PHP test undefined method, GREEN 1/4; Node 8/8 overall, composer quality 152/6618, PHPStan/Deptrac/security audit and live HTTP smoke PASS. No JWT/browser credential storage. Actual Accounts JSON writes and browser E2E remain C-40/C-45.
-- [ ] **C-40** — Migrate registration/login/logout/home to Vanilla JS vertical slice with owned form state, accessi. *(OPEN; no implementation evidence yet)*
-- [ ] **C-41** — Migrate Page A + Buy cow. *(OPEN; no implementation evidence yet)*
-- [ ] **C-42** — Migrate Page B + native file download. *(OPEN; no implementation evidence yet)*
+- [x] **C-40** — Accounts SPA register/login/logout/home. DONE `720b67721aabf497020a0128f78f0f6e24785ebf`: shared authoritative PHP AccountLifecycle and SQLite audit via JSON API, bounded JSON object parsing and stable 201/200/204/401/409/422, rotated cookie session/CSRF, safe textContent forms with cancellation; RED parser 2 errors then GREEN 3 scoped/23 assertions, full quality 155/6644, Node 10/10 and isolated cookie+CSRF HTTP smoke PASS. SSR unchanged; browser E2E remains C-45.
+- [x] **C-41** — Page A active view and Buy Cow transient UI. DONE `4fa0fb1a3367a1311bd8ace283ac8554ab547be2`: reuse CowOffer owner, protected POST view/buy, one event per accepted request; RED missing adapter, GREEN scoped 1/7, Node 11/11 and quality 156/6652, full SSR smoke PASS. Revisit triggers new view; accepted click replaces button with thankYou only in UI; confirmed again by C-42 combined HTTP acceptance.
+- [x] **C-42** — Page B active view and native binary POST. DONE `cae5010ffd2370591b6d3c1589a1c998d2312859`: protected POST view and only allowlisted `/api/downloads/sample` accepts hidden form CSRF; other APIs keep JSON header policy, existing DownloadPages/DownloadFile owns SHA-pinned max-2MiB executable, accepted audit and binary response; RED CSRF 1 failure and missing JS module, GREEN scoped 2/6, Node 12/12, quality 157/6655, real HTTP downloaded 1024-byte PE with pinned SHA and exact activity sequence; SSR smoke PASS. No blob buffering. Browser E2E pending C-45.
 - [ ] **C-43** — Migrate protected statistics filters/pagination and reports table/chart into owner frontend slice. *(OPEN; no implementation evidence yet)*
 - [ ] **C-44** — Enforce textContent/safe DOM, accessible focus/forms/keyboard/contrast. *(OPEN; no implementation evidence yet)*
 - [ ] **C-45** — Add zero-cost unit/component/browser E2E and backend API contract tests. *(OPEN; no implementation evidence yet)*
@@ -89,7 +89,7 @@
 
 ## Current blockers
 
-- C-40 is not completed: creation of its regression test was rejected before dispatch in this turn, and the incomplete C-40 application changes were rolled back. C-38/C-39 are verified and independently committed. Root-owned generated PHPStan cache remains quarantined under gitignored `var/phpstan/cache/PHPStan.root-owned-archive-20261009`; new user-owned cache works. Live smoke startup retries transient connection resets with diagnostics.
+- No current local code/test blocker for C-43. Actual browser-based E2E remains C-45; public deployment is NO-GO pending C-05/C-47 (proxy limits, host-specific service permissions, HTTPS, capacity and recovery objectives). Root-owned historical PHPStan cache remains quarantined under gitignored `var/phpstan/cache/PHPStan.root-owned-archive-20261009`; user-owned cache works.
 
 ## Phase evidence log
 
@@ -131,6 +131,9 @@
 | 2026-10-09 | M07 / C-37 | `a69a5013f8faa26be622c19923242a388b626e79` | RED /app/login absent, GREEN HTTP shell/assets and existing SSR; Node native module 2/2, full quality 151/6614 PASS | Begin reversible same-origin Vanilla ESM shell; routes/feature cutover deferred to C-38/39+. |
 | 2026-10-09 | M07 / C-38 | `407a977113e329ba4ad0221d8b66116a80f936f9` | Node History/Abort/listener tests 3/3, real HTTP SPA deep link and SSR smoke PASS | Safe route lifecycle; no user flow ownership change. |
 | 2026-10-09 | M07 / C-39 | `0eb0a2764af7e64d27f92948400590aa40ca399a` | PHP RED undefined CSRF accessor -> GREEN RequestCsrfTest 1/4; Node 8/8; quality 152 tests/6618 assertions, PHPStan/Deptrac/audit, HTTP smoke PASS | Cookie session and strict JSON/header CSRF; C-40 backend attempt rolled back before commit after test creation was blocked pre-dispatch. |
+| 2026-10-09 | M08 / C-40 | `720b67721aabf497020a0128f78f0f6e24785ebf` | RED JSON input and missing Accounts view; GREEN 3 scoped/23 assertions, 155/6644 quality, Node 10/10, Accounts API HTTP cookie/CSRF audit PASS | Reused lifecycle, no duplicated auth; SSR kept for rollback. |
+| 2026-10-09 | M08 / C-41 | `4fa0fb1a3367a1311bd8ace283ac8554ab547be2` | RED missing CowOffer API and SPA view, GREEN 1/7 scoped, 156/6652 quality, Node 11/11 and SSR live smoke PASS | Intentional view POST, click counts each accepted action, thankYou transient. |
+| 2026-10-09 | M08 / C-42 | `cae5010ffd2370591b6d3c1589a1c998d2312859` | RED native form CSRF and JS module, GREEN RequestCsrf 2/6, quality 157/6655, Node 12/12, real HTTP native binary SHA 1024B, exact 7 audit events and SSR live smoke PASS | Only fixed native binary form exception, no JS blob; E2E browser still C-45. |
 
 ## Decisions log
 
