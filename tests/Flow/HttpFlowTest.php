@@ -198,6 +198,48 @@ final class HttpFlowTest extends TestCase
     }
 
     /**
+     * Cursor HTML links preserve the traversal across newly inserted events and deny tampering.
+     *
+     * @return void No return value.
+     */
+    public function testStatisticsCursorHtmlNavigationAndTamperValidation(): void
+    {
+        $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
+        $this->identity->signIn(account: $admin);
+        $insert = $this->pdo->prepare(
+            query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'admin', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
+        );
+        self::assertNotFalse($insert);
+        for ($i = 0; $i < 65; ++$i) {
+            self::assertTrue($insert->execute());
+        }
+
+        $first = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics'));
+        self::assertSame(200, $first->status());
+        self::assertSame(1, preg_match(pattern: '~href="/statistics\\?cursor=([^"]+)"~', subject: $first->body(), matches: $link));
+        if (! isset($link[1])) {
+            self::fail('Expected an opaque cursor in the Next link.');
+        }
+        $cursor = rawurldecode(string: $link[1]);
+
+        self::assertTrue($insert->execute());
+        $next = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: ['cursor' => $cursor]));
+        self::assertSame(200, $next->status());
+        self::assertStringContainsString('← Previous', $next->body());
+        self::assertStringNotContainsString('Next →', $next->body());
+        self::assertSame(15, substr_count(haystack: $next->body(), needle: '<td>2026-10-08T12:00:00+00:00</td>'));
+
+        $bad = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: [
+            'cursor' => $cursor, 'user' => 'another-user',
+        ]));
+        self::assertSame(422, $bad->status());
+
+        $legacy = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: ['page' => '2']));
+        self::assertSame(200, $legacy->status());
+        self::assertStringContainsString('Page 2', $legacy->body());
+    }
+
+    /**
      * Verify anonymous and regular users cannot read admin pages through the public behavior.
      *
      * @return void No return value.
@@ -725,6 +767,7 @@ final class HttpFlowTest extends TestCase
             admin: new RequireAdmin(identity: $this->identity),
             identity: new CurrentAccount(identity: $this->identity),
             html: $html,
+            session: $session,
         );
     }
 

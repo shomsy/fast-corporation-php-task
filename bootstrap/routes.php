@@ -115,6 +115,7 @@ return static function (Router $router) use ($config): void {
         admin: new RequireAdmin(identity: $identity),
         identity: $current,
         html: $html,
+        session: $session,
     );
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);

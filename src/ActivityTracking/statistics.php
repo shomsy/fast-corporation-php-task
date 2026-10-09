@@ -7,7 +7,7 @@
  *
  * @package InterviewTask\ActivityTracking
  */
-/** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target:?string,occurred_at:string}>,date:string,user:string,action:string,error:string,page:int,hasNext:bool} $data */
+/** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target:?string,occurred_at:string}>,date:string,user:string,action:string,error:string,page:int,hasNext:bool,cursorMode:bool,nextCursor:?string,previousCursor:?string} $data */
 /** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
@@ -121,15 +121,23 @@
     $filters = array_filter(array: ['date' => $data['date'], 'user' => $data['user'], 'action' => $data['action']], callback: static fn(string $value): bool => $value !== '');
 ?>
     <nav aria-label="Activity pages">
-        <?php
-    if ($data['page'] > 1): ?><a
-            href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] - 1])) ?>">← Previous</a><?php
-    endif; ?>
-        <span>Page <?= $escape(value: $data['page']) ?></span>
-        <?php
-    if ($data['hasNext']): ?><a
-            href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] + 1])) ?>">Next →</a><?php
-    endif; ?>
+        <?php if ($data['cursorMode']): ?>
+            <?php if ($data['previousCursor'] !== null): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['cursor' => $data['previousCursor']])) ?>">← Previous</a>
+            <?php endif; ?>
+            <span>Activity history</span>
+            <?php if ($data['nextCursor'] !== null): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['cursor' => $data['nextCursor']])) ?>">Next →</a>
+            <?php endif; ?>
+        <?php else: ?>
+            <?php if ($data['page'] > 1): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] - 1])) ?>">← Previous</a>
+            <?php endif; ?>
+            <span>Page <?= $escape(value: $data['page']) ?></span>
+            <?php if ($data['hasNext']): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] + 1])) ?>">Next →</a>
+            <?php endif; ?>
+        <?php endif; ?>
     </nav>
 </main>
 </body>

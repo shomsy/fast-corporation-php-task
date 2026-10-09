@@ -9,6 +9,7 @@ use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Statistics;
+use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 use InvalidArgumentException;
@@ -28,6 +29,7 @@ final readonly class ActivityPages
      * @param RequireAdmin $admin Administrator authorization gate.
      * @param CurrentAccount $identity Server-side authenticated identity access boundary.
      * @param HtmlPage $html Trusted HTML response adapter.
+     * @param PhpSession $session Owner of server-only cursor signing state.
      */
     public function __construct(
         private Statistics     $statistics,
@@ -35,6 +37,7 @@ final readonly class ActivityPages
         private RequireAdmin   $admin,
         private CurrentAccount $identity,
         private HtmlPage       $html,
+        private PhpSession     $session,
     ) {}
 
     /**
@@ -59,18 +62,40 @@ final readonly class ActivityPages
             $date      = $this->optionalInput(value: $request->query(key: 'date'));
             $user      = $this->optionalInput(value: $request->query(key: 'user'));
             $action    = $this->optionalInput(value: $request->query(key: 'action'));
-            $pageValue = $this->optionalInput(value: $request->query(key: 'page')) ?? '1';
+            $pageInput = $this->optionalInput(value: $request->query(key: 'page'));
+            $cursor = $this->optionalInput(value: $request->query(key: 'cursor'));
+            $pageValue = $pageInput ?? '1';
 
             if (! preg_match(pattern: '/^[1-9][0-9]{0,17}$/', subject: $pageValue)) {
                 throw new InvalidArgumentException(message: 'Invalid page.');
             }
-            $page    = (int) $pageValue;
-            $result  = $this->statistics->page(date: $date, user: $user, action: $action, page: $page);
-            $events  = $result['events'];
+            $page = (int) $pageValue;
+            if ($cursor !== null && $pageInput !== null) {
+                throw new InvalidArgumentException(message: 'Page and cursor cannot be combined.');
+            }
+            $cursorMode = $pageInput === null;
+            if ($cursorMode) {
+                $secret = $this->session->get(key: 'activity_cursor_secret');
+                if (! is_string(value: $secret) || $secret === '') {
+                    $secret = bin2hex(string: random_bytes(length: 32));
+                    $this->session->put(key: 'activity_cursor_secret', value: $secret);
+                }
+                $result = $this->statistics->cursorPage(cursor: $cursor, key: $secret, date: $date, user: $user, action: $action);
+                $nextCursor = $result['nextCursor'];
+                $previousCursor = $result['previousCursor'];
+            } else {
+                $result = $this->statistics->page(date: $date, user: $user, action: $action, page: $page);
+                $nextCursor = null;
+                $previousCursor = null;
+            }
+            $events = $result['events'];
             $hasNext = $result['hasNext'];
             $error   = '';
             $status  = 200;
         } catch (InvalidArgumentException $e) {
+            $cursorMode = true;
+            $nextCursor = null;
+            $previousCursor = null;
             $events  = [];
             $hasNext = false;
             $error   = $e->getMessage();
@@ -81,7 +106,8 @@ final readonly class ActivityPages
             'events'  => $events, 'date' => $date ?? '',
             'user'    => $user ?? '', 'action' => $action ?? '',
             'error'   => $error, 'page' => $page,
-            'hasNext' => $hasNext,
+            'hasNext' => $hasNext, 'cursorMode' => $cursorMode,
+            'nextCursor' => $nextCursor, 'previousCursor' => $previousCursor,
         ], status: $status);
     }
 
