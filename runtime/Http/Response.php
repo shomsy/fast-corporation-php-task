@@ -119,7 +119,7 @@ final readonly class Response
             'X-Frame-Options'        => 'DENY',
             'Referrer-Policy'        => 'no-referrer',
             // SSR still embeds CSS. Scripts are only allowed as same-origin files.
-            'Content-Security-Policy' => "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+            'Content-Security-Policy' => "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
         ];
 
         if (in_array(needle: $_SERVER['HTTPS'] ?? null, haystack: ['on', '1'], strict: true)) {

@@ -165,6 +165,8 @@ final class RouterTest extends TestCase
             self::assertSame('no-referrer', $headers['Referrer-Policy']);
             self::assertSame('DENY', $headers['X-Frame-Options']);
             self::assertStringContainsString("script-src 'self'", $headers['Content-Security-Policy']);
+            self::assertStringContainsString("connect-src 'self'", $headers['Content-Security-Policy']);
+            self::assertStringNotContainsString("connect-src *", $headers['Content-Security-Policy']);
             self::assertStringNotContainsString("script-src 'unsafe-inline'", $headers['Content-Security-Policy']);
             self::assertArrayNotHasKey('Strict-Transport-Security', $headers);
         }

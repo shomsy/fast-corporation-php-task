@@ -1,0 +1,12 @@
+{
+  "name": "fast-corporation-php-task-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:frontend": "node --test tests/Frontend/*.test.mjs",
+    "test:browser": "python3 tests/Flow/browser_acceptance.py"
+  },
+  "devDependencies": {
+    "playwright": "1.64.0"
+  }
+}

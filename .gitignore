@@ -26,3 +26,8 @@ __pycache__/
 
 # Rector dry-run reports (local review evidence)
 /var/rector/
+
+# Development-only Playwright runner
+/node_modules/
+/playwright-report/
+/test-results/
