@@ -144,6 +144,10 @@ final readonly class Response
             header(header: $name . ': ' . $value);
         }
 
-        echo $this->body;
+        // HEAD and no-content status codes may carry headers but never a message body.
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'HEAD'
+            && ! in_array(needle: $this->status, haystack: [204, 304], strict: true)) {
+            echo $this->body;
+        }
     }
 }

@@ -15,6 +15,7 @@ use RuntimeException;
  *
  * @phpstan-type ActivityEventRow array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}
  * @phpstan-type ActivityPageResult array{events: list<ActivityEventRow>, hasNext: bool}
+ * @phpstan-type CursorPageResult array{events: list<ActivityEventRow>, hasNext: bool, nextCursor: ?string, previousCursor: ?string}
  * @api
  * @package InterviewTask\ActivityTracking
  * @see DailyReports
@@ -160,7 +161,7 @@ final readonly class Statistics
      * @param ?string $date Optional validated UTC date filter.
      * @param ?string $user Optional username filter.
      * @param ?string $action Optional action filter.
-     * @return array{events: list<ActivityEventRow>, hasNext: bool, nextCursor: string|null, previousCursor: string|null}
+     * @return CursorPageResult
      */
     public function cursorPage(?string $cursor = null, string $key = '', ?string $date = null, ?string $user = null, ?string $action = null): array
     {

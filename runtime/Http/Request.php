@@ -46,11 +46,28 @@ final readonly class Request
             ? $_SERVER['REQUEST_URI']
             : '/';
 
-        $path = parse_url(url: $uri, component: PHP_URL_PATH);
+        // A malformed request-target is a 400, never a silent fallback to '/'.
+        if (strlen(string: $uri) > 4096 || ! str_starts_with(haystack: $uri, needle: '/')
+            || str_starts_with(haystack: $uri, needle: '//')
+            || preg_match(pattern: '/[\\x00-\\x20\\x7f\\\\#]/', subject: $uri) === 1
+            || preg_match(pattern: '/%(?![a-fA-F0-9]{2})/', subject: $uri) === 1) {
+            throw new InvalidArgumentException(message: 'Invalid request target.');
+        }
+
+        $parts = parse_url(url: $uri);
+
+        if (! is_array(value: $parts) || isset($parts['scheme'], $parts['host'])
+            || isset($parts['fragment']) || ! is_string(value: $parts['path'] ?? null)
+            || $parts['path'] === '' || str_starts_with(haystack: $parts['path'], needle: '//')
+            || preg_match(pattern: '/[\\x00-\\x1f\\x7f\\\\]/', subject: rawurldecode(string: $parts['path'])) === 1) {
+            throw new InvalidArgumentException(message: 'Invalid request target.');
+        }
+
+        $path = $parts['path'];
 
         return new self(
             method: is_string(value: $_SERVER['REQUEST_METHOD'] ?? null) ? $_SERVER['REQUEST_METHOD'] : 'GET',
-            path  : is_string(value: $path) && $path !== '' ? $path : '/',
+            path  : $path,
             query : self::stringKeyed(values: $_GET),
             post  : self::stringKeyed(values: $_POST),
             server: self::stringKeyed(values: $_SERVER),

@@ -48,7 +48,7 @@ final class RouterTest extends TestCase
         $response = $router->dispatch(request: new Request(method: 'GET', path: '/submit'));
 
         self::assertSame(405, $response->status());
-        self::assertSame('POST', $response->headers()['Allow']);
+        self::assertSame('POST, OPTIONS', $response->headers()['Allow']);
     }
 
     /**
@@ -65,7 +65,7 @@ final class RouterTest extends TestCase
         $response = $router->dispatch(request: new Request(method: 'DELETE', path: '/submit'));
 
         self::assertSame(405, $response->status());
-        self::assertSame('POST, GET', $response->headers()['Allow']);
+        self::assertSame('GET, HEAD, POST, OPTIONS', $response->headers()['Allow']);
     }
 
     /**

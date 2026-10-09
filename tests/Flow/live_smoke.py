@@ -185,11 +185,24 @@ def main():
             assert status == 200
             assert b"<svg" in body and b"<polyline" in body and b"Daily totals" in body
             status, headers, body = request(user, base, "/logout")
-            assert status == 405 and headers.get("Allow") == "POST"
+            assert status == 405 and headers.get("Allow") == "POST, OPTIONS"
             assert b"Method Not Allowed" in body
 
             status, headers, body = request(user, base, "/page-a", {})
-            assert status == 405 and headers.get("Allow") == "GET"
+            assert status == 405 and headers.get("Allow") == "GET, HEAD, OPTIONS"
+
+            # The real HTTP server negotiates methods without executing business view handlers.
+            head_req = Request(base + "/page-a", method="HEAD")
+            with admin_user.open(head_req, timeout=8) as head_response:
+                assert head_response.status == 200
+                assert head_response.read() == b""
+                assert head_response.headers.get("X-Content-Type-Options") == "nosniff"
+
+            options_req = Request(base + "/page-a", method="OPTIONS")
+            with admin_user.open(options_req, timeout=8) as options_response:
+                assert options_response.status == 204
+                assert options_response.headers.get("Allow") == "GET, HEAD, OPTIONS"
+                assert options_response.read() == b""
 
             # A real failing activity insert must reach the outer HTTP 500 boundary,
             # not be misreported as a missing download artifact (503).
