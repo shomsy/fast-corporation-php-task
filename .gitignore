@@ -11,6 +11,9 @@
 !/var/log/.gitkeep
 !/var/database/.gitkeep
 
+# Python probe bytecode (never part of release evidence)
+__pycache__/
+
 # Local editor state
 /.idea/
 /.gigaide/

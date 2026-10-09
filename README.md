@@ -103,10 +103,12 @@ The independent `GET /healthz` probe reports process liveness without opening th
 ```bash
 composer test                 # complete PHPUnit suite
 python3 tests/Flow/live_smoke.py  # fresh DB, CLI admin, local PHP server, user/admin HTTP journeys
+python3 tests/Flow/http_capacity_probe.py  # 4-client local p95/p99 baseline (not PHP-FPM)
+php tests/Flow/download_memory_probe.php   # isolated PHP allocated-heap measurement
 composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, PHPUnit
 ```
 
-The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
+The local performance methodology and public-scale limits are documented in [ADR-0014](docs/architecture/ADR-0014-local-capacity-baseline.md). The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
 starts the same PHP version with explicit database environment and mapped temporary directory.
 
 **Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). M00/M01 are verified; 24/48 canonical work packets are implemented; M02 security and M03/M04 runtime/data hardening remain in progress. Public-production readiness has not yet been demonstrated.
