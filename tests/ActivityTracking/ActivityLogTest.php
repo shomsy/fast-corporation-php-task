@@ -32,7 +32,7 @@ final class ActivityLogTest extends TestCase
      *
      * @var PDO
      */
-    private PDO         $pdo;
+    private PDO $pdo;
     /**
      * Internal state or dependency owned by ActivityLogTest.
      *
@@ -45,7 +45,7 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp(): void
+    public function testRecordsAllRequiredEventsWithHistoricalActorAndUtcTimestamp() : void
     {
         $this->log->recordRegistration(actorId: 7, actorLabel: 'alice');
         $this->log->recordLogin(actorId: 7, actorLabel: 'alice');
@@ -84,7 +84,7 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testDoesNotReadAccountsOrChangeEarlierActorLabels(): void
+    public function testDoesNotReadAccountsOrChangeEarlierActorLabels() : void
     {
         $this->log->recordLogin(actorId: 14, actorLabel: 'old-label');
         $this->log->recordLogout(actorId: 14, actorLabel: 'new-label');
@@ -99,7 +99,7 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRejectsInvalidActorBeforeWriting(): void
+    public function testRejectsInvalidActorBeforeWriting() : void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->log->recordLogin(actorId: 0, actorLabel: 'alice');
@@ -110,7 +110,7 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRejectsBlankActorLabelBeforeWriting(): void
+    public function testRejectsBlankActorLabelBeforeWriting() : void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->log->recordLogin(actorId: 1, actorLabel: '  ');
@@ -121,7 +121,7 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testDatabaseRejectsInvalidEventTaxonomy(): void
+    public function testDatabaseRejectsInvalidEventTaxonomy() : void
     {
         $this->expectException(PDOException::class);
         $this->pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'button-click', 'page-a', '2026-10-08T10:15:00+00:00')");
@@ -132,10 +132,10 @@ final class ActivityLogTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testParticipatesInSameLocalTransactionAndRollsBack(): void
+    public function testParticipatesInSameLocalTransactionAndRollsBack() : void
     {
         try {
-            (new Transaction(pdo: $this->pdo))->run(operation: function (): void {
+            (new Transaction(pdo: $this->pdo))->run(operation: function () : void {
                 $this->log->recordRegistration(actorId: 5, actorLabel: 'alice');
                 $this->pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (5, 'alice', 'view-page', 'buy-cow', '2026-10-08T10:15:00+00:00')");
             });
@@ -153,8 +153,7 @@ final class ActivityLogTest extends TestCase
      * @return void No return value.
      */
     #[Override]
-
-    protected function setUp(): void
+    protected function setUp() : void
     {
         $this->pdo = SqliteConnection::memory();
 
@@ -170,7 +169,7 @@ final class ActivityLogTest extends TestCase
              * @return DateTimeImmutable Result described by the native PHP return type.
              */
             #[Override]
-            public function now(): DateTimeImmutable
+            public function now() : DateTimeImmutable
             {
                 return new DateTimeImmutable(datetime: '2026-10-08 12:15:00', timezone: new DateTimeZone(timezone: 'Europe/Belgrade'));
             }

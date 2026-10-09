@@ -23,10 +23,10 @@ final class HealthProbesTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLivenessAndUnavailableReadinessDoNotCreateDatabase(): void
+    public function testLivenessAndUnavailableReadinessDoNotCreateDatabase() : void
     {
         $path = sys_get_temp_dir() . '/fast-health-absent-' . bin2hex(string: random_bytes(length: 8)) . '.sqlite';
-        $this->withDbPath(path: $path, check: static function () use ($path): void {
+        $this->withDbPath(path: $path, check: static function () use ($path) : void {
             $health = HealthProbes::respond(request: new Request(method: 'GET', path: '/healthz'));
             self::assertNotNull($health);
             self::assertSame(200, $health->status());
@@ -45,17 +45,17 @@ final class HealthProbesTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testReadinessDetectsMigrationChecksumDrift(): void
+    public function testReadinessDetectsMigrationChecksumDrift() : void
     {
         $path = sys_get_temp_dir() . '/fast-health-hash-' . bin2hex(string: random_bytes(length: 8)) . '.sqlite';
-        $pdo = SqliteConnection::open(path: $path, createIfMissing: true);
+        $pdo  = SqliteConnection::open(path: $path, createIfMissing: true);
         (new Migrator(pdo: $pdo, migrationDirectories: [
-            'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
+            'Accounts'         => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
         try {
-            $this->withDbPath(path: $path, check: static function () use ($pdo): void {
+            $this->withDbPath(path: $path, check: static function () use ($pdo) : void {
                 $healthy = HealthProbes::respond(request: new Request(method: 'GET', path: '/readyz'));
                 self::assertNotNull($healthy);
                 self::assertSame(200, $healthy->status());
@@ -81,7 +81,7 @@ final class HealthProbesTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProbeMethodNegotiationHasNoBusinessSideEffects(): void
+    public function testProbeMethodNegotiationHasNoBusinessSideEffects() : void
     {
         $option = HealthProbes::respond(request: new Request(method: 'OPTIONS', path: '/readyz'));
         self::assertNotNull($option);
@@ -99,11 +99,12 @@ final class HealthProbesTest extends TestCase
     /**
      * Temporarily bind only the dependency path without changing saved environment or secrets.
      *
-     * @param string $path Test-owned SQLite path.
+     * @param string           $path  Test-owned SQLite path.
      * @param callable(): void $check Probe assertions.
+     *
      * @return void No return value.
      */
-    private function withDbPath(string $path, callable $check): void
+    private function withDbPath(string $path, callable $check) : void
     {
         $before = getenv(name: 'DB_PATH');
         putenv(assignment: 'DB_PATH=' . $path);

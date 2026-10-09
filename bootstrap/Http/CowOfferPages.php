@@ -22,10 +22,10 @@ final readonly class CowOfferPages
     /**
      * Bind Page A behavior to login authorization, CSRF and HTML rendering.
      *
-     * @param CowOffer $cow Page A business interaction owner.
+     * @param CowOffer        $cow      Page A business interaction owner.
      * @param RequireSignedIn $signedIn Authorization gate for authenticated accounts.
-     * @param Csrf $csrf CSRF token generation and verification component.
-     * @param HtmlPage $html Trusted HTML response adapter.
+     * @param Csrf            $csrf     CSRF token generation and verification component.
+     * @param HtmlPage        $html     Trusted HTML response adapter.
      */
     public function __construct(
         private CowOffer        $cow,
@@ -41,7 +41,7 @@ final readonly class CowOfferPages
      *
      * @return Response Page A HTML after an accepted view; 204 for prefetch, or login redirect.
      */
-    public function pageA(Request|null $request = null): Response
+    public function pageA(Request|null $request = null) : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {
@@ -64,7 +64,7 @@ final readonly class CowOfferPages
      *
      * @return SignedInAccount|Response Verified user identity or redirect to the login page.
      */
-    private function authorizedUser(): SignedInAccount|Response
+    private function authorizedUser() : SignedInAccount|Response
     {
         try {
             return $this->signedIn->account();
@@ -77,9 +77,10 @@ final readonly class CowOfferPages
      * Validate login and CSRF, record the click, then render the thank-you view.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Thank-you HTML only after an accepted audit write; 403 CSRF or login redirect.
      */
-    public function buyCow(Request $request): Response
+    public function buyCow(Request $request) : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {

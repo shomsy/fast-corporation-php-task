@@ -51,8 +51,8 @@ $debug        = filter_var(value: getenv(name: 'APP_DEBUG') ?: '0', filter: FILT
 $secureCookie = filter_var(value: getenv(name: 'SESSION_COOKIE_SECURE') ?: '0', filter: FILTER_VALIDATE_BOOL);
 $environment  = getenv(name: 'APP_ENV') ?: 'local';
 $uiEntrypoint = getenv(name: 'UI_ENTRYPOINT') ?: 'ssr';
-$sessionPath = getenv(name: 'SESSION_STORAGE_PATH');
-$sessionPath = is_string(value: $sessionPath) && $sessionPath !== '' ? $sessionPath : null;
+$sessionPath  = getenv(name: 'SESSION_STORAGE_PATH');
+$sessionPath  = is_string(value: $sessionPath) && $sessionPath !== '' ? $sessionPath : null;
 
 if (! in_array(needle: $environment, haystack: ['local', 'test', 'production'], strict: true)) {
     throw new RuntimeException(message: 'Unsupported application environment.');
@@ -65,11 +65,11 @@ if (! in_array(needle: $uiEntrypoint, haystack: ['ssr', 'spa'], strict: true)) {
 if ($environment === 'production') {
     $workerUid = function_exists(function: 'posix_geteuid') ? posix_geteuid() : null;
 
-    $isPrivate = static function (string $path, bool $directory) use ($workerUid): bool {
+    $isPrivate = static function (string $path, bool $directory) use ($workerUid) : bool {
         if (is_link(filename: $path) || ($directory ? ! is_dir(filename: $path) : ! is_file(filename: $path))) {
             return false;
         }
-        $mode = fileperms(filename: $path);
+        $mode  = fileperms(filename: $path);
         $owner = fileowner(filename: $path);
 
         return is_int(value: $mode) && is_int(value: $owner)

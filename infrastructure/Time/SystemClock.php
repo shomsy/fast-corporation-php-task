@@ -22,7 +22,7 @@ final class SystemClock implements ClockInterface
      * @return DateTimeImmutable The current UTC timestamp.
      */
     #[Override]
-    public function now(): DateTimeImmutable
+    public function now() : DateTimeImmutable
     {
         return new DateTimeImmutable(datetime: 'now', timezone: new DateTimeZone(timezone: 'UTC'));
     }

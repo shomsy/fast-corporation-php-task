@@ -24,7 +24,7 @@ final class ComposerAutoloadTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly(): void
+    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly() : void
     {
         foreach ([AccountPages::class, ActivityPages::class, CowOfferPages::class, DownloadPages::class, HtmlPage::class] as $class) {
             self::assertTrue(class_exists(class: $class), $class);

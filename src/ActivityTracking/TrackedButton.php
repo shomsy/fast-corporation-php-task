@@ -14,10 +14,10 @@ enum TrackedButton: string
 {
     /**
      * Canonical Buy cow value for the TrackedButton taxonomy.
-         */
-    case BuyCow   = 'buy-cow';
+     */
+    case BuyCow = 'buy-cow';
     /**
      * Canonical Download value for the TrackedButton taxonomy.
-         */
+     */
     case Download = 'download';
 }

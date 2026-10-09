@@ -23,7 +23,7 @@ final class HttpProtocolTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testMalformedRequestTargetsFailAtTransportBoundary(): void
+    public function testMalformedRequestTargetsFailAtTransportBoundary() : void
     {
         $original = $_SERVER['REQUEST_URI'] ?? null;
 
@@ -52,21 +52,21 @@ final class HttpProtocolTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testHeadIsBodylessAndDoesNotInvokeGetBusinessAction(): void
+    public function testHeadIsBodylessAndDoesNotInvokeGetBusinessAction() : void
     {
-        $router = new Router();
+        $router  = new Router();
         $invoked = 0;
         $router->add(
-            method: 'GET',
-            path: '/page-a',
-            handler: static function () use (&$invoked): Response {
+            method : 'GET',
+            path   : '/page-a',
+            handler: static function () use (&$invoked) : Response {
                 $invoked++;
+
                 return Response::html(body: 'tracked view');
             },
-            access: RouteAccess::SignedIn,
+            access : RouteAccess::SignedIn,
         );
-        $router->guardWith(static fn(Request $request, RouteAccess $access): Response|null =>
-            $request->server(key: 'identity') === 'trusted' ? null : Response::text(body: 'Forbidden', status: 403));
+        $router->guardWith(static fn (Request $request, RouteAccess $access) : Response|null => $request->server(key: 'identity') === 'trusted' ? null : Response::text(body: 'Forbidden', status: 403));
 
         $denied = $router->dispatch(request: new Request(method: 'HEAD', path: '/page-a'));
         self::assertSame(403, $denied->status());
@@ -83,15 +83,16 @@ final class HttpProtocolTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testOptionsAnd405ListSupportedMethodsIncludingImplicitHead(): void
+    public function testOptionsAnd405ListSupportedMethodsIncludingImplicitHead() : void
     {
         $router = new Router();
         $called = 0;
-        $router->add(method: 'GET', path: '/view', handler: static function () use (&$called): Response {
+        $router->add(method: 'GET', path: '/view', handler: static function () use (&$called) : Response {
             $called++;
+
             return Response::text(body: 'ok');
-        }, access: RouteAccess::Public);
-        $router->add(method: 'POST', path: '/view', handler: static fn(): Response => Response::text(body: 'created'));
+        },           access: RouteAccess::Public);
+        $router->add(method: 'POST', path: '/view', handler: static fn () : Response => Response::text(body: 'created'));
 
         $options = $router->dispatch(request: new Request(method: 'OPTIONS', path: '/view'));
         self::assertSame(204, $options->status());
@@ -105,14 +106,15 @@ final class HttpProtocolTest extends TestCase
 
         self::assertSame(404, $router->dispatch(request: new Request(method: 'OPTIONS', path: '/not-a-route'))->status());
     }
+
     /**
      * Even errors must be bodyless on HEAD at the final HTTP output boundary.
      *
      * @return void No return value.
      */
-    public function testHeadNeverEmitsAnHttpBody(): void
+    public function testHeadNeverEmitsAnHttpBody() : void
     {
-        $old = $_SERVER['REQUEST_METHOD'] ?? null;
+        $old                       = $_SERVER['REQUEST_METHOD'] ?? null;
         $_SERVER['REQUEST_METHOD'] = 'HEAD';
 
         try {

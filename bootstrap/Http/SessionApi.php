@@ -19,11 +19,11 @@ final readonly class SessionApi
      * Bind the authoritative account reader and the shared CSRF session service.
      *
      * @param CurrentAccount $identity Reloaded authoritative current account.
-     * @param Csrf $csrf Server-side CSRF token lifecycle.
+     * @param Csrf           $csrf     Server-side CSRF token lifecycle.
      */
     public function __construct(
         private CurrentAccount $identity,
-        private Csrf $csrf,
+        private Csrf           $csrf,
     ) {}
 
     /**
@@ -31,17 +31,17 @@ final readonly class SessionApi
      *
      * @return Response Public no-store JSON containing user identity or null.
      */
-    public function session(): Response
+    public function session() : Response
     {
         $account = $this->identity->current();
 
         return Response::json(payload: [
-            'user' => $account === null ? null : [
-                'id' => $account->id,
-                'username' => $account->username,
-                'role' => $account->role->value,
-            ],
-        ]);
+                                           'user' => $account === null ? null : [
+                                               'id'       => $account->id,
+                                               'username' => $account->username,
+                                               'role'     => $account->role->value,
+                                           ],
+                                       ]);
     }
 
     /**
@@ -49,7 +49,7 @@ final readonly class SessionApi
      *
      * @return Response Public no-store JSON containing the current CSRF token.
      */
-    public function csrf(): Response
+    public function csrf() : Response
     {
         return Response::json(payload: ['csrfToken' => $this->csrf->token()]);
     }

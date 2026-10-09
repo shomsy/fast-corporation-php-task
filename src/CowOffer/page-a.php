@@ -52,7 +52,8 @@ declare(strict_types=1);
     <?php
     if ($data['bought']): ?>
         <p class="success" role="status">thankYou</p>
-    <?php else: ?>
+    <?php
+    else: ?>
         <p>Would you like to buy a cow?</p>
         <form method="post" action="/buy-cow"><input type="hidden" name="csrf_token"
                                                      value="<?= $escape(value: $data['csrfToken']) ?>">

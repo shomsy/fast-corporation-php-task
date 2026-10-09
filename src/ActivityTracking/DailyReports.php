@@ -13,10 +13,11 @@ use RuntimeException;
 /**
  * One bounded UTC daily dataset for both chart and table.
  *
- * @phpstan-type DailyActivityRow array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}
+ * @phpstan-type DailyActivityRow array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int,
+ *               download_clicks: int}
  * @api
  * @package InterviewTask\ActivityTracking
- * @see Statistics
+ * @see     Statistics
  */
 final readonly class DailyReports
 {
@@ -35,16 +36,18 @@ final readonly class DailyReports
     public function __construct(private PDO $pdo) {}
 
     /**
-     * Aggregate the last 30 days with qualifying events, ascending by UTC date. The optional inclusive bounds filter before the 30-row limit is applied. Dates without tracked events are not filled with synthetic zero rows.
+     * Aggregate the last 30 days with qualifying events, ascending by UTC date. The optional inclusive bounds filter
+     * before the 30-row limit is applied. Dates without tracked events are not filled with synthetic zero rows.
      *
      * @param string|null $from Inclusive YYYY-MM-DD UTC lower bound.
-     * @param string|null $to Inclusive YYYY-MM-DD UTC upper bound.
+     * @param string|null $to   Inclusive YYYY-MM-DD UTC upper bound.
+     *
      * @return list<DailyActivityRow> The same counts feed the chart and table.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      * @throws PDOException When the underlying SQLite operation fails.
      * @throws RuntimeException When the query cannot be prepared.
      */
-    public function dailyCounts(string|null $from = null, string|null $to = null): array
+    public function dailyCounts(string|null $from = null, string|null $to = null) : array
     {
         $parameters = [];
         foreach (['from' => $from, 'to' => $to] as $name => $value) {

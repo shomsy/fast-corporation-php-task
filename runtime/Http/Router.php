@@ -11,8 +11,8 @@ use InvalidArgumentException;
  * Exact-path router. Dynamic route matching is intentionally deferred until a real behavior requires it.
  *
  * @package InterviewTask\Runtime\Http
- * @see Request
- * @see Response
+ * @see     Request
+ * @see     Response
  */
 final class Router
 {
@@ -34,9 +34,10 @@ final class Router
      * Configure the single security boundary for route authorization and unsafe methods.
      *
      * @param callable(Request, RouteAccess): (Response|null) $guard Denial response or null when permitted.
+     *
      * @return void No return value.
      */
-    public function guardWith(callable $guard): void
+    public function guardWith(callable $guard) : void
     {
         $this->guard = Closure::fromCallable(callback: $guard);
     }
@@ -44,14 +45,15 @@ final class Router
     /**
      * Register or replace an exact HTTP method-and-path handler.
      *
-     * @param string $method HTTP request method or route verb.
-     * @param string $path Exact HTTP route path beginning with /; never a filesystem path.
+     * @param string                      $method  HTTP request method or route verb.
+     * @param string                      $path    Exact HTTP route path beginning with /; never a filesystem path.
      * @param callable(Request): Response $handler Handler invoked only after centralized authorization and CSRF.
-     * @param RouteAccess $access Required permission; defaults to signed-in, never public.
+     * @param RouteAccess                 $access  Required permission; defaults to signed-in, never public.
+     *
      * @return void No return value.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
-    public function add(string $method, string $path, callable $handler, RouteAccess $access = RouteAccess::SignedIn): void
+    public function add(string $method, string $path, callable $handler, RouteAccess $access = RouteAccess::SignedIn) : void
     {
         $method = strtoupper(string: trim(string: $method));
 
@@ -73,12 +75,13 @@ final class Router
      * Invoke a matching handler or return 404/405 with an Allow header.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Matched response, or 404/405 without invoking an invalid handler.
      */
-    public function dispatch(Request $request): Response
+    public function dispatch(Request $request) : Response
     {
-        $method = $request->method();
-        $path = $request->path();
+        $method  = $request->method();
+        $path    = $request->path();
         $allowed = [];
 
         foreach ($this->routes as $registeredMethod => $registeredRoutes) {
@@ -93,11 +96,10 @@ final class Router
         if ($allowed !== []) {
             $allowed[] = 'OPTIONS';
         }
-        $allowed = array_values(array_unique(array: $allowed));
+        $allowed  = array_values(array_unique(array: $allowed));
         $priority = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
-        $rank = array_flip(array: $priority);
-        usort(array: $allowed, callback: static fn(string $a, string $b): int =>
-            ($rank[$a] ?? 99) <=> ($rank[$b] ?? 99));
+        $rank     = array_flip(array: $priority);
+        usort(array: $allowed, callback: static fn (string $a, string $b) : int => ($rank[$a] ?? 99) <=> ($rank[$b] ?? 99));
 
         if ($method === 'OPTIONS' && $allowed !== []) {
             return new Response(body: '', status: 204, headers: ['Allow' => implode(separator: ', ', array: $allowed)]);

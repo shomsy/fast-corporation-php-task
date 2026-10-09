@@ -26,21 +26,21 @@ foreach ($daily as $day) {
         $max = max($max, (int) $day[$key]);
     }
 }
-$count = count(value: $daily);
-$dayEpoch = static fn(string $date): int => (new DateTimeImmutable(datetime: $date, timezone: new DateTimeZone(timezone: 'UTC')))->getTimestamp();
-$firstEpoch = $count === 0 ? 0 : $dayEpoch(date: $daily[0]['date']);
-$lastEpoch  = $count === 0 ? 0 : $dayEpoch(date: $daily[$count - 1]['date']);
+$count       = count(value: $daily);
+$dayEpoch    = static fn (string $date) : int => (new DateTimeImmutable(datetime: $date, timezone: new DateTimeZone(timezone: 'UTC')))->getTimestamp();
+$firstEpoch  = $count === 0 ? 0 : $dayEpoch(date: $daily[0]['date']);
+$lastEpoch   = $count === 0 ? 0 : $dayEpoch(date: $daily[$count - 1]['date']);
 $spanSeconds = max(86400, $lastEpoch - $firstEpoch);
-$xFor = static fn(string $date): float => round(num: 75 + ($dayEpoch(date: $date) - $firstEpoch) * 830 / $spanSeconds, precision: 2);
-$yFor = static fn(int $value): float => 265 - $value * 215 / $max;
-$ticks = range(start: 0, end: min(4, $max));
-$ticks = array_map(callback: static fn(int $i): int => (int) round(num: $max * $i / max(1, count(value: $ticks) - 1)), array: $ticks);
+$xFor        = static fn (string $date) : float => round(num: 75 + ($dayEpoch(date: $date) - $firstEpoch) * 830 / $spanSeconds, precision: 2);
+$yFor        = static fn (int $value) : float => 265 - $value * 215 / $max;
+$ticks       = range(start: 0, end: min(4, $max));
+$ticks       = array_map(callback: static fn (int $i) : int => (int) round(num: $max * $i / max(1, count(value: $ticks) - 1)), array: $ticks);
 
 // Missing dates are genuine zero-event gaps. Never connect nonadjacent active days.
 $segmentsBySeries = [];
 foreach ($series as $key => $_) {
-    $segments = [];
-    $current = [];
+    $segments      = [];
+    $current       = [];
     $previousEpoch = null;
     foreach ($daily as $day) {
         $epoch = $dayEpoch(date: $day['date']);
@@ -50,7 +50,7 @@ foreach ($series as $key => $_) {
             }
             $current = [];
         }
-        $current[] = $xFor(date: $day['date']) . ',' . round(num: $yFor(value: (int) $day[$key]), precision: 2);
+        $current[]     = $xFor(date: $day['date']) . ',' . round(num: $yFor(value: (int) $day[$key]), precision: 2);
         $previousEpoch = $epoch;
     }
     if ($current !== []) {
@@ -59,12 +59,12 @@ foreach ($series as $key => $_) {
     $segmentsBySeries[$key] = $segments;
 }
 
-$axisLabels = [];
+$axisLabels     = [];
 $previousLabelX = -200.0;
 foreach ($daily as $index => $day) {
     $x = $xFor(date: $day['date']);
     if ($index === 0 || $index === $count - 1 || ($x - $previousLabelX >= 115 && $x < 795)) {
-        $axisLabels[] = $day;
+        $axisLabels[]   = $day;
         $previousLabelX = $x;
     }
 }
@@ -125,7 +125,8 @@ foreach ($daily as $index => $day) {
     <p>All dates are UTC. The chart and table use the same daily dataset (up
         to <?= DailyReports::MAX_DAYS ?> recent active dates).</p>
     <form method="get" action="/reports">
-        <label>From (UTC) <input name="from" placeholder="YYYY-MM-DD" value="<?= $escape(value: $data['from']) ?>"></label>
+        <label>From (UTC) <input name="from" placeholder="YYYY-MM-DD"
+                                 value="<?= $escape(value: $data['from']) ?>"></label>
         <label>To (UTC) <input name="to" placeholder="YYYY-MM-DD" value="<?= $escape(value: $data['to']) ?>"></label>
         <button type="submit">Filter</button>
         <a href="/reports">Clear</a>
@@ -136,8 +137,10 @@ foreach ($daily as $index => $day) {
     <?php
     if ($daily === []): ?>
         <p>No reportable activity yet.</p>
-    <?php else: ?>
-        <p id="report-calendar-note">Missing UTC dates have zero recorded activity and appear as gaps in the chart; the table lists only active dates.</p>
+    <?php
+    else: ?>
+        <p id="report-calendar-note">Missing UTC dates have zero recorded activity and appear as gaps in the chart; the
+            table lists only active dates.</p>
         <div class="legend">
             <?php
             foreach ($series as $s): ?><span style="color:<?= $escape(value: $s['color']) ?>">
@@ -146,7 +149,10 @@ foreach ($daily as $index => $day) {
         </div>
         <svg viewBox="0 0 960 330" role="img" aria-labelledby="activity-chart-title activity-chart-description">
             <title id="activity-chart-title">Daily Page A, Page B, Buy Cow and Download event counts</title>
-            <desc id="activity-chart-description">The UTC date axis uses actual calendar spacing. Missing UTC dates represent zero tracked events and break the lines. Each point has a keyboard-readable count and date. Exact active-day totals follow in the table.</desc>
+            <desc id="activity-chart-description">The UTC date axis uses actual calendar spacing. Missing UTC dates
+                represent zero tracked events and break the lines. Each point has a keyboard-readable count and date.
+                Exact active-day totals follow in the table.
+            </desc>
             <line x1="75" y1="50" x2="75" y2="265" stroke="#64748b"/>
             <line x1="75" y1="265" x2="905" y2="265" stroke="#64748b"/>
             <?php
@@ -158,18 +164,23 @@ foreach ($daily as $index => $day) {
             endforeach; ?>
             <?php
             foreach ($series as $key => $s): ?>
-                <?php foreach ($segmentsBySeries[$key] as $segment): ?>
+                <?php
+                foreach ($segmentsBySeries[$key] as $segment): ?>
                     <polyline fill="none" stroke="<?= $escape(value: $s['color']) ?>" stroke-width="3"
                               stroke-dasharray="<?= $escape(value: $s['dash']) ?>"
                               points="<?= $escape(value: implode(separator: ' ', array: $segment)) ?>"/>
-                <?php endforeach; ?>
-                <?php foreach ($daily as $day): ?>
-                    <circle cx="<?= $escape(value: $xFor(date: $day['date'])) ?>" cy="<?= $escape(value: $yFor(value: (int) $day[$key])) ?>" r="4"
+                <?php
+                endforeach; ?>
+                <?php
+                foreach ($daily as $day): ?>
+                    <circle cx="<?= $escape(value: $xFor(date: $day['date'])) ?>"
+                            cy="<?= $escape(value: $yFor(value: (int) $day[$key])) ?>" r="4"
                             fill="<?= $escape(value: $s['color']) ?>" tabindex="0"
                             aria-label="<?= $escape(value: $s['label'] . ': ' . $day[$key] . ' on ' . $day['date']) ?>">
                         <title><?= $escape(value: $s['label'] . ': ' . $day[$key] . ' on ' . $day['date']) ?></title>
                     </circle>
-                <?php endforeach; ?>
+                <?php
+                endforeach; ?>
             <?php
             endforeach; ?>
             <?php

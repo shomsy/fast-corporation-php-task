@@ -21,7 +21,9 @@ use ReflectionNamedType;
 use SplFileInfo;
 
 /**
- * AST-based owner export enforcement for statically named PHP class references. Explicit composition root bootstrap/routes.php and test code are excluded. Runtime class-string/reflection construction is an independently reviewed risk.
+ * AST-based owner export enforcement for statically named PHP class references. Explicit composition root
+ * bootstrap/routes.php and test code are excluded. Runtime class-string/reflection construction is an independently
+ * reviewed risk.
  *
  * @package InterviewTask\Tests\Architecture
  */
@@ -39,7 +41,7 @@ final class PublicSurfaceTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface(): void
+    public function testEveryCrossOwnerAndHttpAdapterClassReferenceUsesDeclaredSurface() : void
     {
         $root     = dirname(path: __DIR__, levels: 2);
         $exports  = self::exports(root: $root);
@@ -79,9 +81,10 @@ final class PublicSurfaceTest extends TestCase
      * Exports according to the PublicSurfaceTest contract.
      *
      * @param string $root Project root directory.
+     *
      * @return array<string, list<string>>
      */
-    private static function exports(string $root): array
+    private static function exports(string $root) : array
     {
         $result = [];
         foreach (self::OWNERS as $owner) {
@@ -100,9 +103,10 @@ final class PublicSurfaceTest extends TestCase
      * Referenced owner types according to the PublicSurfaceTest contract.
      *
      * @param string $source Input value for source.
+     *
      * @return list<array{string, string}>
      */
-    private static function referencedOwnerTypes(string $source): array
+    private static function referencedOwnerTypes(string $source) : array
     {
         $parser = (new ParserFactory())->createForNewestSupportedVersion();
         $parsed = $parser->parse(code: $source);
@@ -157,23 +161,24 @@ final class PublicSurfaceTest extends TestCase
     }
 
     /**
-     * Verify only the tracked account lifecycle is publicly exposed for authentication changes through the public behavior.
+     * Verify only the tracked account lifecycle is publicly exposed for authentication changes through the public
+     * behavior.
      *
      * @return void No return value.
      */
-    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges(): void
+    public function testOnlyTheTrackedAccountLifecycleIsPubliclyExposedForAuthenticationChanges() : void
     {
         $exports = self::exports(root: dirname(path: __DIR__, levels: 2));
         self::assertContains(AccountLifecycle::class, $exports['Accounts']);
         self::assertContains(CurrentAccount::class, $exports['Accounts']);
 
         foreach ([
-            'InterviewTask\Accounts\Register\Register',
-            'InterviewTask\Accounts\Login\Login',
-            'InterviewTask\Accounts\Logout\Logout',
-            'InterviewTask\Accounts\SessionIdentity',
-            'InterviewTask\Accounts\Accounts',
-        ] as $privateType) {
+                     'InterviewTask\Accounts\Register\Register',
+                     'InterviewTask\Accounts\Login\Login',
+                     'InterviewTask\Accounts\Logout\Logout',
+                     'InterviewTask\Accounts\SessionIdentity',
+                     'InterviewTask\Accounts\Accounts',
+                 ] as $privateType) {
             self::assertNotContains($privateType, $exports['Accounts'], $privateType . ' is a private implementation detail');
         }
 
@@ -188,7 +193,7 @@ final class PublicSurfaceTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns(): void
+    public function testExportedLifecycleDoesNotLeakInternalAccountInPublicMethodReturns() : void
     {
         $exports   = self::exports(root: dirname(path: __DIR__, levels: 2));
         $lifecycle = new ReflectionClass(objectOrClass: AccountLifecycle::class);
@@ -213,7 +218,7 @@ final class PublicSurfaceTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes(): void
+    public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes() : void
     {
         $cases   = [
             "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n",

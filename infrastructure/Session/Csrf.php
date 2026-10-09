@@ -33,7 +33,7 @@ final readonly class Csrf
      * @return string A persisted session token encoded as hexadecimal.
      * @throws RandomException If the cryptographically secure random source fails.
      */
-    public function token(): string
+    public function token() : string
     {
         $stored = $this->session->get(key: self::SESSION_KEY);
 
@@ -50,7 +50,7 @@ final readonly class Csrf
      * @return string Newly issued unpredictable CSRF token for this session.
      * @throws RandomException When the secure random generator fails.
      */
-    public function rotate(): string
+    public function rotate() : string
     {
         $token = bin2hex(string: random_bytes(length: 32));
         $this->session->put(key: self::SESSION_KEY, value: $token);
@@ -62,9 +62,10 @@ final readonly class Csrf
      * Compare the submitted token with the active session token in constant time.
      *
      * @param mixed $submitted Untrusted CSRF token supplied by an HTTP client.
+     *
      * @return bool True only when the candidate matches the stored session token.
      */
-    public function matches(mixed $submitted): bool
+    public function matches(mixed $submitted) : bool
     {
         $stored = $this->session->get(key: self::SESSION_KEY);
 

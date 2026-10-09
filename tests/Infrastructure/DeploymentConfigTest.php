@@ -19,13 +19,13 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionRejectsInsecureSessionCookie(): void
+    public function testProductionRejectsInsecureSessionCookie() : void
     {
         $threw = false;
 
         $this->withEnvironment(
             overrides: ['APP_ENV' => 'production', 'APP_DEBUG' => '0', 'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '0'],
-            action: static function () use (&$threw): void {
+            action   : static function () use (&$threw) : void {
                 try {
                     require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
                 } catch (RuntimeException) {
@@ -42,15 +42,15 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionRejectsDebugAndInsecureOrigin(): void
+    public function testProductionRejectsDebugAndInsecureOrigin() : void
     {
         foreach ([
-            ['APP_ENV' => 'production', 'APP_DEBUG' => '1', 'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1'],
-            ['APP_ENV' => 'production', 'APP_DEBUG' => '0', 'APP_URL' => 'http://example.test', 'SESSION_COOKIE_SECURE' => '1'],
-        ] as $overrides) {
+                     ['APP_ENV' => 'production', 'APP_DEBUG' => '1', 'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1'],
+                     ['APP_ENV' => 'production', 'APP_DEBUG' => '0', 'APP_URL' => 'http://example.test', 'SESSION_COOKIE_SECURE' => '1'],
+                 ] as $overrides) {
             $threw = false;
 
-            $this->withEnvironment(overrides: $overrides, action: static function () use (&$threw): void {
+            $this->withEnvironment(overrides: $overrides, action: static function () use (&$threw) : void {
                 try {
                     require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
                 } catch (RuntimeException) {
@@ -67,16 +67,16 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionRejectsMissingPrivateSessionDirectory(): void
+    public function testProductionRejectsMissingPrivateSessionDirectory() : void
     {
         $rejected = false;
         $this->withEnvironment(
             overrides: [
-                'APP_ENV' => 'production', 'APP_DEBUG' => '0',
-                'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
-                'SESSION_STORAGE_PATH' => '',
-            ],
-            action: static function () use (&$rejected): void {
+                           'APP_ENV'              => 'production', 'APP_DEBUG' => '0',
+                           'APP_URL'              => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+                           'SESSION_STORAGE_PATH' => '',
+                       ],
+            action   : static function () use (&$rejected) : void {
                 try {
                     require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
                 } catch (RuntimeException) {
@@ -92,10 +92,11 @@ final class DeploymentConfigTest extends TestCase
      * Environment mutations used in tests must not leak between test cases.
      *
      * @param array<string, string> $overrides Trusted test configuration.
-     * @param callable(): void $action Synchronous validation call.
+     * @param callable(): void      $action    Synchronous validation call.
+     *
      * @return void No return value.
      */
-    private function withEnvironment(array $overrides, callable $action): void
+    private function withEnvironment(array $overrides, callable $action) : void
     {
         // Production test cases must not depend on the developer's local (possibly unsafe) DB.
         $directory = sys_get_temp_dir() . '/fast-config-private-' . bin2hex(string: random_bytes(length: 8));
@@ -109,7 +110,7 @@ final class DeploymentConfigTest extends TestCase
         $previous = [];
 
         foreach ($overrides as $key => $value) {
-            $old = getenv(name: $key);
+            $old            = getenv(name: $key);
             $previous[$key] = is_string(value: $old) ? $old : false;
             putenv(assignment: $key . '=' . $value);
         }
@@ -135,7 +136,7 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRuntimeDoesNotServeUnmigratedDatabase(): void
+    public function testRuntimeDoesNotServeUnmigratedDatabase() : void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'unmigrated-');
         self::assertNotFalse($path);
@@ -144,7 +145,7 @@ final class DeploymentConfigTest extends TestCase
             $rejected = false;
             $this->withEnvironment(
                 overrides: ['APP_ENV' => 'test', 'DB_PATH' => $path],
-                action: static function () use (&$rejected): void {
+                action   : static function () use (&$rejected) : void {
                     try {
                         require dirname(path: __DIR__, levels: 2) . '/bootstrap/app.php';
                     } catch (\PDOException|RuntimeException) {
@@ -164,24 +165,24 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionRuntimeRequiresTrustedTls(): void
+    public function testProductionRuntimeRequiresTrustedTls() : void
     {
         $sessionPath = sys_get_temp_dir() . '/fast-private-session-' . bin2hex(string: random_bytes(length: 8));
         self::assertTrue(mkdir(directory: $sessionPath, permissions: 0700));
-        $previousHttps = $_SERVER['HTTPS'] ?? null;
+        $previousHttps    = $_SERVER['HTTPS'] ?? null;
         $_SERVER['HTTPS'] = 'off';
 
         try {
             $rejected = false;
             $this->withEnvironment(
                 overrides: [
-                    'APP_ENV'               => 'production',
-                    'APP_DEBUG'             => '0',
-                    'APP_URL'               => 'https://example.test',
-                    'SESSION_COOKIE_SECURE' => '1',
-                    'SESSION_STORAGE_PATH'  => $sessionPath,
-                ],
-                action: static function () use (&$rejected): void {
+                               'APP_ENV'               => 'production',
+                               'APP_DEBUG'             => '0',
+                               'APP_URL'               => 'https://example.test',
+                               'SESSION_COOKIE_SECURE' => '1',
+                               'SESSION_STORAGE_PATH'  => $sessionPath,
+                           ],
+                action   : static function () use (&$rejected) : void {
                     try {
                         require dirname(path: __DIR__, levels: 2) . '/bootstrap/app.php';
                     } catch (RuntimeException $error) {
@@ -208,7 +209,7 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionRejectsGroupReadableSessionDirectory(): void
+    public function testProductionRejectsGroupReadableSessionDirectory() : void
     {
         $path = sys_get_temp_dir() . '/fast-public-session-' . bin2hex(string: random_bytes(length: 8));
         self::assertTrue(mkdir(directory: $path, permissions: 0755));
@@ -219,11 +220,11 @@ final class DeploymentConfigTest extends TestCase
             $rejected = false;
             $this->withEnvironment(
                 overrides: [
-                    'APP_ENV' => 'production', 'APP_DEBUG' => '0',
-                    'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
-                    'SESSION_STORAGE_PATH' => $path,
-                ],
-                action: static function () use (&$rejected): void {
+                               'APP_ENV'              => 'production', 'APP_DEBUG' => '0',
+                               'APP_URL'              => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+                               'SESSION_STORAGE_PATH' => $path,
+                           ],
+                action   : static function () use (&$rejected) : void {
                     try {
                         require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
                     } catch (RuntimeException) {
@@ -242,7 +243,7 @@ final class DeploymentConfigTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionAcceptsPrivateSessionDirectory(): void
+    public function testProductionAcceptsPrivateSessionDirectory() : void
     {
         $path = sys_get_temp_dir() . '/fast-valid-session-' . bin2hex(string: random_bytes(length: 8));
         self::assertTrue(mkdir(directory: $path, permissions: 0700));
@@ -250,11 +251,11 @@ final class DeploymentConfigTest extends TestCase
         try {
             $this->withEnvironment(
                 overrides: [
-                    'APP_ENV' => 'production', 'APP_DEBUG' => '0',
-                    'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
-                    'SESSION_STORAGE_PATH' => $path,
-                ],
-                action: static function () use ($path): void {
+                               'APP_ENV'              => 'production', 'APP_DEBUG' => '0',
+                               'APP_URL'              => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+                               'SESSION_STORAGE_PATH' => $path,
+                           ],
+                action   : static function () use ($path) : void {
                     $config = require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
                     self::assertIsArray($config);
                     self::assertSame($path, $config['sessionStoragePath']);

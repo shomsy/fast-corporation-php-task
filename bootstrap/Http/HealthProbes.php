@@ -25,9 +25,10 @@ final class HealthProbes
      * Handle the two reserved operational paths before normal application bootstrap.
      *
      * @param Request $request Validated HTTP request.
+     *
      * @return Response|null Probe response, or null when the request is for a business route.
      */
-    public static function respond(Request $request): Response|null
+    public static function respond(Request $request) : Response|null
     {
         if (! in_array(needle: $request->path(), haystack: ['/healthz', '/readyz'], strict: true)) {
             return null;
@@ -66,7 +67,7 @@ final class HealthProbes
      * @return void No return value.
      * @throws RuntimeException If the database or an expected migration is missing or modified.
      */
-    private static function verifyReadiness(): void
+    private static function verifyReadiness() : void
     {
         /** @var array{databasePath: string, root: string} $config */
         $config = require dirname(path: __DIR__) . '/config.php';
@@ -75,9 +76,9 @@ final class HealthProbes
 
         // Validate the columns actually needed for core login and activity reporting.
         foreach ([
-            'SELECT id, username, password_hash, role FROM accounts LIMIT 1',
-            'SELECT id, actor_id, action, target, occurred_at FROM activity_events LIMIT 1',
-        ] as $sql) {
+                     'SELECT id, username, password_hash, role FROM accounts LIMIT 1',
+                     'SELECT id, actor_id, action, target, occurred_at FROM activity_events LIMIT 1',
+                 ] as $sql) {
             $statement = $pdo->query(query: $sql);
 
             if ($statement === false) {
@@ -88,9 +89,9 @@ final class HealthProbes
         $expected = [];
 
         foreach ([
-            'Accounts' => $config['root'] . '/src/Accounts/migrations',
-            'ActivityTracking' => $config['root'] . '/src/ActivityTracking/migrations',
-        ] as $owner => $directory) {
+                     'Accounts'         => $config['root'] . '/src/Accounts/migrations',
+                     'ActivityTracking' => $config['root'] . '/src/ActivityTracking/migrations',
+                 ] as $owner => $directory) {
             $files = glob(pattern: $directory . '/*.sql');
 
             if ($files === false || $files === []) {
@@ -116,8 +117,8 @@ final class HealthProbes
 
         $seen = 0;
 
-        while (($row = $statement->fetch(mode: PDO::FETCH_ASSOC)) !== false) {
-            $name = $row['migration'] ?? null;
+        while ( ($row = $statement->fetch(mode: PDO::FETCH_ASSOC)) !== false ) {
+            $name     = $row['migration'] ?? null;
             $checksum = $row['checksum'] ?? null;
 
             if (! is_string(value: $name) || ! is_string(value: $checksum)

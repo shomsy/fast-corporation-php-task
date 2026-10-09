@@ -24,7 +24,7 @@ final class CowOfferTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testViewAndBuyProduceExactlyTheRequiredActivity(): void
+    public function testViewAndBuyProduceExactlyTheRequiredActivity() : void
     {
         $pdo = SqliteConnection::memory();
         (new Migrator(pdo: $pdo, migrationDirectories: [
@@ -38,8 +38,8 @@ final class CowOfferTest extends TestCase
         $statement = $pdo->query(query: 'SELECT actor_id, actor_label, action, target FROM activity_events ORDER BY id');
         self::assertNotFalse($statement);
         self::assertSame([
-            ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'view-page', 'target' => 'page-a'],
-            ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'button-click', 'target' => 'buy-cow'],
-        ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
+                             ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'view-page', 'target' => 'page-a'],
+                             ['actor_id' => 7, 'actor_label' => 'alice', 'action' => 'button-click', 'target' => 'buy-cow'],
+                         ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
     }
 }

@@ -21,7 +21,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testStrictModeAndSignOutDestroySession(): void
+    public function testStrictModeAndSignOutDestroySession() : void
     {
         $session = $this->session();
         $session->start();
@@ -41,7 +41,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testSignInRotatesTheAnonymousSessionIdentifier(): void
+    public function testSignInRotatesTheAnonymousSessionIdentifier() : void
     {
         $session = $this->session();
         $session->start();
@@ -61,7 +61,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testAttackerProvidedUnknownSessionIdIsRejected(): void
+    public function testAttackerProvidedUnknownSessionIdIsRejected() : void
     {
         $attackerId = str_repeat(string: 'a', times: 32);
         session_id(id: $attackerId);
@@ -77,7 +77,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testCookieConfigurationRequiresSecureHttpOnlyAndSameSiteLax(): void
+    public function testCookieConfigurationRequiresSecureHttpOnlyAndSameSiteLax() : void
     {
         ini_set(option: 'session.use_cookies', value: '1');
         $session = new PhpSession(name: 'secure_cookie_test', secureCookie: true);
@@ -95,7 +95,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testNativeSessionGcCoversAbsoluteAuthenticationLifetime(): void
+    public function testNativeSessionGcCoversAbsoluteAuthenticationLifetime() : void
     {
         ini_set(option: 'session.gc_maxlifetime', value: '1440');
 
@@ -109,7 +109,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testNativeSessionUsesConfiguredPrivateStorage(): void
+    public function testNativeSessionUsesConfiguredPrivateStorage() : void
     {
         $path = sys_get_temp_dir() . '/fast-session-files-' . bin2hex(string: random_bytes(length: 8));
         self::assertTrue(mkdir(directory: $path, permissions: 0700));
@@ -143,7 +143,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testIdleTimeoutRevokesPreviouslyValidAuthentication(): void
+    public function testIdleTimeoutRevokesPreviouslyValidAuthentication() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
@@ -160,7 +160,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testAbsoluteTimeoutRevokesSessionEvenWhenRecentlyActive(): void
+    public function testAbsoluteTimeoutRevokesSessionEvenWhenRecentlyActive() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
@@ -176,7 +176,7 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testUnknownSessionMetadataDoesNotAuthenticate(): void
+    public function testUnknownSessionMetadataDoesNotAuthenticate() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
         $identity = new SessionIdentity(session: new PhpSession(name: 'expired_session_test', secureCookie: false), accounts: $this->accounts, clock: $this->clock);
@@ -191,14 +191,14 @@ final class SessionExpiryTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testLoginRotatesCsrfTokenAndInvalidatesAnonymousForms(): void
+    public function testLoginRotatesCsrfTokenAndInvalidatesAnonymousForms() : void
     {
-        $session = $this->session();
-        $csrf = new Csrf(session: $session);
+        $session      = $this->session();
+        $csrf         = new Csrf(session: $session);
         $oldSessionId = session_id();
-        $oldToken = $csrf->token();
+        $oldToken     = $csrf->token();
 
-        $account = (new Register(accounts: $this->accounts, clock: $this->clock))
+        $account  = (new Register(accounts: $this->accounts, clock: $this->clock))
             ->register(username: 'alice', password: 'valid-password');
         $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
         $identity->signIn(account: $account);

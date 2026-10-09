@@ -23,19 +23,19 @@ final class NamedArgumentContractTest extends TestCase
      *
      * @return void The test asserts the approved API parameter vocabulary.
      */
-    public function testPublicNamedArgumentsRemainCompatible(): void
+    public function testPublicNamedArgumentsRemainCompatible() : void
     {
         foreach ([
-            [AccountLifecycle::class, 'register', ['username', 'password']],
-            [AccountLifecycle::class, 'login', ['username', 'password']],
-            [Statistics::class, 'page', ['date', 'user', 'action', 'page']],
-            [Statistics::class, 'cursorPage', ['cursor', 'key', 'date', 'user', 'action']],
-            [DownloadFile::class, 'prepareDownload', ['actorId', 'actorLabel']],
-            [Router::class, 'add', ['method', 'path', 'handler', 'access']],
-        ] as [$owner, $method, $expected]) {
+                     [AccountLifecycle::class, 'register', ['username', 'password']],
+                     [AccountLifecycle::class, 'login', ['username', 'password']],
+                     [Statistics::class, 'page', ['date', 'user', 'action', 'page']],
+                     [Statistics::class, 'cursorPage', ['cursor', 'key', 'date', 'user', 'action']],
+                     [DownloadFile::class, 'prepareDownload', ['actorId', 'actorLabel']],
+                     [Router::class, 'add', ['method', 'path', 'handler', 'access']],
+                 ] as [$owner, $method, $expected]) {
             $actual = array_map(
-                callback: static fn(\ReflectionParameter $parameter): string => $parameter->getName(),
-                array: (new ReflectionMethod(objectOrMethod: $owner, method: $method))->getParameters(),
+                callback: static fn (\ReflectionParameter $parameter) : string => $parameter->getName(),
+                array   : (new ReflectionMethod(objectOrMethod: $owner, method: $method))->getParameters(),
             );
 
             self::assertSame($expected, $actual, $owner . '::' . $method . ' named-argument contract changed.');

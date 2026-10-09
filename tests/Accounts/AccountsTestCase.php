@@ -26,13 +26,13 @@ abstract class AccountsTestCase extends TestCase
      *
      * @var PDO
      */
-    protected PDO        $pdo;
+    protected PDO $pdo;
     /**
      * Internal state or dependency owned by AccountsTestCase.
      *
      * @var Accounts
      */
-    protected Accounts   $accounts;
+    protected Accounts $accounts;
     /**
      * Internal state or dependency owned by AccountsTestCase.
      *
@@ -46,8 +46,7 @@ abstract class AccountsTestCase extends TestCase
      * @return void No return value.
      */
     #[Override]
-
-    protected function setUp(): void
+    protected function setUp() : void
     {
         parent::setUp();
 
@@ -77,8 +76,7 @@ abstract class AccountsTestCase extends TestCase
      * @return void No return value.
      */
     #[Override]
-
-    protected function tearDown(): void
+    protected function tearDown() : void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
@@ -95,7 +93,7 @@ abstract class AccountsTestCase extends TestCase
      *
      * @return PhpSession Result described by the native PHP return type.
      */
-    protected function session(): PhpSession
+    protected function session() : PhpSession
     {
         return new PhpSession(name: 'fast_task_test', secureCookie: false);
     }

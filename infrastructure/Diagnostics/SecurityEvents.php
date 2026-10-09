@@ -18,12 +18,13 @@ final class SecurityEvents
     /**
      * Record an approved event name with a random correlation ID; never accept user payloads.
      *
-     * @param string $event Trusted allowlisted security event category.
+     * @param string         $event Trusted allowlisted security event category.
      * @param Throwable|null $error Optional server exception; only its type is logged.
+     *
      * @return string Unpredictable event correlation ID safe to expose in a response header.
      * @throws InvalidArgumentException When the event name is not defined.
      */
-    public static function record(string $event, Throwable|null $error = null): string
+    public static function record(string $event, Throwable|null $error = null) : string
     {
         $allowed = ['auth.login_denied', 'security.csrf_denied', 'security.admin_denied', 'runtime.unhandled', 'db.contention'];
 
@@ -35,7 +36,7 @@ final class SecurityEvents
             $event = 'db.contention';
         }
 
-        $id = bin2hex(string: random_bytes(length: 12));
+        $id    = bin2hex(string: random_bytes(length: 12));
         $entry = [
             'schema'     => 1,
             'event'      => $event,

@@ -19,7 +19,7 @@ final class LogoutTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity(): void
+    public function testSessionSignOutDestroysAuthenticatedSessionAndIdentity() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);

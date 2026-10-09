@@ -13,10 +13,10 @@ enum Role: string
 {
     /**
      * Canonical User value for the Role taxonomy.
-         */
-    case User  = 'user';
+     */
+    case User = 'user';
     /**
      * Canonical Admin value for the Role taxonomy.
-         */
+     */
     case Admin = 'admin';
 }

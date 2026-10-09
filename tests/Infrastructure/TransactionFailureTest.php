@@ -25,7 +25,7 @@ final class TransactionFailureTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testNestedTransactionFailsWithoutTouchingOwnerTransaction(): void
+    public function testNestedTransactionFailsWithoutTouchingOwnerTransaction() : void
     {
         $pdo = SqliteConnection::memory();
         $pdo->beginTransaction();
@@ -33,7 +33,7 @@ final class TransactionFailureTest extends TestCase
 
         try {
             try {
-                (new Transaction(pdo: $pdo))->run(operation: static function () use (&$invoked): void {
+                (new Transaction(pdo: $pdo))->run(operation: static function () use (&$invoked) : void {
                     $invoked = true;
                 });
                 self::fail('Nested transaction must be explicitly rejected.');
@@ -52,7 +52,7 @@ final class TransactionFailureTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testBusinessFailureSurvivesFailedRollback(): void
+    public function testBusinessFailureSurvivesFailedRollback() : void
     {
         $pdo = new class('sqlite::memory:') extends PDO {
             /**
@@ -61,7 +61,7 @@ final class TransactionFailureTest extends TestCase
              * @return bool Rollback is deliberately never completed.
              */
             #[Override]
-            public function rollBack(): bool
+            public function rollBack() : bool
             {
                 throw new RuntimeException(message: 'secondary rollback failure');
             }
@@ -69,7 +69,7 @@ final class TransactionFailureTest extends TestCase
 
         $original = new RuntimeException(message: 'primary business failure');
         try {
-            (new Transaction(pdo: $pdo))->run(operation: static function () use ($pdo, $original): void {
+            (new Transaction(pdo: $pdo))->run(operation: static function () use ($pdo, $original) : void {
                 if ($pdo->inTransaction()) {
                     throw $original;
                 }
@@ -85,7 +85,7 @@ final class TransactionFailureTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testCommitFailureSurvivesFailedRollback(): void
+    public function testCommitFailureSurvivesFailedRollback() : void
     {
         $original = new RuntimeException(message: 'primary commit failure');
 
@@ -93,7 +93,7 @@ final class TransactionFailureTest extends TestCase
             /**
              * Simulate a failed commit while a transaction is still open.
              *
-             * @param string $dsn SQLite memory DSN.
+             * @param string           $dsn     SQLite memory DSN.
              * @param RuntimeException $failure Preselected primary error.
              */
             public function __construct(string $dsn, private RuntimeException $failure)
@@ -107,7 +107,7 @@ final class TransactionFailureTest extends TestCase
              * @return bool Commit is deliberately refused.
              */
             #[Override]
-            public function commit(): bool
+            public function commit() : bool
             {
                 throw $this->failure;
             }
@@ -118,14 +118,14 @@ final class TransactionFailureTest extends TestCase
              * @return bool Rollback is deliberately refused.
              */
             #[Override]
-            public function rollBack(): bool
+            public function rollBack() : bool
             {
                 throw new RuntimeException(message: 'secondary rollback failure');
             }
         };
 
         try {
-            (new Transaction(pdo: $pdo))->run(operation: static fn(): int => 1);
+            (new Transaction(pdo: $pdo))->run(operation: static fn () : int => 1);
             self::fail('Expected commit failure.');
         } catch (Throwable $error) {
             self::assertSame($original, $error);

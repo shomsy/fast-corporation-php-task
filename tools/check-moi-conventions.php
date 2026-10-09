@@ -15,14 +15,14 @@ use PhpParser\Node\NullableType;
 use PhpParser\NodeFinder;
 use PhpParser\ParserFactory;
 
-function moiSyntaxProblems(string $source): array
+function moiSyntaxProblems(string $source) : array
 {
-    $parser = (new ParserFactory())->createForNewestSupportedVersion();
-    $ast = $parser->parse($source) ?? [];
-    $finder = new NodeFinder();
+    $parser   = (new ParserFactory())->createForNewestSupportedVersion();
+    $ast      = $parser->parse($source) ?? [];
+    $finder   = new NodeFinder();
     $problems = [];
 
-    foreach ($finder->find($ast, static fn(Node $node): bool => $node instanceof NullableType
+    foreach ($finder->find($ast, static fn (Node $node) : bool => $node instanceof NullableType
         || $node instanceof PreInc || $node instanceof PreDec) as $node) {
         if ($node instanceof NullableType) {
             $problems[] = [$node->getStartLine(), 'Use Type|null, not ?Type.'];
@@ -41,7 +41,7 @@ function moiSyntaxProblems(string $source): array
             throw new RuntimeException('Could not inspect PHPDoc.');
         }
         foreach ($matches[0] as [$type, $offset]) {
-            $line = $token[2] + substr_count(substr($token[1], 0, $offset), "\n");
+            $line       = $token[2] + substr_count(substr($token[1], 0, $offset), "\n");
             $problems[] = [$line, 'Use Type|null instead of ' . $type . ' in PHPDoc.'];
         }
     }
@@ -50,23 +50,23 @@ function moiSyntaxProblems(string $source): array
 }
 
 if (($argv[1] ?? '') === '--self-test') {
-    $ok = <<<'PHP'
-<?php
-/** @param string|null $value */
-function check(string|null $value): string|null {
-    $result = $value?->value ?? null;
-    for ($i = 0; $i < 3; $i++) { $i++; }
-    return $result;
-}
-PHP;
+    $ok  = <<<'PHP'
+        <?php
+        /** @param string|null $value */
+        function check(string|null $value): string|null {
+            $result = $value?->value ?? null;
+            for ($i = 0; $i < 3; $i++) { $i++; }
+            return $result;
+        }
+        PHP;
     $bad = <<<'PHP'
-<?php
-/** @param ?string $value */
-function check(?string $value): ?string {
-    ++$counter;
-    return $value;
-}
-PHP;
+        <?php
+        /** @param ?string $value */
+        function check(?string $value): ?string {
+            ++$counter;
+            return $value;
+        }
+        PHP;
     if (moiSyntaxProblems($ok) !== [] || count(moiSyntaxProblems($bad)) !== 4) {
         fwrite(STDERR, "MOI convention checker self-test FAILED.\n");
         exit(1);
@@ -75,17 +75,17 @@ PHP;
     exit(0);
 }
 
-$root = dirname(__DIR__);
-$skip = ['vendor' => true, 'node_modules' => true, '.git' => true, '.idea' => true, 'var' => true];
-$files = new RecursiveIteratorIterator(
+$root     = dirname(__DIR__);
+$skip     = ['vendor' => true, 'node_modules' => true, '.git' => true, '.idea' => true, 'var' => true];
+$files    = new RecursiveIteratorIterator(
     new RecursiveCallbackFilterIterator(
         new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
-        static function (SplFileInfo $entry) use ($skip): bool {
+        static function (SplFileInfo $entry) use ($skip) : bool {
             return ! ($entry->isDir() && isset($skip[$entry->getFilename()]));
         },
     ),
 );
-$checked = 0;
+$checked  = 0;
 $failures = 0;
 foreach ($files as $entry) {
     if (! $entry->isFile() || $entry->getExtension() !== 'php') {

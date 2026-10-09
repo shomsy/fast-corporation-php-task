@@ -31,22 +31,22 @@ final class ActivityApiTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAdminApiFiltersCursorAndReportCounts(): void
+    public function testAdminApiFiltersCursorAndReportCounts() : void
     {
         $pdo = SqliteConnection::memory();
         (new Migrator(pdo: $pdo, migrationDirectories: [
-            'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
+            'Accounts'         => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
-        $session = new PhpSession();
-        $clock = new SystemClock();
+        $session  = new PhpSession();
+        $clock    = new SystemClock();
         $accounts = new Accounts(pdo: $pdo);
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
-        $api = new ActivityApi(
+        $api      = new ActivityApi(
             statistics: new Statistics(pdo: $pdo),
-            reports: new DailyReports(pdo: $pdo),
-            admin: new RequireAdmin(identity: $identity),
-            session: $session,
+            reports   : new DailyReports(pdo: $pdo),
+            admin     : new RequireAdmin(identity: $identity),
+            session   : $session,
         );
 
         try {
@@ -59,7 +59,7 @@ final class ActivityApiTest extends TestCase
             }
 
             $response = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
-                query: ['date' => '2026-10-07', 'action' => 'view-page']));
+                                                              query : ['date' => '2026-10-07', 'action' => 'view-page']));
             self::assertSame(200, $response->status());
             $first = json_decode(json: $response->body(), associative: true, flags: JSON_THROW_ON_ERROR);
             self::assertIsArray($first);
@@ -68,7 +68,7 @@ final class ActivityApiTest extends TestCase
             self::assertIsString($first['nextCursor']);
 
             $next = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
-                query: ['date' => '2026-10-07', 'action' => 'view-page', 'cursor' => $first['nextCursor']]));
+                                                          query : ['date' => '2026-10-07', 'action' => 'view-page', 'cursor' => $first['nextCursor']]));
             $page = json_decode(json: $next->body(), associative: true, flags: JSON_THROW_ON_ERROR);
             self::assertIsArray($page);
             self::assertIsArray($page['events']);
@@ -76,21 +76,21 @@ final class ActivityApiTest extends TestCase
             self::assertNull($page['nextCursor']);
 
             $invalid = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
-                query: ['date' => '2026-02-30']));
+                                                             query : ['date' => '2026-02-30']));
             self::assertSame(422, $invalid->status());
             $crossFilter = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
-                query: ['date' => '2026-10-08', 'action' => 'view-page', 'cursor' => $first['nextCursor']]));
+                                                                 query : ['date' => '2026-10-08', 'action' => 'view-page', 'cursor' => $first['nextCursor']]));
             self::assertSame(422, $crossFilter->status());
 
             $report = $api->reports(request: new Request(method: 'GET', path: '/api/activity/reports',
-                query: ['from' => '2026-10-07', 'to' => '2026-10-07']));
+                                                         query : ['from' => '2026-10-07', 'to' => '2026-10-07']));
             self::assertSame(200, $report->status());
             $daily = json_decode(json: $report->body(), associative: true, flags: JSON_THROW_ON_ERROR);
             self::assertIsArray($daily);
-            self::assertSame([['date' => '2026-10-07', 'pageAViews' => 51, 'pageBViews' => 0,
-                'buyCowClicks' => 0, 'downloadClicks' => 0]], $daily['days']);
+            self::assertSame([['date'         => '2026-10-07', 'pageAViews' => 51, 'pageBViews' => 0,
+                               'buyCowClicks' => 0, 'downloadClicks' => 0]], $daily['days']);
             self::assertSame(422, $api->reports(request: new Request(method: 'GET',
-                path: '/api/activity/reports', query: ['from' => '2026-02-30']))->status());
+                                                                     path  : '/api/activity/reports', query: ['from' => '2026-02-30']))->status());
         } finally {
             $session->destroy();
         }

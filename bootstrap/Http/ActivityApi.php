@@ -23,25 +23,26 @@ final readonly class ActivityApi
     /**
      * Receive the existing query owners and server-side session cursor authority.
      *
-     * @param Statistics $statistics Authoritative bounded activity query.
-     * @param DailyReports $reports Authoritative UTC daily aggregation.
-     * @param RequireAdmin $admin Server-owned admin authorization gate.
-     * @param PhpSession $session Server-only session cursor secret.
+     * @param Statistics   $statistics Authoritative bounded activity query.
+     * @param DailyReports $reports    Authoritative UTC daily aggregation.
+     * @param RequireAdmin $admin      Server-owned admin authorization gate.
+     * @param PhpSession   $session    Server-only session cursor secret.
      */
     public function __construct(
-        private Statistics $statistics,
+        private Statistics   $statistics,
         private DailyReports $reports,
         private RequireAdmin $admin,
-        private PhpSession $session,
+        private PhpSession   $session,
     ) {}
 
     /**
      * Return a signed cursor page preserving ActivityTracking filter semantics.
      *
      * @param Request $request Untrusted filter/cursor inputs.
+     *
      * @return Response 200 cursor page, 403 denied, or 422 invalid filters.
      */
-    public function statistics(Request $request): Response
+    public function statistics(Request $request) : Response
     {
         try {
             $this->admin->account();
@@ -50,8 +51,8 @@ final readonly class ActivityApi
         }
 
         try {
-            $date = $this->optionalQuery(request: $request, name: 'date');
-            $user = $this->optionalQuery(request: $request, name: 'user');
+            $date   = $this->optionalQuery(request: $request, name: 'date');
+            $user   = $this->optionalQuery(request: $request, name: 'user');
             $action = $this->optionalQuery(request: $request, name: 'action');
             $cursor = $this->optionalQuery(request: $request, name: 'cursor');
             if ($request->query(key: 'page') !== null) {
@@ -78,9 +79,10 @@ final readonly class ActivityApi
      * Return one UTC active-day dataset shared by chart and table.
      *
      * @param Request $request Untrusted inclusive UTC date bounds.
+     *
      * @return Response 200 canonical daily counts, 403 denied, or 422 invalid dates.
      */
-    public function reports(Request $request): Response
+    public function reports(Request $request) : Response
     {
         try {
             $this->admin->account();
@@ -91,7 +93,7 @@ final readonly class ActivityApi
         try {
             $rows = $this->reports->dailyCounts(
                 from: $this->optionalQuery(request: $request, name: 'from'),
-                to: $this->optionalQuery(request: $request, name: 'to'),
+                to  : $this->optionalQuery(request: $request, name: 'to'),
             );
         } catch (InvalidArgumentException) {
             return self::error(code: 'invalid_dates', message: 'Invalid UTC date range.', status: 422);
@@ -100,10 +102,10 @@ final readonly class ActivityApi
         $days = [];
         foreach ($rows as $row) {
             $days[] = [
-                'date' => $row['date'],
-                'pageAViews' => (int) $row['page_a_views'],
-                'pageBViews' => (int) $row['page_b_views'],
-                'buyCowClicks' => (int) $row['buy_cow_clicks'],
+                'date'           => $row['date'],
+                'pageAViews'     => (int) $row['page_a_views'],
+                'pageBViews'     => (int) $row['page_b_views'],
+                'buyCowClicks'   => (int) $row['buy_cow_clicks'],
                 'downloadClicks' => (int) $row['download_clicks'],
             ];
         }
@@ -115,11 +117,12 @@ final readonly class ActivityApi
      * Reject non-string/oversized query values without changing valid filter syntax.
      *
      * @param Request $request Raw HTTP input boundary.
-     * @param string $name Query parameter name.
+     * @param string  $name    Query parameter name.
+     *
      * @return string|null A present nonempty string, otherwise null.
      * @throws InvalidArgumentException For malformed input values.
      */
-    private function optionalQuery(Request $request, string $name): string|null
+    private function optionalQuery(Request $request, string $name) : string|null
     {
         $value = $request->query(key: $name);
         if ($value === null || $value === '') {
@@ -135,12 +138,13 @@ final readonly class ActivityApi
     /**
      * Serialize a stable non-sensitive error outcome for the browser.
      *
-     * @param string $code Stable machine-readable category.
+     * @param string $code    Stable machine-readable category.
      * @param string $message Safe user-facing message.
-     * @param int $status HTTP status.
+     * @param int    $status  HTTP status.
+     *
      * @return Response JSON error contract.
      */
-    private static function error(string $code, string $message, int $status): Response
+    private static function error(string $code, string $message, int $status) : Response
     {
         return Response::json(payload: ['error' => ['code' => $code, 'message' => $message]], status: $status);
     }

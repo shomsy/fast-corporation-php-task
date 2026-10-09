@@ -25,7 +25,7 @@ final readonly class RequireAdmin
      * @return SignedInAccount Authorized administrator identity.
      * @throws AccessDenied When the current identity lacks the required permission.
      */
-    public function account(): SignedInAccount
+    public function account() : SignedInAccount
     {
         $account = $this->identity->current();
 

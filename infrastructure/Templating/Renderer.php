@@ -18,26 +18,27 @@ final class Renderer
     /**
      * Templates receive $data and an $escape callable.
      *
-     * @param string $template Trusted local PHP template file path.
+     * @param string               $template Trusted local PHP template file path.
      * @param array<string, mixed> $data
+     *
      * @return string Complete escaped server-rendered HTML.
      * @throws RuntimeException When a required external resource or stored value is invalid.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
-    public function render(string $template, array $data = []): string
+    public function render(string $template, array $data = []) : string
     {
         if (! is_file(filename: $template)) {
             throw new RuntimeException(message: 'Template does not exist: ' . $template);
         }
 
-        $escape = static function (mixed $value): string {
+        $escape = static function (mixed $value) : string {
             $text = match (true) {
-                is_string(value: $value)                => $value,
+                is_string(value: $value)                       => $value,
                 is_int(value: $value), is_float(value: $value) => (string) $value,
-                is_bool(value: $value)                  => $value ? '1' : '',
-                $value === null                  => '',
-                $value instanceof Stringable     => (string) $value,
-                default                          => throw new InvalidArgumentException(message: 'Template value is not safely stringable.'),
+                is_bool(value: $value)                         => $value ? '1' : '',
+                $value === null                                => '',
+                $value instanceof Stringable                   => (string) $value,
+                default                                        => throw new InvalidArgumentException(message: 'Template value is not safely stringable.'),
             };
 
             return htmlspecialchars(string: $text, flags: ENT_QUOTES | ENT_SUBSTITUTE, encoding: 'UTF-8');
@@ -65,7 +66,7 @@ final class Renderer
 
             return $output;
         } finally {
-            while (ob_get_level() > $entryLevel) {
+            while ( ob_get_level() > $entryLevel ) {
                 if (! ob_end_clean()) {
                     break;
                 }

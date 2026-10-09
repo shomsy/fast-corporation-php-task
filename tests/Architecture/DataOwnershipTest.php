@@ -13,7 +13,8 @@ use RecursiveIteratorIterator;
 use SplFileInfo;
 
 /**
- * Checks owner SQL literals (PHP strings and owner-local .sql migrations). Computed identifiers and dynamically generated SQL remain REVIEW-ENFORCED.
+ * Checks owner SQL literals (PHP strings and owner-local .sql migrations). Computed identifiers and dynamically
+ * generated SQL remain REVIEW-ENFORCED.
  *
  * @package InterviewTask\Tests\Architecture
  */
@@ -35,7 +36,7 @@ final class DataOwnershipTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables(): void
+    public function testBusinessModulesDoNotDirectlyReferenceAnotherOwnersTables() : void
     {
         $root       = dirname(path: __DIR__, levels: 2) . '/src';
         $violations = [];
@@ -65,9 +66,10 @@ final class DataOwnershipTest extends TestCase
      * Literal strings according to the DataOwnershipTest contract.
      *
      * @param string $source Input value for source.
+     *
      * @return list<string>
      */
-    private static function literalStrings(string $source): array
+    private static function literalStrings(string $source) : array
     {
         $parsed = (new ParserFactory())->createForNewestSupportedVersion()->parse(code: $source);
         if ($parsed === null) {
@@ -87,10 +89,11 @@ final class DataOwnershipTest extends TestCase
      * Foreign tables according to the DataOwnershipTest contract.
      *
      * @param string $owner Input value for owner.
-     * @param string $sql Input value for sql.
+     * @param string $sql   Input value for sql.
+     *
      * @return list<string>
      */
-    private static function foreignTables(string $owner, string $sql): array
+    private static function foreignTables(string $owner, string $sql) : array
     {
         preg_match_all(
             pattern: '/\b(?:FROM|JOIN|INTO|UPDATE|REFERENCES|TABLE(?:\s+IF\s+NOT\s+EXISTS)?)\s+["\x60]?([a-z][a-z0-9_]*)/i',
@@ -113,23 +116,23 @@ final class DataOwnershipTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testForeignTableReferenceMutationsFailOwnerPolicy(): void
+    public function testForeignTableReferenceMutationsFailOwnerPolicy() : void
     {
         self::assertSame(['activity_events'], self::foreignTables(
             owner: 'Accounts',
-            sql: "INSERT INTO activity_events (actor_id) VALUES (1)",
+            sql  : "INSERT INTO activity_events (actor_id) VALUES (1)",
         ));
         self::assertSame(['accounts'], self::foreignTables(
             owner: 'ActivityTracking',
-            sql: 'SELECT role FROM accounts WHERE id = :id',
+            sql  : 'SELECT role FROM accounts WHERE id = :id',
         ));
         self::assertSame(['accounts'], self::foreignTables(
             owner: 'CowOffer',
-            sql: 'UPDATE accounts SET role = :role WHERE id = :id',
+            sql  : 'UPDATE accounts SET role = :role WHERE id = :id',
         ));
         self::assertSame([], self::foreignTables(
             owner: 'ActivityTracking',
-            sql: 'SELECT id FROM activity_events WHERE actor_id = :id',
+            sql  : 'SELECT id FROM activity_events WHERE actor_id = :id',
         ));
     }
 }

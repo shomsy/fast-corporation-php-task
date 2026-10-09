@@ -20,14 +20,14 @@ final class FilePrivilegesTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testNewDatabaseIsPrivateWithPermissiveCallerUmask(): void
+    public function testNewDatabaseIsPrivateWithPermissiveCallerUmask() : void
     {
         $directory = sys_get_temp_dir() . '/fast-private-db-' . bin2hex(string: random_bytes(length: 8));
-        $path = $directory . '/activity.sqlite';
-        $oldUmask = umask(mask: 0000);
+        $path      = $directory . '/activity.sqlite';
+        $oldUmask  = umask(mask: 0000);
 
         try {
-            $pdo = SqliteConnection::open(path: $path, createIfMissing: true);
+            $pdo       = SqliteConnection::open(path: $path, createIfMissing: true);
             $statement = $pdo->query(query: 'SELECT 1');
             self::assertNotFalse($statement);
             self::assertSame(1, (int) $statement->fetchColumn());
@@ -53,7 +53,7 @@ final class FilePrivilegesTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProductionRejectsInsecureExistingDatabase(): void
+    public function testProductionRejectsInsecureExistingDatabase() : void
     {
         $directory = sys_get_temp_dir() . '/fast-insecure-db-' . bin2hex(string: random_bytes(length: 8));
         self::assertTrue(mkdir(directory: $directory, permissions: 0700));
@@ -64,12 +64,12 @@ final class FilePrivilegesTest extends TestCase
         /** @var array<string, string|false> $old */
         $old = [];
         $env = [
-            'APP_ENV' => 'production', 'APP_DEBUG' => '0',
-            'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+            'APP_ENV'              => 'production', 'APP_DEBUG' => '0',
+            'APP_URL'              => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
             'SESSION_STORAGE_PATH' => $directory, 'DB_PATH' => $database,
         ];
         foreach ($env as $name => $value) {
-            $previous = getenv(name: $name);
+            $previous   = getenv(name: $name);
             $old[$name] = is_string(value: $previous) ? $previous : false;
             putenv(assignment: $name . '=' . $value);
         }

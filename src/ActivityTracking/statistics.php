@@ -78,7 +78,8 @@ declare(strict_types=1);
     <form method="get" action="/statistics">
         <div><label for="date">Date (UTC)</label><input id="date" name="date" placeholder="YYYY-MM-DD"
                                                         value="<?= $escape(value: $data['date']) ?>"></div>
-        <div><label for="user">User</label><input id="user" name="user" value="<?= $escape(value: $data['user']) ?>"></div>
+        <div><label for="user">User</label><input id="user" name="user" value="<?= $escape(value: $data['user']) ?>">
+        </div>
         <div><label for="action">Action</label><select id="action" name="action">
                 <option value="">All actions</option>
                 <?php
@@ -123,26 +124,41 @@ declare(strict_types=1);
         </table>
     </div>
     <?php
-    $filters = array_filter(array: ['date' => $data['date'], 'user' => $data['user'], 'action' => $data['action']], callback: static fn(string $value): bool => $value !== '');
-?>
+    $filters = array_filter(array: ['date' => $data['date'], 'user' => $data['user'], 'action' => $data['action']], callback: static fn (string $value) : bool => $value !== '');
+    ?>
     <nav aria-label="Activity pages">
-        <?php if ($data['cursorMode']): ?>
-            <?php if ($data['previousCursor'] !== null): ?>
-                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['cursor' => $data['previousCursor']])) ?>">← Previous</a>
-            <?php endif; ?>
+        <?php
+        if ($data['cursorMode']): ?>
+            <?php
+            if ($data['previousCursor'] !== null): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['cursor' => $data['previousCursor']])) ?>">←
+                    Previous</a>
+            <?php
+            endif; ?>
             <span>Activity history</span>
-            <?php if ($data['nextCursor'] !== null): ?>
-                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['cursor' => $data['nextCursor']])) ?>">Next →</a>
-            <?php endif; ?>
-        <?php else: ?>
-            <?php if ($data['page'] > 1): ?>
-                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] - 1])) ?>">← Previous</a>
-            <?php endif; ?>
+            <?php
+            if ($data['nextCursor'] !== null): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['cursor' => $data['nextCursor']])) ?>">Next
+                    →</a>
+            <?php
+            endif; ?>
+        <?php
+        else: ?>
+            <?php
+            if ($data['page'] > 1): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] - 1])) ?>">←
+                    Previous</a>
+            <?php
+            endif; ?>
             <span>Page <?= $escape(value: $data['page']) ?></span>
-            <?php if ($data['hasNext']): ?>
-                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] + 1])) ?>">Next →</a>
-            <?php endif; ?>
-        <?php endif; ?>
+            <?php
+            if ($data['hasNext']): ?>
+                <a href="/statistics?<?= $escape(value: http_build_query(data: $filters + ['page' => $data['page'] + 1])) ?>">Next
+                    →</a>
+            <?php
+            endif; ?>
+        <?php
+        endif; ?>
     </nav>
 </main>
 </body>

@@ -13,12 +13,24 @@ use RuntimeException;
 /**
  * Stable, bounded and newest-first activity history.
  *
- * @phpstan-type ActivityEventRow array{id: int, actor_id: int, actor_label: string, action: string, target: string|null, occurred_at: string}
+ * @phpstan-type ActivityEventRow array{
+ *     id: int,
+ *     actor_id: int,
+ *     actor_label: string,
+ *     action: string,
+ *     target: string|null,
+ *     occurred_at: string
+ * }
  * @phpstan-type ActivityPageResult array{events: list<ActivityEventRow>, hasNext: bool}
- * @phpstan-type CursorPageResult array{events: list<ActivityEventRow>, hasNext: bool, nextCursor: string|null, previousCursor: string|null}
+ * @phpstan-type CursorPageResult array{
+ *     events: list<ActivityEventRow>,
+ *     hasNext: bool,
+ *     nextCursor: string|null,
+ *     previousCursor: string|null
+ * }
  * @api
  * @package InterviewTask\ActivityTracking
- * @see DailyReports
+ * @see     DailyReports
  */
 final readonly class Statistics
 {
@@ -39,38 +51,41 @@ final readonly class Statistics
     /**
      * Return one 1-based page of event rows, excluding pagination metadata.
      *
-     * @param string|null $date Exact UTC calendar date (YYYY-MM-DD); null means all dates.
-     * @param string|null $user Case-insensitive exact actor label, not a substring.
+     * @param string|null $date   Exact UTC calendar date (YYYY-MM-DD); null means all dates.
+     * @param string|null $user   Case-insensitive exact actor label, not a substring.
      * @param string|null $action Canonical action value; invalid values are rejected.
-     * @param int $page 1-based page number.
-     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: string|null, occurred_at: string}>
+     * @param int         $page   1-based page number.
+     *
+     * @return list<ActivityEventRow>
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
-    public function events(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1): array
+    public function events(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1) : array
     {
         return $this->page(date: $date, user: $user, action: $action, page: $page)['events'];
     }
 
     /**
-     * Return a 1-based page sorted by UTC timestamp then event ID descending. One extra row establishes hasNext without an approximate count.
+     * Return a 1-based page sorted by UTC timestamp then event ID descending. One extra row establishes hasNext
+     * without an approximate count.
      *
-     * @param string|null $date Exact UTC date (YYYY-MM-DD), or null for all dates.
-     * @param string|null $user Case-insensitive exact actor label, or null.
+     * @param string|null $date   Exact UTC date (YYYY-MM-DD), or null for all dates.
+     * @param string|null $user   Case-insensitive exact actor label, or null.
      * @param string|null $action Canonical ActivityAction value, or null.
-     * @param int $page 1-based page number.
+     * @param int         $page   1-based page number.
+     *
      * @return ActivityPageResult
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      * @throws PDOException When the underlying SQLite operation fails.
      * @throws RuntimeException When the query cannot be prepared.
      */
-    public function page(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1): array
+    public function page(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1) : array
     {
         if ($page < 1 || $page > intdiv(num1: PHP_INT_MAX, num2: self::PAGE_SIZE) - 1) {
             throw new InvalidArgumentException(message: 'Invalid page.');
         }
 
-        $filters = $this->filters(date: $date, user: $user, action: $action);
-        $where = $filters['where'];
+        $filters    = $this->filters(date: $date, user: $user, action: $action);
+        $where      = $filters['where'];
         $parameters = $filters['parameters'];
 
         // Date-filtered requests must stay on the existing day expression index even
@@ -105,15 +120,17 @@ final readonly class Statistics
             'hasNext' => count(value: $rows) > self::PAGE_SIZE,
         ];
     }
+
     /**
      * Validate shared public statistics filters and create bound SQL predicates.
      *
-     * @param string|null $date Exact UTC date.
-     * @param string|null $user Historical username.
+     * @param string|null $date   Exact UTC date.
+     * @param string|null $user   Historical username.
      * @param string|null $action Canonical event action.
+     *
      * @return array{where: list<string>, parameters: array<string, string>}
      */
-    private function filters(string|null $date, string|null $user, string|null $action): array
+    private function filters(string|null $date, string|null $user, string|null $action) : array
     {
         $where      = [];
         $parameters = [];
@@ -157,39 +174,40 @@ final readonly class Statistics
      * Traverse one stable activity page using a signed, filter-bound keyset position.
      *
      * @param string|null $cursor Opaque session-bound cursor, or null for the first page.
-     * @param string $key Secret from the authenticated PHP session; never send to browser.
-     * @param string|null $date Optional validated UTC date filter.
-     * @param string|null $user Optional username filter.
+     * @param string      $key    Secret from the authenticated PHP session; never send to browser.
+     * @param string|null $date   Optional validated UTC date filter.
+     * @param string|null $user   Optional username filter.
      * @param string|null $action Optional action filter.
+     *
      * @return CursorPageResult
      */
-    public function cursorPage(string|null $cursor = null, string $key = '', string|null $date = null, string|null $user = null, string|null $action = null): array
+    public function cursorPage(string|null $cursor = null, string $key = '', string|null $date = null, string|null $user = null, string|null $action = null) : array
     {
         if ($key === '') {
             throw new InvalidArgumentException(message: 'Missing cursor signing context.');
         }
 
-        $filters = $this->filters(date: $date, user: $user, action: $action);
-        $where = $filters['where'];
-        $parameters = $filters['parameters'];
+        $filters     = $this->filters(date: $date, user: $user, action: $action);
+        $where       = $filters['where'];
+        $parameters  = $filters['parameters'];
         $fingerprint = hash(algo: 'sha256', data: json_encode(value: [$date ?? '', $user === null ? '' : trim(string: $user), $action ?? ''], flags: JSON_THROW_ON_ERROR));
-        $position = $cursor === null ? null : $this->decodeCursor(cursor: $cursor, key: $key, fingerprint: $fingerprint);
-        $direction = $position['direction'] ?? 'before';
+        $position    = $cursor === null ? null : $this->decodeCursor(cursor: $cursor, key: $key, fingerprint: $fingerprint);
+        $direction   = $position['direction'] ?? 'before';
 
         if ($position !== null) {
-            $comparison = $direction === 'after' ? '>' : '<';
-            $where[] = '(occurred_at ' . $comparison . ' :cursor_time OR (occurred_at = :cursor_same_time AND id ' . $comparison . ' :cursor_id))';
-            $parameters['cursor_time'] = $position['time'];
+            $comparison                     = $direction === 'after' ? '>' : '<';
+            $where[]                        = '(occurred_at ' . $comparison . ' :cursor_time OR (occurred_at = :cursor_same_time AND id ' . $comparison . ' :cursor_id))';
+            $parameters['cursor_time']      = $position['time'];
             $parameters['cursor_same_time'] = $position['time'];
         }
 
         $table = $date !== null && $date !== '' ? 'activity_events INDEXED BY idx_activity_day' : 'activity_events';
-        $sql = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
+        $sql   = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(separator: ' AND ', array: $where);
         }
-        $sort = $direction === 'after' ? 'ASC' : 'DESC';
-        $sql .= ' ORDER BY occurred_at ' . $sort . ', id ' . $sort . ' LIMIT :limit';
+        $sort      = $direction === 'after' ? 'ASC' : 'DESC';
+        $sql       .= ' ORDER BY occurred_at ' . $sort . ', id ' . $sort . ' LIMIT :limit';
         $statement = $this->pdo->prepare(query: $sql);
         if ($statement === false) {
             throw new RuntimeException(message: 'Unable to prepare cursor activity history.');
@@ -204,9 +222,9 @@ final readonly class Statistics
         $statement->execute();
 
         /** @var list<ActivityEventRow> $rows */
-        $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
+        $rows    = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
         $hasMore = count(value: $rows) > self::PAGE_SIZE;
-        $rows = array_slice(array: $rows, offset: 0, length: self::PAGE_SIZE);
+        $rows    = array_slice(array: $rows, offset: 0, length: self::PAGE_SIZE);
         if ($direction === 'after') {
             $rows = array_reverse(array: $rows);
         }
@@ -215,15 +233,15 @@ final readonly class Statistics
             return ['events' => [], 'hasNext' => false, 'nextCursor' => null, 'previousCursor' => null];
         }
 
-        $last = $rows[count(value: $rows) - 1];
-        $first = $rows[0];
-        $hasNext = $direction === 'after' ? true : $hasMore;
+        $last        = $rows[count(value: $rows) - 1];
+        $first       = $rows[0];
+        $hasNext     = $direction === 'after' ? true : $hasMore;
         $hasPrevious = $direction === 'after' ? $hasMore : $position !== null;
 
         return [
-            'events' => $rows,
-            'hasNext' => $hasNext,
-            'nextCursor' => $hasNext ? $this->encodeCursor(time: $last['occurred_at'], id: $last['id'], direction: 'before', fingerprint: $fingerprint, key: $key) : null,
+            'events'         => $rows,
+            'hasNext'        => $hasNext,
+            'nextCursor'     => $hasNext ? $this->encodeCursor(time: $last['occurred_at'], id: $last['id'], direction: 'before', fingerprint: $fingerprint, key: $key) : null,
             'previousCursor' => $hasPrevious ? $this->encodeCursor(time: $first['occurred_at'], id: $first['id'], direction: 'after', fingerprint: $fingerprint, key: $key) : null,
         ];
     }
@@ -231,18 +249,19 @@ final readonly class Statistics
     /**
      * Encode an opaque, MAC-protected navigation position.
      *
-     * @param string $time Exact stored UTC timestamp.
-     * @param int $id Event ID.
-     * @param string $direction before or after.
+     * @param string $time        Exact stored UTC timestamp.
+     * @param int    $id          Event ID.
+     * @param string $direction   before or after.
      * @param string $fingerprint Bound user/date/action filters.
-     * @param string $key Server-side session secret.
+     * @param string $key         Server-side session secret.
+     *
      * @return string URL-safe cursor.
      */
-    private function encodeCursor(string $time, int $id, string $direction, string $fingerprint, string $key): string
+    private function encodeCursor(string $time, int $id, string $direction, string $fingerprint, string $key) : string
     {
         $json = json_encode(value: ['v' => 1, 't' => $time, 'id' => $id, 'd' => $direction, 'f' => $fingerprint], flags: JSON_THROW_ON_ERROR);
         $body = rtrim(string: strtr(string: base64_encode(string: $json), from: '+/', to: '-_'), characters: '=');
-        $mac = hash_hmac(algo: 'sha256', data: $body, key: $key);
+        $mac  = hash_hmac(algo: 'sha256', data: $body, key: $key);
 
         return $body . '.' . $mac;
     }
@@ -250,12 +269,13 @@ final readonly class Statistics
     /**
      * Decode only well-formed cursors authenticated by the current PHP session.
      *
-     * @param string $cursor Untrusted URL parameter.
-     * @param string $key Server-side secret.
+     * @param string $cursor      Untrusted URL parameter.
+     * @param string $key         Server-side secret.
      * @param string $fingerprint Filter-bound SHA-256.
+     *
      * @return array{time: string, id: int, direction: string}
      */
-    private function decodeCursor(string $cursor, string $key, string $fingerprint): array
+    private function decodeCursor(string $cursor, string $key, string $fingerprint) : array
     {
         if (strlen(string: $cursor) > 768 || preg_match(pattern: '/\\A([A-Za-z0-9_-]+)\\.([a-f0-9]{64})\\z/D', subject: $cursor, matches: $parts) !== 1) {
             throw new InvalidArgumentException(message: 'Invalid activity cursor.');

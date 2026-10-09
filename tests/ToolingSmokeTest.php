@@ -20,7 +20,7 @@ final class ToolingSmokeTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRequiredRuntimeCapabilitiesAreAvailable(): void
+    public function testRequiredRuntimeCapabilitiesAreAvailable() : void
     {
         self::assertGreaterThanOrEqual(80300, PHP_VERSION_ID);
         self::assertTrue(extension_loaded(extension: 'pdo_sqlite'));

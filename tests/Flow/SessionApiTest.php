@@ -28,17 +28,17 @@ final class SessionApiTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testJsonSessionAndCsrfRemainServerAuthoritative(): void
+    public function testJsonSessionAndCsrfRemainServerAuthoritative() : void
     {
         $pdo = SqliteConnection::memory();
         (new Migrator(pdo: $pdo, migrationDirectories: [
             'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
         ]))->migrate();
-        $session = new PhpSession();
-        $csrf = new Csrf(session: $session);
+        $session  = new PhpSession();
+        $csrf     = new Csrf(session: $session);
         $accounts = new Accounts(pdo: $pdo);
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: new SystemClock());
-        $api = new SessionApi(identity: new CurrentAccount(identity: $identity), csrf: $csrf);
+        $api      = new SessionApi(identity: new CurrentAccount(identity: $identity), csrf: $csrf);
 
         try {
             $guest = $api->session();
@@ -57,8 +57,8 @@ final class SessionApiTest extends TestCase
             $identity->signIn(account: $account);
             $active = json_decode(json: $api->session()->body(), associative: true, flags: JSON_THROW_ON_ERROR);
             self::assertSame([
-                'user' => ['id' => $account->id, 'username' => 'sessiontest', 'role' => 'user'],
-            ], $active);
+                                 'user' => ['id' => $account->id, 'username' => 'sessiontest', 'role' => 'user'],
+                             ], $active);
             self::assertStringNotContainsString('password', $api->session()->body());
             self::assertStringNotContainsString('csrfToken', $api->session()->body());
 
@@ -81,7 +81,7 @@ final class SessionApiTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testJsonResponseHexEscapesUntrustedHtml(): void
+    public function testJsonResponseHexEscapesUntrustedHtml() : void
     {
         $response = Response::json(payload: ['message' => '<script>alert("x")</script>']);
         self::assertSame(200, $response->status());

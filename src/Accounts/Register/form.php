@@ -65,7 +65,8 @@ declare(strict_types=1);
     <form action="/register" method="post">
         <input type="hidden" name="csrf_token" value="<?= $escape(value: $data['csrfToken']) ?>">
         <label for="username">Username</label>
-        <input id="username" name="username" autocomplete="username" value="<?= $escape(value: $data['username']) ?>" required>
+        <input id="username" name="username" autocomplete="username" value="<?= $escape(value: $data['username']) ?>"
+               required>
         <label for="password">Password</label>
         <input id="password" type="password" name="password" autocomplete="new-password" required>
         <button type="submit">Register</button>

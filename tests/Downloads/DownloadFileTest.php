@@ -34,7 +34,7 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testFixedReadableArtifactIsTrackedAndReturned(): void
+    public function testFixedReadableArtifactIsTrackedAndReturned() : void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-download-');
         self::assertNotFalse($path);
@@ -48,9 +48,9 @@ final class DownloadFileTest extends TestCase
             $statement = $this->pdo->query(query: 'SELECT action, target FROM activity_events ORDER BY id');
             self::assertNotFalse($statement);
             self::assertSame([
-                ['action' => 'view-page', 'target' => 'page-b'],
-                ['action' => 'button-click', 'target' => 'download'],
-            ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
+                                 ['action' => 'view-page', 'target' => 'page-b'],
+                                 ['action' => 'button-click', 'target' => 'download'],
+                             ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
         } finally {
             unlink(filename: $path);
         }
@@ -61,7 +61,7 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testActivityDatabaseFailureDoesNotBecomeArtifactUnavailable(): void
+    public function testActivityDatabaseFailureDoesNotBecomeArtifactUnavailable() : void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-download-');
         self::assertNotFalse($path);
@@ -83,7 +83,7 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testMissingArtifactDoesNotClaimSuccessfulDownload(): void
+    public function testMissingArtifactDoesNotClaimSuccessfulDownload() : void
     {
         $path     = sys_get_temp_dir() . '/fast-task-absent-artifact-does-not-exist.exe';
         $download = new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()), artifactPath: $path);
@@ -106,15 +106,15 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testUnexpectedArtifactHashRejectsDownloadBeforeAudit(): void
+    public function testUnexpectedArtifactHashRejectsDownloadBeforeAudit() : void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-hash-');
         self::assertNotFalse($path);
         try {
             self::assertNotFalse(file_put_contents(filename: $path, data: 'unexpected bytes'));
             $download = new DownloadFile(
-                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
-                artifactPath: $path,
+                activityLog   : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                artifactPath  : $path,
                 expectedSha256: hash(algo: 'sha256', data: 'original bytes'),
             );
             $this->expectException(ArtifactUnavailable::class);
@@ -132,7 +132,7 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testMatchingArtifactHashAllowsDownloadAndOneAuditEvent(): void
+    public function testMatchingArtifactHashAllowsDownloadAndOneAuditEvent() : void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-hash-valid-');
         self::assertNotFalse($path);
@@ -141,8 +141,8 @@ final class DownloadFileTest extends TestCase
             $contents = 'known artifact bytes';
             self::assertNotFalse(file_put_contents(filename: $path, data: $contents));
             $download = new DownloadFile(
-                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
-                artifactPath: $path,
+                activityLog   : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                artifactPath  : $path,
                 expectedSha256: hash(algo: 'sha256', data: $contents),
             );
             self::assertSame($contents, $download->prepareDownload(actorId: 9, actorLabel: 'bob'));
@@ -159,16 +159,16 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testOversizedArtifactRejectsDownloadBeforeAudit(): void
+    public function testOversizedArtifactRejectsDownloadBeforeAudit() : void
     {
         $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-big-');
         self::assertNotFalse($path);
         try {
             self::assertNotFalse(file_put_contents(filename: $path, data: str_repeat(string: 'z', times: 4096)));
             $download = new DownloadFile(
-                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                activityLog : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
                 artifactPath: $path,
-                maxBytes: 1024,
+                maxBytes    : 1024,
             );
             $this->expectException(ArtifactUnavailable::class);
             $download->prepareDownload(actorId: 9, actorLabel: 'bob');
@@ -185,7 +185,7 @@ final class DownloadFileTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testSymlinkArtifactCannotBeDownloaded(): void
+    public function testSymlinkArtifactCannotBeDownloaded() : void
     {
         $real = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-link-target-');
         self::assertNotFalse($real);
@@ -194,7 +194,7 @@ final class DownloadFileTest extends TestCase
             self::assertNotFalse(file_put_contents(filename: $real, data: 'target'));
             self::assertTrue(symlink(target: $real, link: $link));
             $download = new DownloadFile(
-                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                activityLog : new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
                 artifactPath: $link,
             );
             $this->expectException(ArtifactUnavailable::class);
@@ -213,8 +213,7 @@ final class DownloadFileTest extends TestCase
      * @return void No return value.
      */
     #[Override]
-
-    protected function setUp(): void
+    protected function setUp() : void
     {
         $this->pdo = SqliteConnection::memory();
         (new Migrator(pdo: $this->pdo, migrationDirectories: [

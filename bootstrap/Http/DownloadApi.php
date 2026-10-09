@@ -18,11 +18,11 @@ final readonly class DownloadApi
     /**
      * Reuse the canonical artifact owner and session identity.
      *
-     * @param DownloadFile $downloads Authoritative tracked fixed-file behavior.
-     * @param RequireSignedIn $signedIn Verified account identity.
+     * @param DownloadFile    $downloads Authoritative tracked fixed-file behavior.
+     * @param RequireSignedIn $signedIn  Verified account identity.
      */
     public function __construct(
-        private DownloadFile $downloads,
+        private DownloadFile    $downloads,
         private RequireSignedIn $signedIn,
     ) {}
 
@@ -31,7 +31,7 @@ final readonly class DownloadApi
      *
      * @return Response Empty 204 after persisted view event.
      */
-    public function view(): Response
+    public function view() : Response
     {
         $account = $this->signedIn->account();
         $this->downloads->view(actorId: $account->id, actorLabel: $account->username);

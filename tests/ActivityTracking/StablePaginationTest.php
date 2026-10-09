@@ -23,13 +23,13 @@ final class StablePaginationTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testStableTraversalSurvivesNewEventsAndTimestampTies(): void
+    public function testStableTraversalSurvivesNewEventsAndTimestampTies() : void
     {
         $pdo = $this->database();
         $this->seed(pdo: $pdo, count: 115);
         $statistics = new Statistics(pdo: $pdo);
-        $key = 'test-session-only-secret';
-        $first = $statistics->cursorPage(key: $key);
+        $key        = 'test-session-only-secret';
+        $first      = $statistics->cursorPage(key: $key);
         self::assertCount(50, $first['events']);
         self::assertNotNull($first['nextCursor']);
         $firstIds = array_column(array: $first['events'], column_key: 'id');
@@ -53,21 +53,21 @@ final class StablePaginationTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testCursorValidationBindsFiltersAndSession(): void
+    public function testCursorValidationBindsFiltersAndSession() : void
     {
         $pdo = $this->database();
         $this->seed(pdo: $pdo, count: 61);
         $statistics = new Statistics(pdo: $pdo);
-        $first = $statistics->cursorPage(key: 'first-key', action: 'view-page');
-        $cursor = $first['nextCursor'];
+        $first      = $statistics->cursorPage(key: 'first-key', action: 'view-page');
+        $cursor     = $first['nextCursor'];
         self::assertNotNull($cursor);
 
         foreach ([
-            static fn(): array => $statistics->cursorPage(cursor: substr(string: $cursor, offset: 0, length: -1) . 'x', key: 'first-key', action: 'view-page'),
-            static fn(): array => $statistics->cursorPage(cursor: $cursor, key: 'second-key', action: 'view-page'),
-            static fn(): array => $statistics->cursorPage(cursor: $cursor, key: 'first-key', action: 'login'),
-            static fn(): array => $statistics->cursorPage(cursor: 'not-a-valid-cursor', key: 'first-key'),
-        ] as $attempt) {
+                     static fn () : array => $statistics->cursorPage(cursor: substr(string: $cursor, offset: 0, length: -1) . 'x', key: 'first-key', action: 'view-page'),
+                     static fn () : array => $statistics->cursorPage(cursor: $cursor, key: 'second-key', action: 'view-page'),
+                     static fn () : array => $statistics->cursorPage(cursor: $cursor, key: 'first-key', action: 'login'),
+                     static fn () : array => $statistics->cursorPage(cursor: 'not-a-valid-cursor', key: 'first-key'),
+                 ] as $attempt) {
             try {
                 $attempt();
                 self::fail('Tampered or cross-filter cursor must be rejected.');
@@ -82,7 +82,7 @@ final class StablePaginationTest extends TestCase
      *
      * @return PDO Migrated SQLite connection.
      */
-    private function database(): PDO
+    private function database() : PDO
     {
         $pdo = SqliteConnection::memory();
         (new Migrator(pdo: $pdo, migrationDirectories: [
@@ -95,11 +95,12 @@ final class StablePaginationTest extends TestCase
     /**
      * Append valid events with the same UTC timestamp.
      *
-     * @param PDO $pdo Target migrated database.
+     * @param PDO $pdo   Target migrated database.
      * @param int $count Rows to append.
+     *
      * @return void No return value.
      */
-    private function seed(PDO $pdo, int $count): void
+    private function seed(PDO $pdo, int $count) : void
     {
         $insert = $pdo->prepare(query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-09T12:00:00+00:00')");
         self::assertNotFalse($insert);

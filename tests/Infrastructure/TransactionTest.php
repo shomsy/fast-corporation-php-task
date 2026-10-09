@@ -21,7 +21,7 @@ final class TransactionTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRollsBackWhenOperationFails(): void
+    public function testRollsBackWhenOperationFails() : void
     {
         $pdo = SqliteConnection::memory();
         $pdo->exec(statement: 'CREATE TABLE example (value TEXT NOT NULL)');
@@ -29,7 +29,7 @@ final class TransactionTest extends TestCase
         $transaction = new Transaction(pdo: $pdo);
 
         try {
-            $transaction->run(operation: static function () use ($pdo): void {
+            $transaction->run(operation: static function () use ($pdo) : void {
                 $pdo->exec(statement: "INSERT INTO example (value) VALUES ('written')");
                 $pdo->exec(statement: 'INSERT INTO example (value) VALUES (NULL)');
             });

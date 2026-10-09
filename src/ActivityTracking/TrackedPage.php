@@ -14,10 +14,10 @@ enum TrackedPage: string
 {
     /**
      * Canonical Page a value for the TrackedPage taxonomy.
-         */
+     */
     case PageA = 'page-a';
     /**
      * Canonical Page b value for the TrackedPage taxonomy.
-         */
+     */
     case PageB = 'page-b';
 }

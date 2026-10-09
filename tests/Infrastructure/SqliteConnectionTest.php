@@ -20,7 +20,7 @@ final class SqliteConnectionTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testNormalConnectionDoesNotProvisionMissingDatabase(): void
+    public function testNormalConnectionDoesNotProvisionMissingDatabase() : void
     {
         $root = sys_get_temp_dir() . '/fast-no-create-' . bin2hex(string: random_bytes(length: 8));
         $path = $root . '/database/missing.sqlite';
@@ -38,13 +38,13 @@ final class SqliteConnectionTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testExplicitProvisioningCanCreateAndReopenDatabase(): void
+    public function testExplicitProvisioningCanCreateAndReopenDatabase() : void
     {
         $root = sys_get_temp_dir() . '/fast-provision-' . bin2hex(string: random_bytes(length: 8));
         $path = $root . '/database/app.sqlite';
 
         try {
-            $pdo = SqliteConnection::open(path: $path, createIfMissing: true);
+            $pdo     = SqliteConnection::open(path: $path, createIfMissing: true);
             $journal = $pdo->query(query: 'PRAGMA journal_mode');
             self::assertNotFalse($journal);
             self::assertSame('wal', $journal->fetchColumn());
@@ -55,7 +55,7 @@ final class SqliteConnectionTest extends TestCase
             self::assertFileExists($path);
             unset($pdo);
 
-            $reopened = SqliteConnection::open(path: $path);
+            $reopened  = SqliteConnection::open(path: $path);
             $statement = $reopened->query(query: "SELECT 'ok'");
             self::assertNotFalse($statement);
             self::assertSame('ok', $statement->fetchColumn());

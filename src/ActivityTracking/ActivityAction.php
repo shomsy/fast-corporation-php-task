@@ -14,22 +14,22 @@ enum ActivityAction: string
 {
     /**
      * Canonical Registration value for the ActivityAction taxonomy.
-         */
+     */
     case Registration = 'registration';
     /**
      * Canonical Login value for the ActivityAction taxonomy.
-         */
-    case Login        = 'login';
+     */
+    case Login = 'login';
     /**
      * Canonical Logout value for the ActivityAction taxonomy.
-         */
-    case Logout       = 'logout';
+     */
+    case Logout = 'logout';
     /**
      * Canonical View page value for the ActivityAction taxonomy.
-         */
-    case ViewPage     = 'view-page';
+     */
+    case ViewPage = 'view-page';
     /**
      * Canonical Button click value for the ActivityAction taxonomy.
-         */
-    case ButtonClick  = 'button-click';
+     */
+    case ButtonClick = 'button-click';
 }

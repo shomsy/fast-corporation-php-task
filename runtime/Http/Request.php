@@ -18,22 +18,24 @@ final readonly class Request
     /**
      * Capture the HTTP method, path and raw input containers without coercing values.
      *
-     * @param string $method HTTP request method or route verb.
-     * @param string $path Parsed HTTP request pathname, never a filesystem path.
+     * @param string               $method  HTTP request method or route verb.
+     * @param string               $path    Parsed HTTP request pathname, never a filesystem path.
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, mixed> $server
-     * @param string|null $rawBody Optional injected JSON body for deterministic tests.
+     * @param string|null          $rawBody Optional injected JSON body for deterministic tests.
+     *
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function __construct(
-        private string $method,
-        private string $path,
-        private array  $query = [],
-        private array  $post = [],
-        private array  $server = [],
+        private string      $method,
+        private string      $path,
+        private array       $query = [],
+        private array       $post = [],
+        private array       $server = [],
         private string|null $rawBody = null,
-    ) {
+    )
+    {
         if ($path === '' || ! str_starts_with(haystack: $path, needle: '/')) {
             throw new InvalidArgumentException(message: 'Request path must start with "/".');
         }
@@ -44,7 +46,7 @@ final readonly class Request
      *
      * @return self Immutable request snapshot from the current superglobals.
      */
-    public static function fromGlobals(): self
+    public static function fromGlobals() : self
     {
         $uri = is_string(value: $_SERVER['REQUEST_URI'] ?? null)
             ? $_SERVER['REQUEST_URI']
@@ -82,9 +84,10 @@ final readonly class Request
      * Discard non-string top-level input keys without changing values.
      *
      * @param array<array-key, mixed> $values
+     *
      * @return array<string, mixed>
      */
-    private static function stringKeyed(array $values): array
+    private static function stringKeyed(array $values) : array
     {
         $result = [];
 
@@ -102,7 +105,7 @@ final readonly class Request
      *
      * @return string Uppercase HTTP method.
      */
-    public function method(): string
+    public function method() : string
     {
         return strtoupper(string: $this->method);
     }
@@ -112,7 +115,7 @@ final readonly class Request
      *
      * @return string Absolute request path.
      */
-    public function path(): string
+    public function path() : string
     {
         return $this->path;
     }
@@ -121,9 +124,10 @@ final readonly class Request
      * Fetch a raw query-string value for transport-boundary validation.
      *
      * @param string $key Name of a session or HTTP input value.
+     *
      * @return mixed Raw query input for the named key, or null if missing.
      */
-    public function query(string $key): mixed
+    public function query(string $key) : mixed
     {
         return $this->query[$key] ?? null;
     }
@@ -132,9 +136,10 @@ final readonly class Request
      * Fetch a raw submitted form value for transport-boundary validation.
      *
      * @param string $key Name of a session or HTTP input value.
+     *
      * @return mixed Raw form input for the named key, or null if missing.
      */
-    public function post(string $key): mixed
+    public function post(string $key) : mixed
     {
         return $this->post[$key] ?? null;
     }
@@ -144,7 +149,7 @@ final readonly class Request
      *
      * @return mixed Submitted session token or null when the transport is inappropriate.
      */
-    public function csrfToken(): mixed
+    public function csrfToken() : mixed
     {
         // Only the native binary download is an API-path HTML form.
         if ($this->path === '/api/downloads/sample') {
@@ -178,7 +183,7 @@ final readonly class Request
      * @return array<string, mixed> Untrusted JSON properties for the owning adapter to validate.
      * @throws InvalidArgumentException When the transport, JSON or payload size is invalid.
      */
-    public function jsonObject(): array
+    public function jsonObject() : array
     {
         $contentType = $this->server(key: 'CONTENT_TYPE');
 
@@ -214,18 +219,20 @@ final readonly class Request
      * Fetch untrusted HTTP server metadata.
      *
      * @param string $key Name of a session or HTTP input value.
+     *
      * @return mixed Raw request metadata, or null if missing.
      */
-    public function server(string $key): mixed
+    public function server(string $key) : mixed
     {
         return $this->server[$key] ?? null;
     }
+
     /**
      * Recognize speculative browser prefetches; this is never an authorization signal.
      *
      * @return bool Whether a standard prefetch marker is present.
      */
-    public function isPrefetch(): bool
+    public function isPrefetch() : bool
     {
         foreach (['HTTP_SEC_PURPOSE', 'HTTP_PURPOSE', 'HTTP_X_MOZ'] as $name) {
             $header = $this->server(key: $name);

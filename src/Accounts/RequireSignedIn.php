@@ -25,7 +25,7 @@ final readonly class RequireSignedIn
      * @return SignedInAccount Authorized signed-in account identity.
      * @throws AccessDenied When the current identity lacks the required permission.
      */
-    public function account(): SignedInAccount
+    public function account() : SignedInAccount
     {
         return $this->identity->current()
             ?? throw new AccessDenied(message: 'Authentication required.');

@@ -20,7 +20,7 @@ final class RendererTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testProvidesCentralEscapingHelperToTemplate(): void
+    public function testProvidesCentralEscapingHelperToTemplate() : void
     {
         $template = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-task-template-');
 
@@ -44,7 +44,7 @@ final class RendererTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testNestedThrowingTemplateRestoresCallerBuffer(): void
+    public function testNestedThrowingTemplateRestoresCallerBuffer() : void
     {
         $template = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-task-template-');
         self::assertNotFalse($template);
@@ -66,7 +66,7 @@ final class RendererTest extends TestCase
             self::assertSame($callerLevel, ob_get_level(), 'Renderer leaked an output buffer.');
             self::assertSame('caller output', ob_get_contents(), 'Renderer disturbed the caller buffer.');
         } finally {
-            while (ob_get_level() > $initialLevel) {
+            while ( ob_get_level() > $initialLevel ) {
                 ob_end_clean();
             }
             unlink(filename: $template);
@@ -78,7 +78,7 @@ final class RendererTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testUnbalancedSuccessfulTemplateIsRejectedWithoutLeakingBuffers(): void
+    public function testUnbalancedSuccessfulTemplateIsRejectedWithoutLeakingBuffers() : void
     {
         $template = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-task-template-');
         self::assertNotFalse($template);
@@ -97,7 +97,7 @@ final class RendererTest extends TestCase
             }
             self::assertSame($callerLevel, ob_get_level(), 'Renderer leaked its buffer.');
         } finally {
-            while (ob_get_level() > $initialLevel) {
+            while ( ob_get_level() > $initialLevel ) {
                 ob_end_clean();
             }
             unlink(filename: $template);
@@ -109,7 +109,7 @@ final class RendererTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testBalancedNestedTemplateCapturesCompleteOutput(): void
+    public function testBalancedNestedTemplateCapturesCompleteOutput() : void
     {
         $template = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-task-template-');
         self::assertNotFalse($template);
@@ -121,7 +121,7 @@ final class RendererTest extends TestCase
             self::assertSame('beforeinnerafter', (new Renderer())->render(template: $template));
             self::assertSame($initialLevel, ob_get_level());
         } finally {
-            while (ob_get_level() > $initialLevel) {
+            while ( ob_get_level() > $initialLevel ) {
                 ob_end_clean();
             }
             unlink(filename: $template);

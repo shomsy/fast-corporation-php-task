@@ -16,16 +16,18 @@ final readonly class Response
     /**
      * Capture outgoing status, headers and body after validating the status code.
      *
-     * @param string $body HTTP response payload.
-     * @param int $status HTTP response status code.
+     * @param string                $body   HTTP response payload.
+     * @param int                   $status HTTP response status code.
      * @param array<string, string> $headers
+     *
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function __construct(
         private string $body = '',
         private int    $status = 200,
         private array  $headers = [],
-    ) {
+    )
+    {
         if ($status < 100 || $status > 599) {
             throw new InvalidArgumentException(message: 'HTTP status must be between 100 and 599.');
         }
@@ -34,11 +36,12 @@ final readonly class Response
     /**
      * Build a text response with a Content-Type header.
      *
-     * @param string $body HTTP response payload.
-     * @param int $status HTTP response status code.
+     * @param string $body   HTTP response payload.
+     * @param int    $status HTTP response status code.
+     *
      * @return self A plain-text response with the supplied status.
      */
-    public static function text(string $body, int $status = 200): self
+    public static function text(string $body, int $status = 200) : self
     {
         return new self(body: $body, status: $status, headers: ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
@@ -46,11 +49,12 @@ final readonly class Response
     /**
      * Build an HTML response with a Content-Type header.
      *
-     * @param string $body HTTP response payload.
-     * @param int $status HTTP response status code.
+     * @param string $body   HTTP response payload.
+     * @param int    $status HTTP response status code.
+     *
      * @return self An HTML response with the supplied status.
      */
-    public static function html(string $body, int $status = 200): self
+    public static function html(string $body, int $status = 200) : self
     {
         return new self(body: $body, status: $status, headers: ['Content-Type' => 'text/html; charset=UTF-8']);
     }
@@ -59,15 +63,16 @@ final readonly class Response
      * Encode a trusted PHP payload as an HTML-safe JSON HTTP response.
      *
      * @param array<string, mixed> $payload Transport projection, never a raw domain object.
-     * @param int $status Response status code.
+     * @param int                  $status  Response status code.
+     *
      * @return self JSON response with explicit content type.
      * @throws \JsonException When payload serialization is invalid.
      */
-    public static function json(array $payload, int $status = 200): self
+    public static function json(array $payload, int $status = 200) : self
     {
         return new self(
-            body: json_encode(value: $payload, flags: JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS),
-            status: $status,
+            body   : json_encode(value: $payload, flags: JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS),
+            status : $status,
             headers: ['Content-Type' => 'application/json; charset=UTF-8'],
         );
     }
@@ -76,10 +81,11 @@ final readonly class Response
      * Build a redirect response with the requested Location.
      *
      * @param string $location Redirect destination (Location header).
-     * @param int $status HTTP response status code.
+     * @param int    $status   HTTP response status code.
+     *
      * @return self A redirect response with a Location header.
      */
-    public static function redirect(string $location, int $status = 303): self
+    public static function redirect(string $location, int $status = 303) : self
     {
         return new self(body: '', status: $status, headers: ['Location' => $location]);
     }
@@ -89,7 +95,7 @@ final readonly class Response
      *
      * @return string Body that will be sent to the HTTP client.
      */
-    public function body(): string
+    public function body() : string
     {
         return $this->body;
     }
@@ -99,7 +105,7 @@ final readonly class Response
      *
      * @return int Validated HTTP status code.
      */
-    public function status(): int
+    public function status() : int
     {
         return $this->status;
     }
@@ -109,15 +115,15 @@ final readonly class Response
      *
      * @return array<string, string>
      */
-    public function headers(): array
+    public function headers() : array
     {
         // One boundary for private dynamic responses: never depend on every handler
         // remembering browser security, privacy or HTTPS policy.
         $defaults = [
             'Cache-Control'           => 'no-store',
-            'X-Content-Type-Options' => 'nosniff',
-            'X-Frame-Options'        => 'DENY',
-            'Referrer-Policy'        => 'no-referrer',
+            'X-Content-Type-Options'  => 'nosniff',
+            'X-Frame-Options'         => 'DENY',
+            'Referrer-Policy'         => 'no-referrer',
             // SSR still embeds CSS. Scripts are only allowed as same-origin files.
             'Content-Security-Policy' => "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
         ];
@@ -132,12 +138,13 @@ final readonly class Response
     /**
      * Create an immutable copy with an additional trusted response header.
      *
-     * @param string $name HTTP response header name.
+     * @param string $name  HTTP response header name.
      * @param string $value Server-created header value.
+     *
      * @return self Response copy including the new header.
      * @throws InvalidArgumentException When the header contains forbidden characters.
      */
-    public function withHeader(string $name, string $value): self
+    public function withHeader(string $name, string $value) : self
     {
         if (preg_match(pattern: '/\A[A-Za-z0-9-]+\z/D', subject: $name) !== 1
             || str_contains(haystack: $value, needle: "\r")
@@ -153,7 +160,7 @@ final readonly class Response
      *
      * @return void No return value.
      */
-    public function send(): void
+    public function send() : void
     {
         http_response_code(response_code: $this->status);
 

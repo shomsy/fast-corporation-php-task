@@ -49,13 +49,13 @@ final class HttpFlowTest extends TestCase
      *
      * @var PDO
      */
-    private PDO             $pdo;
+    private PDO $pdo;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
      * @var Accounts
      */
-    private Accounts        $accounts;
+    private Accounts $accounts;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
@@ -67,44 +67,44 @@ final class HttpFlowTest extends TestCase
      *
      * @var Csrf
      */
-    private Csrf            $csrf;
+    private Csrf $csrf;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
      * @var AccountPages
      */
-    private AccountPages    $accountPages;
+    private AccountPages $accountPages;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
      * @var CowOfferPages
      */
-    private CowOfferPages   $cowPages;
+    private CowOfferPages $cowPages;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
      * @var DownloadPages
      */
-    private DownloadPages   $downloadPages;
+    private DownloadPages $downloadPages;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
      * @var ActivityPages
      */
-    private ActivityPages   $activityPages;
+    private ActivityPages $activityPages;
     /**
      * Internal state or dependency owned by HttpFlowTest.
      *
      * @var SystemClock
      */
-    private SystemClock     $clock;
+    private SystemClock $clock;
 
     /**
      * Verify end to end browser flow records every required user event through the public behavior.
      *
      * @return void No return value.
      */
-    public function testEndToEndBrowserFlowRecordsEveryRequiredUserEvent(): void
+    public function testEndToEndBrowserFlowRecordsEveryRequiredUserEvent() : void
     {
         self::assertSame(200, $this->accountPages->registerForm()->status());
         self::assertSame(200, $this->accountPages->loginForm(request: new Request(method: 'GET', path: '/login'))->status());
@@ -153,14 +153,14 @@ final class HttpFlowTest extends TestCase
         $statement = $this->pdo->query(query: 'SELECT action, target FROM activity_events ORDER BY id');
         self::assertNotFalse($statement);
         self::assertSame([
-            ['action' => 'registration', 'target' => null],
-            ['action' => 'login', 'target' => null],
-            ['action' => 'view-page', 'target' => 'page-a'],
-            ['action' => 'button-click', 'target' => 'buy-cow'],
-            ['action' => 'view-page', 'target' => 'page-b'],
-            ['action' => 'button-click', 'target' => 'download'],
-            ['action' => 'logout', 'target' => null],
-        ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
+                             ['action' => 'registration', 'target' => null],
+                             ['action' => 'login', 'target' => null],
+                             ['action' => 'view-page', 'target' => 'page-a'],
+                             ['action' => 'button-click', 'target' => 'buy-cow'],
+                             ['action' => 'view-page', 'target' => 'page-b'],
+                             ['action' => 'button-click', 'target' => 'download'],
+                             ['action' => 'logout', 'target' => null],
+                         ], $statement->fetchAll(mode: PDO::FETCH_ASSOC));
     }
 
     /**
@@ -168,7 +168,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRepeatedAcceptedClicksCountSeparatelyAcrossTabsAndReloads(): void
+    public function testRepeatedAcceptedClicksCountSeparatelyAcrossTabsAndReloads() : void
     {
         $account = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'clickadmin', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -196,8 +196,8 @@ final class HttpFlowTest extends TestCase
         self::assertNotFalse($statement);
         $counts = $statement->fetchAll(mode: PDO::FETCH_KEY_PAIR);
         self::assertSame(['buy-cow' => 3, 'download' => 2], array_map(
-            callback: static fn(mixed $total): int => is_numeric(value: $total) ? (int) $total : -1,
-            array: $counts,
+            callback: static fn (mixed $total) : int => is_numeric(value: $total) ? (int) $total : -1,
+            array   : $counts,
         ));
     }
 
@@ -206,7 +206,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testPageNavigationEventsExcludePrefetchButIncludeReturnVisits(): void
+    public function testPageNavigationEventsExcludePrefetchButIncludeReturnVisits() : void
     {
         $speculative = new Request(method: 'GET', path: '/page-a', server: ['HTTP_SEC_PURPOSE' => 'prefetch;prerender']);
         self::assertSame(303, $this->cowPages->pageA(request: $speculative)->status());
@@ -227,8 +227,8 @@ final class HttpFlowTest extends TestCase
         self::assertNotFalse($counts);
         $rows = $counts->fetchAll(mode: PDO::FETCH_KEY_PAIR);
         self::assertSame(['page-a' => 2, 'page-b' => 2], array_map(
-            callback: static fn(mixed $total): int => is_numeric(value: $total) ? (int) $total : -1,
-            array: $rows,
+            callback: static fn (mixed $total) : int => is_numeric(value: $total) ? (int) $total : -1,
+            array   : $rows,
         ));
     }
 
@@ -237,7 +237,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists(): void
+    public function testStatisticsNextLinkOnlyAppearsWhenAnotherEventExists() : void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $this->identity->signIn(account: $admin);
@@ -252,18 +252,18 @@ final class HttpFlowTest extends TestCase
 
         $exact = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics'));
         self::assertSame(200, $exact->status());
-        self::assertStringNotContainsString('Next →', $exact->body());
+        self::assertDoesNotMatchRegularExpression('/Next\\s+→/u', $exact->body());
 
         self::assertTrue($insert->execute());
         $next = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics'));
-        self::assertStringContainsString('Next →', $next->body());
+        self::assertMatchesRegularExpression('/Next\\s+→/u', $next->body());
         $last = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: ['page' => '2']));
-        self::assertStringNotContainsString('Next →', $last->body());
-        self::assertStringContainsString('← Previous', $last->body());
+        self::assertDoesNotMatchRegularExpression('/Next\\s+→/u', $last->body());
+        self::assertMatchesRegularExpression('/←\\s+Previous/u', $last->body());
 
         $oldPage = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: ['page' => '1001']));
         self::assertSame(200, $oldPage->status());
-        self::assertStringNotContainsString('Next →', $oldPage->body());
+        self::assertDoesNotMatchRegularExpression('/Next\\s+→/u', $oldPage->body());
     }
 
     /**
@@ -271,7 +271,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testStatisticsCursorHtmlNavigationAndTamperValidation(): void
+    public function testStatisticsCursorHtmlNavigationAndTamperValidation() : void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $this->identity->signIn(account: $admin);
@@ -294,8 +294,8 @@ final class HttpFlowTest extends TestCase
         self::assertTrue($insert->execute());
         $next = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: ['cursor' => $cursor]));
         self::assertSame(200, $next->status());
-        self::assertStringContainsString('← Previous', $next->body());
-        self::assertStringNotContainsString('Next →', $next->body());
+        self::assertMatchesRegularExpression('/←\\s+Previous/u', $next->body());
+        self::assertDoesNotMatchRegularExpression('/Next\\s+→/u', $next->body());
         self::assertSame(15, substr_count(haystack: $next->body(), needle: '<td>2026-10-08T12:00:00+00:00</td>'));
 
         $bad = $this->activityPages->statisticsPage(request: new Request(method: 'GET', path: '/statistics', query: [
@@ -313,7 +313,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAnonymousAndRegularUsersCannotReadAdminPages(): void
+    public function testAnonymousAndRegularUsersCannotReadAdminPages() : void
     {
         self::assertSame('/login', $this->cowPages->pageA()->headers()['Location']);
         self::assertSame('/login', $this->downloadPages->pageB()->headers()['Location']);
@@ -331,17 +331,17 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRejectedUnknownLoginDoesNotProduceBusinessActivity(): void
+    public function testRejectedUnknownLoginDoesNotProduceBusinessActivity() : void
     {
         $result = $this->accountPages->loginSubmit(request: new Request(
-            method: 'POST',
-            path: '/login',
-            post: [
-                'username'   => 'nobody',
-                'password'   => 'incorrect-password',
-                'csrf_token' => $this->csrf->token(),
-            ],
-        ));
+                                                                method: 'POST',
+                                                                path  : '/login',
+                                                                post  : [
+                                                                            'username'   => 'nobody',
+                                                                            'password'   => 'incorrect-password',
+                                                                            'csrf_token' => $this->csrf->token(),
+                                                                        ],
+                                                            ));
 
         self::assertSame(401, $result->status());
         self::assertNull($this->identity->current());
@@ -356,17 +356,17 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents(): void
+    public function testCsrfRejectsEveryStateChangingRouteAndDoesNotWriteEvents() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
         foreach ([
-            $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register')),
-            $this->accountPages->loginSubmit(request: new Request(method: 'POST', path: '/login')),
-            $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow')),
-            $this->downloadPages->download(request: new Request(method: 'POST', path: '/download')),
-            $this->accountPages->logoutSubmit(request: new Request(method: 'POST', path: '/logout')),
-        ] as $response) {
+                     $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register')),
+                     $this->accountPages->loginSubmit(request: new Request(method: 'POST', path: '/login')),
+                     $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow')),
+                     $this->downloadPages->download(request: new Request(method: 'POST', path: '/download')),
+                     $this->accountPages->logoutSubmit(request: new Request(method: 'POST', path: '/logout')),
+                 ] as $response) {
             self::assertSame(403, $response->status());
         }
         self::assertNotNull($this->identity->current());
@@ -380,7 +380,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAdminStatisticsAndReportsShowCorrectDataAndEscapeUntrustedLabels(): void
+    public function testAdminStatisticsAndReportsShowCorrectDataAndEscapeUntrustedLabels() : void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'root', password: 'strong-password');
         $this->identity->signIn(account: $admin);
@@ -417,7 +417,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAdministratorDateFiltersRejectNulAndArrayInputs(): void
+    public function testAdministratorDateFiltersRejectNulAndArrayInputs() : void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(
             username: 'date-admin',
@@ -427,18 +427,18 @@ final class HttpFlowTest extends TestCase
 
         foreach (["2026-10-07\0", ['2026-10-07']] as $invalidDate) {
             $statistics = $this->activityPages->statisticsPage(request: new Request(
-                method: 'GET',
-                path: '/statistics',
-                query: ['date' => $invalidDate],
-            ));
+                                                                            method: 'GET',
+                                                                            path  : '/statistics',
+                                                                            query : ['date' => $invalidDate],
+                                                                        ));
             self::assertSame(422, $statistics->status());
 
             foreach (['from', 'to'] as $filter) {
                 $reports = $this->activityPages->reportsPage(request: new Request(
-                    method: 'GET',
-                    path: '/reports',
-                    query: [$filter => $invalidDate],
-                ));
+                                                                          method: 'GET',
+                                                                          path  : '/reports',
+                                                                          query : [$filter => $invalidDate],
+                                                                      ));
                 self::assertSame(422, $reports->status());
             }
         }
@@ -449,10 +449,10 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLoginRejectsMalformedCredentialFieldsWithoutLoginEvents(): void
+    public function testLoginRejectsMalformedCredentialFieldsWithoutLoginEvents() : void
     {
         foreach (['username', 'password'] as $field) {
-            $values = [
+            $values         = [
                 'username'   => 'alice',
                 'password'   => 'wrong-password',
                 'csrf_token' => $this->csrf->token(),
@@ -460,10 +460,10 @@ final class HttpFlowTest extends TestCase
             $values[$field] = ['unexpected'];
 
             $response = $this->accountPages->loginSubmit(request: new Request(
-                method: 'POST',
-                path: '/login',
-                post: $values,
-            ));
+                                                                      method: 'POST',
+                                                                      path  : '/login',
+                                                                      post  : $values,
+                                                                  ));
             self::assertSame(422, $response->status());
             self::assertStringNotContainsString('unexpected', $response->body());
         }
@@ -478,19 +478,19 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRegistrationRejectsMalformedAndOversizedCredentialFields(): void
+    public function testRegistrationRejectsMalformedAndOversizedCredentialFields() : void
     {
         foreach ([
-            ['username' => ['invalid'], 'password' => 'strong-password'],
-            ['username' => 'alice', 'password' => ['invalid']],
-            ['username' => str_repeat(string: 'u', times: 17000), 'password' => 'strong-password'],
-            ['username' => 'alice', 'password' => str_repeat(string: 'p', times: 17000)],
-        ] as $values) {
+                     ['username' => ['invalid'], 'password' => 'strong-password'],
+                     ['username' => 'alice', 'password' => ['invalid']],
+                     ['username' => str_repeat(string: 'u', times: 17000), 'password' => 'strong-password'],
+                     ['username' => 'alice', 'password' => str_repeat(string: 'p', times: 17000)],
+                 ] as $values) {
             $response = $this->accountPages->registerSubmit(request: new Request(
-                method: 'POST',
-                path: '/register',
-                post: $values + ['csrf_token' => $this->csrf->token()],
-            ));
+                                                                         method: 'POST',
+                                                                         path  : '/register',
+                                                                         post  : $values + ['csrf_token' => $this->csrf->token()],
+                                                                     ));
             self::assertSame(422, $response->status());
         }
 
@@ -504,7 +504,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testStatisticsRejectsOversizedUserFilterAtHttpBoundary(): void
+    public function testStatisticsRejectsOversizedUserFilterAtHttpBoundary() : void
     {
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(
             username: 'filter-admin',
@@ -514,10 +514,10 @@ final class HttpFlowTest extends TestCase
         $oversized = str_repeat(string: 'u', times: 17000);
 
         $result = $this->activityPages->statisticsPage(request: new Request(
-            method: 'GET',
-            path: '/statistics',
-            query: ['user' => $oversized],
-        ));
+                                                                    method: 'GET',
+                                                                    path  : '/statistics',
+                                                                    query : ['user' => $oversized],
+                                                                ));
 
         self::assertSame(422, $result->status());
         self::assertStringNotContainsString($oversized, $result->body());
@@ -528,7 +528,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testMissingArtifactFailsWithoutDownloadActivity(): void
+    public function testMissingArtifactFailsWithoutDownloadActivity() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -544,15 +544,16 @@ final class HttpFlowTest extends TestCase
      * Download pages according to the HttpFlowTest contract.
      *
      * @param string $artifact Input value for artifact.
+     *
      * @return DownloadPages Result described by the native PHP return type.
      */
-    private function downloadPages(string $artifact): DownloadPages
+    private function downloadPages(string $artifact) : DownloadPages
     {
         return new DownloadPages(
             downloads: new DownloadFile(activityLog: new ActivityLog(pdo: $this->pdo, clock: $this->clock), artifactPath: $artifact),
-            signedIn: new RequireSignedIn(identity: $this->identity),
-            csrf: $this->csrf,
-            html: new HtmlPage(renderer: new Renderer()),
+            signedIn : new RequireSignedIn(identity: $this->identity),
+            csrf     : $this->csrf,
+            html     : new HtmlPage(renderer: new Renderer()),
         );
     }
 
@@ -561,7 +562,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testDownloadAuditFailurePropagatesDatabaseException(): void
+    public function testDownloadAuditFailurePropagatesDatabaseException() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -579,7 +580,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable(): void
+    public function testMissingDownloadArtifactKeeps503EvenIfAuditDatabaseIsUnavailable() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -596,7 +597,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRegistrationTrackingFailureRollsBackAccountCreation(): void
+    public function testRegistrationTrackingFailureRollsBackAccountCreation() : void
     {
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
 
@@ -617,7 +618,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLogoutRevokesSessionEvenWhenAccountLookupFails(): void
+    public function testLogoutRevokesSessionEvenWhenAccountLookupFails() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -640,7 +641,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails(): void
+    public function testLogoutAlwaysRevokesIdentityWhenActivityWriteFails() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -660,7 +661,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testHtmlResponsesCarryNoStoreAndBrowserSecurityHeaders(): void
+    public function testHtmlResponsesCarryNoStoreAndBrowserSecurityHeaders() : void
     {
         $response = $this->accountPages->registerForm();
 
@@ -676,7 +677,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent(): void
+    public function testRegistrationRejectsCaseInsensitiveDuplicateWithoutAdditionalEvent() : void
     {
         $first = $this->accountPages->registerSubmit(request: new Request(method: 'POST', path: '/register', post: [
             'username' => 'Alice', 'password' => 'strong-password', 'csrf_token' => $this->csrf->token(),
@@ -701,7 +702,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLoginTrackingFailureRevokesSessionAndPropagatesFailure(): void
+    public function testLoginTrackingFailureRevokesSessionAndPropagatesFailure() : void
     {
         (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->pdo->exec(statement: 'DROP TABLE activity_events');
@@ -722,7 +723,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testDownloadNeverUsesUserSuppliedFilePath(): void
+    public function testDownloadNeverUsesUserSuppliedFilePath() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -741,7 +742,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAnonymousCannotTriggerSignedInActionsEvenWithValidCsrfToken(): void
+    public function testAnonymousCannotTriggerSignedInActionsEvenWithValidCsrfToken() : void
     {
         $csrf     = $this->csrf->token();
         $buy      = $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow', post: [
@@ -763,7 +764,7 @@ final class HttpFlowTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions(): void
+    public function testExpiredAuthenticationCannotTriggerProtectedViewsOrActions() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
         $this->identity->signIn(account: $account);
@@ -791,8 +792,7 @@ final class HttpFlowTest extends TestCase
      * @return void No return value.
      */
     #[Override]
-
-    protected function setUp(): void
+    protected function setUp() : void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();
@@ -816,27 +816,27 @@ final class HttpFlowTest extends TestCase
         $html                = new HtmlPage(renderer: new Renderer());
         $signedIn            = new RequireSignedIn(identity: $this->identity);
         $lifecycle           = new AccountLifecycle(
-            register: new Register(accounts: $this->accounts, clock: $this->clock),
-            login: new Login(accounts: $this->accounts, identity: $this->identity),
-            identity: $this->identity,
-            activity: $activity,
+            register   : new Register(accounts: $this->accounts, clock: $this->clock),
+            login      : new Login(accounts: $this->accounts, identity: $this->identity),
+            identity   : $this->identity,
+            activity   : $activity,
             transaction: new Transaction(pdo: $this->pdo),
         );
         $this->accountPages  = new AccountPages(lifecycle: $lifecycle, identity: new CurrentAccount(identity: $this->identity), csrf: $this->csrf, html: $html);
         $this->cowPages      = new CowOfferPages(
-            cow: new CowOffer(activityLog: $activity),
+            cow     : new CowOffer(activityLog: $activity),
             signedIn: $signedIn,
-            csrf: $this->csrf,
-            html: $html,
+            csrf    : $this->csrf,
+            html    : $html,
         );
         $this->downloadPages = $this->downloadPages(artifact: dirname(path: __DIR__, levels: 2) . '/assets/sample.exe');
         $this->activityPages = new ActivityPages(
             statistics: new Statistics(pdo: $this->pdo),
-            reports: new DailyReports(pdo: $this->pdo),
-            admin: new RequireAdmin(identity: $this->identity),
-            identity: new CurrentAccount(identity: $this->identity),
-            html: $html,
-            session: $session,
+            reports   : new DailyReports(pdo: $this->pdo),
+            admin     : new RequireAdmin(identity: $this->identity),
+            identity  : new CurrentAccount(identity: $this->identity),
+            html      : $html,
+            session   : $session,
         );
     }
 
@@ -846,8 +846,7 @@ final class HttpFlowTest extends TestCase
      * @return void No return value.
      */
     #[Override]
-
-    protected function tearDown(): void
+    protected function tearDown() : void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             session_destroy();

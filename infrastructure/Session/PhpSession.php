@@ -16,13 +16,13 @@ final readonly class PhpSession
     /**
      * Configure a named PHP session and whether its cookie requires HTTPS.
      *
-     * @param string $name         Configured session name or lookup name.
-     * @param bool   $secureCookie Whether PHP cookies require HTTPS.
-     * @param string|null $savePath Preprovisioned private directory for native session files.
+     * @param string      $name         Configured session name or lookup name.
+     * @param bool        $secureCookie Whether PHP cookies require HTTPS.
+     * @param string|null $savePath     Preprovisioned private directory for native session files.
      */
     public function __construct(
-        private string $name = 'fast_task',
-        private bool   $secureCookie = false,
+        private string      $name = 'fast_task',
+        private bool        $secureCookie = false,
         private string|null $savePath = null,
     ) {}
 
@@ -33,7 +33,7 @@ final readonly class PhpSession
      *
      * @return mixed Result described by the native PHP return type.
      */
-    public function get(string $key): mixed
+    public function get(string $key) : mixed
     {
         $this->start();
 
@@ -46,7 +46,7 @@ final readonly class PhpSession
      * @return void No return value.
      * @throws RuntimeException When a required external resource or stored value is invalid.
      */
-    public function start(): void
+    public function start() : void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
@@ -68,11 +68,11 @@ final readonly class PhpSession
 
         if (ini_get(option: 'session.use_cookies')) {
             session_set_cookie_params([
-                'httponly' => true,
-                'secure'   => $this->secureCookie,
-                'samesite' => 'Lax',
-                'path'     => '/',
-            ]);
+                                          'httponly' => true,
+                                          'secure'   => $this->secureCookie,
+                                          'samesite' => 'Lax',
+                                          'path'     => '/',
+                                      ]);
         }
 
         if (! session_start()) {
@@ -88,7 +88,7 @@ final readonly class PhpSession
      *
      * @return void No return value.
      */
-    public function put(string $key, mixed $value): void
+    public function put(string $key, mixed $value) : void
     {
         $this->start();
         $_SESSION[$key] = $value;
@@ -101,7 +101,7 @@ final readonly class PhpSession
      *
      * @return void No return value.
      */
-    public function remove(string $key): void
+    public function remove(string $key) : void
     {
         $this->start();
         unset($_SESSION[$key]);
@@ -113,7 +113,7 @@ final readonly class PhpSession
      * @return void No return value.
      * @throws RuntimeException When a required external resource or stored value is invalid.
      */
-    public function regenerate(): void
+    public function regenerate() : void
     {
         $this->start();
 
@@ -128,7 +128,7 @@ final readonly class PhpSession
      * @return void No return value.
      * @throws RuntimeException When a required external resource or stored value is invalid.
      */
-    public function destroy(): void
+    public function destroy() : void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
             $_SESSION = [];

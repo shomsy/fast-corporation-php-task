@@ -26,9 +26,9 @@ final readonly class AccountPages
      * Receive the Accounts lifecycle, current identity, CSRF guard and HTML renderer.
      *
      * @param AccountLifecycle $lifecycle Coordinates registration/login/logout with required business audit history.
-     * @param CurrentAccount $identity Server-side authenticated identity access boundary.
-     * @param Csrf $csrf CSRF token generation and verification component.
-     * @param HtmlPage $html Trusted HTML response adapter.
+     * @param CurrentAccount   $identity  Server-side authenticated identity access boundary.
+     * @param Csrf             $csrf      CSRF token generation and verification component.
+     * @param HtmlPage         $html      Trusted HTML response adapter.
      */
     public function __construct(
         private AccountLifecycle $lifecycle,
@@ -42,7 +42,7 @@ final readonly class AccountPages
      *
      * @return Response HTML registration form with session-scoped CSRF token.
      */
-    public function registerForm(): Response
+    public function registerForm() : Response
     {
         return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
             'csrfToken' => $this->csrf->token(), 'username' => '', 'error' => '',
@@ -53,9 +53,10 @@ final readonly class AccountPages
      * Validate CSRF and registration input, translating known business outcomes into HTTP.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Redirect 303 after accepted registration; 403 CSRF, 409 duplicate name, 422 invalid form.
      */
-    public function registerSubmit(Request $request): Response
+    public function registerSubmit(Request $request) : Response
     {
         if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
             return Response::text(body: 'Forbidden', status: 403);
@@ -65,10 +66,10 @@ final readonly class AccountPages
             $username = $this->stringInput(value: $request->post(key: 'username'));
             $password = $this->stringInput(value: $request->post(key: 'password'));
         } catch (InvalidArgumentException) {
-            return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
+            return $this->html->render(path  : 'src/Accounts/Register/form.php', data: [
                 'csrfToken' => $this->csrf->token(), 'username' => '',
                 'error'     => 'Invalid registration request.',
-            ], status: 422);
+            ],                         status: 422);
         }
 
         try {
@@ -76,15 +77,15 @@ final readonly class AccountPages
 
             return Response::redirect(location: '/login?registered=1');
         } catch (UsernameTaken) {
-            return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
+            return $this->html->render(path  : 'src/Accounts/Register/form.php', data: [
                 'csrfToken' => $this->csrf->token(), 'username' => $username,
                 'error'     => 'Username is already taken.',
-            ], status: 409);
+            ],                         status: 409);
         } catch (RegistrationRejected $e) {
-            return $this->html->render(path: 'src/Accounts/Register/form.php', data: [
+            return $this->html->render(path  : 'src/Accounts/Register/form.php', data: [
                 'csrfToken' => $this->csrf->token(), 'username' => $username,
                 'error'     => $e->getMessage(),
-            ], status: 422);
+            ],                         status: 422);
         }
     }
 
@@ -92,10 +93,11 @@ final readonly class AccountPages
      * Convert a missing field to empty, reject non-strings and bound submitted strings to 4096 bytes.
      *
      * @param mixed $value Untrusted form field; only strings up to 4096 bytes pass.
+     *
      * @return string A bounded string for business-level credential validation.
      * @throws InvalidArgumentException When a credential field has an invalid type or exceeds the transport budget.
      */
-    private function stringInput(mixed $value): string
+    private function stringInput(mixed $value) : string
     {
         if ($value === null) {
             return '';
@@ -112,9 +114,10 @@ final readonly class AccountPages
      * Render the login form and optional post-registration notice.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Login HTML with post-registration notice only when query flag is valid.
      */
-    public function loginForm(Request $request): Response
+    public function loginForm(Request $request) : Response
     {
         return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
             'csrfToken' => $this->csrf->token(), 'registered' => $request->query(key: 'registered') === '1',
@@ -126,9 +129,10 @@ final readonly class AccountPages
      * Validate CSRF and sign-in credentials, translating failure to HTTP 401.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Redirect 303 after login; 403 CSRF, 422 invalid input, 401 invalid credentials.
      */
-    public function loginSubmit(Request $request): Response
+    public function loginSubmit(Request $request) : Response
     {
         if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
             return Response::text(body: 'Forbidden', status: 403);
@@ -138,19 +142,19 @@ final readonly class AccountPages
             $username = $this->stringInput(value: $request->post(key: 'username'));
             $password = $this->stringInput(value: $request->post(key: 'password'));
         } catch (InvalidArgumentException) {
-            return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
+            return $this->html->render(path  : 'src/Accounts/Login/form.php', data: [
                 'csrfToken'  => $this->csrf->token(),
                 'registered' => false, 'error' => 'Invalid login request.',
-            ], status: 422);
+            ],                         status: 422);
         }
 
         try {
             $this->lifecycle->login(username: $username, password: $password);
         } catch (InvalidCredentials) {
-            return $this->html->render(path: 'src/Accounts/Login/form.php', data: [
+            return $this->html->render(path  : 'src/Accounts/Login/form.php', data: [
                 'csrfToken'  => $this->csrf->token(),
                 'registered' => false, 'error' => 'Invalid username or password.',
-            ], status: 401)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'auth.login_denied'));
+            ],                         status: 401)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'auth.login_denied'));
         }
 
         return Response::redirect(location: '/');
@@ -160,9 +164,10 @@ final readonly class AccountPages
      * Validate CSRF, revoke authentication and redirect to the login page.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Redirect 303 after session invalidation, or 403 on rejected CSRF.
      */
-    public function logoutSubmit(Request $request): Response
+    public function logoutSubmit(Request $request) : Response
     {
         if (! $this->csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
             return Response::text(body: 'Forbidden', status: 403);
@@ -178,7 +183,7 @@ final readonly class AccountPages
      *
      * @return Response Account home HTML, or login redirect when identity has expired.
      */
-    public function home(): Response
+    public function home() : Response
     {
         $account = $this->identity->current();
 

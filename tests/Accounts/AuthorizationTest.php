@@ -24,7 +24,7 @@ final class AuthorizationTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount(): void
+    public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount() : void
     {
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);
         $guard    = new RequireSignedIn(identity: $identity);
@@ -47,7 +47,7 @@ final class AuthorizationTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testAdminGuardRejectsUserAndAcceptsAdmin(): void
+    public function testAdminGuardRejectsUserAndAcceptsAdmin() : void
     {
         $session  = $this->session();
         $identity = new SessionIdentity(session: $session, accounts: $this->accounts);
@@ -76,7 +76,7 @@ final class AuthorizationTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession(): void
+    public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession() : void
     {
         $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
         $guard    = new RequireAdmin(identity: $identity);

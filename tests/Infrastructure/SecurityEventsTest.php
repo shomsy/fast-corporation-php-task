@@ -21,7 +21,7 @@ final class SecurityEventsTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testContentionLoggingRedactsExceptionMessages(): void
+    public function testContentionLoggingRedactsExceptionMessages() : void
     {
         $file = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-security-events-');
         self::assertNotFalse($file);
@@ -29,9 +29,9 @@ final class SecurityEventsTest extends TestCase
         self::assertNotFalse($original);
 
         try {
-            $error = new PDOException(message: 'password=do-not-log-me');
+            $error            = new PDOException(message: 'password=do-not-log-me');
             $error->errorInfo = ['HY000', 5, 'private query'];
-            $id = SecurityEvents::record(event: 'runtime.unhandled', error: $error);
+            $id               = SecurityEvents::record(event: 'runtime.unhandled', error: $error);
             self::assertMatchesRegularExpression('/\A[a-f0-9]{24}\z/', $id);
             $logged = file_get_contents(filename: $file);
             self::assertIsString($logged);
@@ -51,7 +51,7 @@ final class SecurityEventsTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testUnrecognizedEventNamesAreRejected(): void
+    public function testUnrecognizedEventNamesAreRejected() : void
     {
         $this->expectException(InvalidArgumentException::class);
 

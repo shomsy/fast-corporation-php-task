@@ -18,11 +18,12 @@ use InterviewTask\Accounts\Register\RegistrationRejected;
 final class PasswordPolicyTest extends AccountsTestCase
 {
     /**
-     * Verify seventy two byte password is valid but distinct longer password cannot authenticate through the public behavior.
+     * Verify seventy two byte password is valid but distinct longer password cannot authenticate through the public
+     * behavior.
      *
      * @return void No return value.
      */
-    public function testSeventyTwoBytePasswordIsValidButDistinctLongerPasswordCannotAuthenticate(): void
+    public function testSeventyTwoBytePasswordIsValidButDistinctLongerPasswordCannotAuthenticate() : void
     {
         $password = str_repeat(string: 'a', times: 72);
         (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: $password);
@@ -32,11 +33,12 @@ final class PasswordPolicyTest extends AccountsTestCase
     }
 
     /**
-     * Verify registration rejects overlong utf8 passwords in bytes without persisting account through the public behavior.
+     * Verify registration rejects overlong utf8 passwords in bytes without persisting account through the public
+     * behavior.
      *
      * @return void No return value.
      */
-    public function testRegistrationRejectsOverlongUtf8PasswordsInBytesWithoutPersistingAccount(): void
+    public function testRegistrationRejectsOverlongUtf8PasswordsInBytesWithoutPersistingAccount() : void
     {
         $password = str_repeat(string: 'é', times: 37); // 74 UTF-8 bytes
         $this->expectException(RegistrationRejected::class);
@@ -56,7 +58,7 @@ final class PasswordPolicyTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testNulBytePasswordIsRejectedAcrossRegistrationAndAdminCreation(): void
+    public function testNulBytePasswordIsRejectedAcrossRegistrationAndAdminCreation() : void
     {
         $password = "safe\0unsafe";
 
@@ -88,7 +90,7 @@ final class PasswordPolicyTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testDirectAccountAndAdminCreationEnforceIdenticalPasswordBoundary(): void
+    public function testDirectAccountAndAdminCreationEnforceIdenticalPasswordBoundary() : void
     {
         $password = str_repeat(string: 'b', times: 73);
 
@@ -108,9 +110,9 @@ final class PasswordPolicyTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testUsernamePolicyIsSharedAcrossUserAndAdminCreation(): void
+    public function testUsernamePolicyIsSharedAcrossUserAndAdminCreation() : void
     {
-        $register = new Register(accounts: $this->accounts, clock: $this->clock);
+        $register    = new Register(accounts: $this->accounts, clock: $this->clock);
         $createAdmin = new CreateAdmin(accounts: $this->accounts, clock: $this->clock);
 
         foreach (['with spaces', "admin\0name", 'аdmin', str_repeat(string: 'a', times: 65)] as $username) {
@@ -139,7 +141,7 @@ final class PasswordPolicyTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testWeakShortPasswordRejectedAcrossBothCreationPaths(): void
+    public function testWeakShortPasswordRejectedAcrossBothCreationPaths() : void
     {
         try {
             (new Register(accounts: $this->accounts, clock: $this->clock))
@@ -159,16 +161,15 @@ final class PasswordPolicyTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testLegacyUsernameRemainsAuthenticatableWithoutNewCreationPolicy(): void
+    public function testLegacyUsernameRemainsAuthenticatableWithoutNewCreationPolicy() : void
     {
-        $username = 'legacy аccount';
-        $hash = password_hash(password: 'legacy-password', algo: PASSWORD_BCRYPT);
-        $statement = $this->pdo->prepare(query:
-            'INSERT INTO accounts (username, password_hash, role, created_at) VALUES (:name, :hash, :role, :created)');
+        $username  = 'legacy аccount';
+        $hash      = password_hash(password: 'legacy-password', algo: PASSWORD_BCRYPT);
+        $statement = $this->pdo->prepare(query: 'INSERT INTO accounts (username, password_hash, role, created_at) VALUES (:name, :hash, :role, :created)');
         $statement->execute(params: [
-            'name' => $username, 'hash' => $hash, 'role' => 'user',
-            'created' => '2026-10-08T00:00:00+00:00',
-        ]);
+                                        'name'    => $username, 'hash' => $hash, 'role' => 'user',
+                                        'created' => '2026-10-08T00:00:00+00:00',
+                                    ]);
 
         self::assertSame($username, $this->accounts->authenticate(username: $username, password: 'legacy-password')?->username);
     }

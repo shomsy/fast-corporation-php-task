@@ -18,13 +18,14 @@ final class SqliteConnection
     /**
      * Open existing database for runtime, allowing explicit CLI provisioning only.
      *
-     * @param string $path Trusted local SQLite filesystem path.
-     * @param bool $createIfMissing Explicit CLI migration provisioning permission.
+     * @param string $path            Trusted local SQLite filesystem path.
+     * @param bool   $createIfMissing Explicit CLI migration provisioning permission.
+     *
      * @return PDO Configured PDO connection to the requested SQLite file.
      * @throws RuntimeException If runtime database is absent or provisioning fails.
      * @throws PDOException If SQLite cannot be opened.
      */
-    public static function open(string $path, bool $createIfMissing = false): PDO
+    public static function open(string $path, bool $createIfMissing = false) : PDO
     {
         // SQLite creates WAL/SHM files lazily. Keep the whole worker/CLI process private.
         umask(mask: 0077);
@@ -63,9 +64,10 @@ final class SqliteConnection
      * Apply strict error handling, associative fetches, foreign keys and a busy timeout.
      *
      * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     *
      * @return PDO The same PDO instance with connection invariants applied.
      */
-    private static function configure(PDO $pdo): PDO
+    private static function configure(PDO $pdo) : PDO
     {
         $pdo->setAttribute(attribute: PDO::ATTR_ERRMODE, value: PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(attribute: PDO::ATTR_DEFAULT_FETCH_MODE, value: PDO::FETCH_ASSOC);
@@ -80,7 +82,7 @@ final class SqliteConnection
      *
      * @return PDO Configured isolated in-memory PDO connection.
      */
-    public static function memory(): PDO
+    public static function memory() : PDO
     {
         return self::configure(pdo: new PDO(dsn: 'sqlite::memory:'));
     }

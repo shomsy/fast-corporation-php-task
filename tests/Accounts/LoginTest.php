@@ -22,7 +22,7 @@ final class LoginTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testValidCredentialsRegenerateSessionAndEstablishIdentity(): void
+    public function testValidCredentialsRegenerateSessionAndEstablishIdentity() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'correct horse battery staple');
 
@@ -45,7 +45,7 @@ final class LoginTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testUnknownUserAndWrongPasswordExposeSameFailure(): void
+    public function testUnknownUserAndWrongPasswordExposeSameFailure() : void
     {
         (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'correct horse battery staple');
 
@@ -73,7 +73,7 @@ final class LoginTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testUnknownAccountUsesPasswordVerificationCost(): void
+    public function testUnknownAccountUsesPasswordVerificationCost() : void
     {
         (new Register(accounts: $this->accounts, clock: $this->clock))
             ->register(username: 'alice', password: 'valid-password');
@@ -91,12 +91,12 @@ final class LoginTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testSuccessfulLoginRehashesLegacyBcryptCost(): void
+    public function testSuccessfulLoginRehashesLegacyBcryptCost() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))
             ->register(username: 'alice', password: 'valid-password');
 
-        $oldHash = password_hash(password: 'valid-password', algo: PASSWORD_BCRYPT, options: ['cost' => 4]);
+        $oldHash   = password_hash(password: 'valid-password', algo: PASSWORD_BCRYPT, options: ['cost' => 4]);
         $statement = $this->pdo->prepare(query: 'UPDATE accounts SET password_hash = :hash WHERE id = :id');
         $statement->execute(params: ['hash' => $oldHash, 'id' => $account->id]);
 

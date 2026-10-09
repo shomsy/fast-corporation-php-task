@@ -35,7 +35,7 @@ final class SessionCompensationTest extends TestCase
      * @return void No return value.
      */
     #[RunInSeparateProcess]
-    public function testLogoutRetainsAuditFailureIfSessionDestroyAlsoFails(): void
+    public function testLogoutRetainsAuditFailureIfSessionDestroyAlsoFails() : void
     {
         ini_set(option: 'session.use_cookies', value: '0');
         $handler = new class extends \SessionHandler {
@@ -50,10 +50,11 @@ final class SessionCompensationTest extends TestCase
              * Simulate a native session store failure on destroy.
              *
              * @param string $id Session identifier.
+             *
              * @return bool Native session destroy result when not faulted.
              */
             #[Override]
-            public function destroy(string $id): bool
+            public function destroy(string $id) : bool
             {
                 if ($this->failDestroy) {
                     throw new RuntimeException(message: 'Secondary session-destroy failure.');
@@ -66,19 +67,19 @@ final class SessionCompensationTest extends TestCase
 
         $pdo = SqliteConnection::memory();
         (new Migrator(pdo: $pdo, migrationDirectories: [
-            'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
+            'Accounts'         => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
-        $accounts = new Accounts(pdo: $pdo);
-        $clock = new SystemClock();
-        $session = new PhpSession(name: 'cleanup-regression', secureCookie: false);
-        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
+        $accounts  = new Accounts(pdo: $pdo);
+        $clock     = new SystemClock();
+        $session   = new PhpSession(name: 'cleanup-regression', secureCookie: false);
+        $identity  = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
         $lifecycle = new AccountLifecycle(
-            register: new Register(accounts: $accounts, clock: $clock),
-            login: new Login(accounts: $accounts, identity: $identity),
-            identity: $identity,
-            activity: new ActivityLog(pdo: $pdo, clock: $clock),
+            register   : new Register(accounts: $accounts, clock: $clock),
+            login      : new Login(accounts: $accounts, identity: $identity),
+            identity   : $identity,
+            activity   : new ActivityLog(pdo: $pdo, clock: $clock),
             transaction: new Transaction(pdo: $pdo),
         );
         $lifecycle->register(username: 'cleanup-tester', password: 'strong-password');

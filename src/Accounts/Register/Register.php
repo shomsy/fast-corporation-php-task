@@ -22,8 +22,8 @@ final readonly class Register
     /**
      * Use the Accounts owner writer and a wall clock.
      *
-     * @param Accounts $accounts Authoritative Accounts owner persistence API.
-     * @param ClockInterface $clock Wall-clock source used for deterministic timestamps.
+     * @param Accounts       $accounts Authoritative Accounts owner persistence API.
+     * @param ClockInterface $clock    Wall-clock source used for deterministic timestamps.
      */
     public function __construct(
         private Accounts       $accounts,
@@ -35,11 +35,12 @@ final readonly class Register
      *
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     *
      * @return Account The newly registered user account.
      * @throws RegistrationRejected When registration input or password policy is rejected.
      * @throws UsernameTaken When the persisted username already exists.
      */
-    public function register(string $username, #[SensitiveParameter] string $password): Account
+    public function register(string $username, #[SensitiveParameter] string $password) : Account
     {
         $username = trim(string: $username);
 

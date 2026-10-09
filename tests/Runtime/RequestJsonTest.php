@@ -20,11 +20,11 @@ final class RequestJsonTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRejectsInvalidJsonWithoutCoercion(): void
+    public function testRejectsInvalidJsonWithoutCoercion() : void
     {
         foreach (['{', '[]', 'null', '"string"', str_repeat(string: 'x', times: 16385)] as $body) {
             $request = new Request(method: 'POST', path: '/api/accounts/login',
-                server: ['CONTENT_TYPE' => 'application/json'], rawBody: $body);
+                                   server: ['CONTENT_TYPE' => 'application/json'], rawBody: $body);
             try {
                 $request->jsonObject();
                 self::fail('Malformed JSON request unexpectedly accepted.');
@@ -34,7 +34,7 @@ final class RequestJsonTest extends TestCase
         }
 
         $wrongType = new Request(method: 'POST', path: '/api/accounts/login',
-            server: ['CONTENT_TYPE' => 'text/plain'], rawBody: '{}');
+                                 server: ['CONTENT_TYPE' => 'text/plain'], rawBody: '{}');
         $this->expectException(InvalidArgumentException::class);
         $wrongType->jsonObject();
     }
@@ -44,11 +44,11 @@ final class RequestJsonTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testPreservesInputTypes(): void
+    public function testPreservesInputTypes() : void
     {
-        $request = new Request(method: 'POST', path: '/api/accounts/register',
-            server: ['CONTENT_TYPE' => 'application/json; charset=utf-8'],
-            rawBody: '{"username":"alice","password":["not-a-string"]}');
+        $request = new Request(method : 'POST', path: '/api/accounts/register',
+                               server : ['CONTENT_TYPE' => 'application/json; charset=utf-8'],
+                               rawBody: '{"username":"alice","password":["not-a-string"]}');
 
         self::assertSame('alice', $request->jsonObject()['username']);
         self::assertIsArray($request->jsonObject()['password']);

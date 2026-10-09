@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace InterviewTask\Accounts;
 
 /**
- * Safe cross-owner view of authentication. Session mutation belongs exclusively to the owner-internal lifecycle implementation.
+ * Safe cross-owner view of authentication. Session mutation belongs exclusively to the owner-internal lifecycle
+ * implementation.
  *
  * @api
  * @package InterviewTask\Accounts
@@ -24,7 +25,7 @@ final readonly class CurrentAccount
      *
      * @return SignedInAccount|null Current verified identity, or null when not signed in.
      */
-    public function current(): SignedInAccount|null
+    public function current() : SignedInAccount|null
     {
         return $this->identity->current();
     }

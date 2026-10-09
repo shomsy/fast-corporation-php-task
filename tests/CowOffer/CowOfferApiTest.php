@@ -30,19 +30,19 @@ final class CowOfferApiTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRecordsAcceptedViewAndEachClick(): void
+    public function testRecordsAcceptedViewAndEachClick() : void
     {
         $pdo = SqliteConnection::memory();
         (new Migrator(pdo: $pdo, migrationDirectories: [
-            'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
+            'Accounts'         => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
-        $session = new PhpSession();
-        $clock = new SystemClock();
+        $session  = new PhpSession();
+        $clock    = new SystemClock();
         $accounts = new Accounts(pdo: $pdo);
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
-        $api = new CowOfferApi(
-            cow: new CowOffer(activityLog: new ActivityLog(pdo: $pdo, clock: $clock)),
+        $api      = new CowOfferApi(
+            cow     : new CowOffer(activityLog: new ActivityLog(pdo: $pdo, clock: $clock)),
             signedIn: new RequireSignedIn(identity: $identity),
         );
 
@@ -61,10 +61,10 @@ final class CowOfferApiTest extends TestCase
             $query = $pdo->query(query: 'SELECT action, target FROM activity_events ORDER BY id');
             self::assertNotFalse($query);
             self::assertSame([
-                ['action' => 'view-page', 'target' => 'page-a'],
-                ['action' => 'button-click', 'target' => 'buy-cow'],
-                ['action' => 'button-click', 'target' => 'buy-cow'],
-            ], $query->fetchAll(mode: PDO::FETCH_ASSOC));
+                                 ['action' => 'view-page', 'target' => 'page-a'],
+                                 ['action' => 'button-click', 'target' => 'buy-cow'],
+                                 ['action' => 'button-click', 'target' => 'buy-cow'],
+                             ], $query->fetchAll(mode: PDO::FETCH_ASSOC));
         } finally {
             $session->destroy();
         }

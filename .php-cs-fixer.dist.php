@@ -20,18 +20,18 @@ $finder = PhpCsFixer\Finder::create()
 return (new PhpCsFixer\Config())
     ->setRiskyAllowed(true)
     ->setRules([
-                   '@PER-CS3x0'           => true,
-                   'declare_strict_types' => true,
-                   'no_unused_imports'    => true,
-                   'ordered_imports'      => true,
+                   '@PER-CS3x0'                   => true,
+                   'declare_strict_types'         => true,
+                   'no_unused_imports'            => true,
+                   'ordered_imports'              => true,
                    'fully_qualified_strict_types' => [
                        'import_symbols' => true,
                    ],
-                   'global_namespace_import' => [
-                       'import_classes' => true,
+                   'global_namespace_import'      => [
+                       'import_classes'   => true,
                        'import_functions' => null,
                        'import_constants' => null,
                    ],
-                   'strict_param'         => true,
+                   'strict_param'                 => true,
                ])
     ->setFinder($finder);

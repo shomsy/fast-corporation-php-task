@@ -23,10 +23,10 @@ final readonly class DownloadPages
     /**
      * Bind Page B to authorized access, CSRF protection and artifact delivery.
      *
-     * @param DownloadFile $downloads Fixed artifact interaction owner.
-     * @param RequireSignedIn $signedIn Authorization gate for authenticated accounts.
-     * @param Csrf $csrf CSRF token generation and verification component.
-     * @param HtmlPage $html Trusted HTML response adapter.
+     * @param DownloadFile    $downloads Fixed artifact interaction owner.
+     * @param RequireSignedIn $signedIn  Authorization gate for authenticated accounts.
+     * @param Csrf            $csrf      CSRF token generation and verification component.
+     * @param HtmlPage        $html      Trusted HTML response adapter.
      */
     public function __construct(
         private DownloadFile    $downloads,
@@ -42,7 +42,7 @@ final readonly class DownloadPages
      *
      * @return Response Page B form after an accepted view; 204 for prefetch, or login redirect.
      */
-    public function pageB(Request|null $request = null): Response
+    public function pageB(Request|null $request = null) : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {
@@ -65,7 +65,7 @@ final readonly class DownloadPages
      *
      * @return SignedInAccount|Response Verified user identity or redirect to the login page.
      */
-    private function authorizedUser(): SignedInAccount|Response
+    private function authorizedUser() : SignedInAccount|Response
     {
         try {
             return $this->signedIn->account();
@@ -78,9 +78,10 @@ final readonly class DownloadPages
      * Validate access and CSRF before sending a fixed binary artifact; map only artifact failure to 503.
      *
      * @param Request $request Raw HTTP request; validate client-supplied values before use.
+     *
      * @return Response Attachment only after artifact check and audit write; 503 if artifact unavailable, 403 CSRF.
      */
-    public function download(Request $request): Response
+    public function download(Request $request) : Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {

@@ -22,12 +22,12 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testDispatchesExactRoute(): void
+    public function testDispatchesExactRoute() : void
     {
         $router = new Router();
-        $router->add(method: 'GET', path: '/hello', handler: static fn(Request $request): Response => Response::text(
+        $router->add(method: 'GET', path: '/hello', handler: static fn (Request $request) : Response => Response::text(
             body: 'hello:' . $request->path(),
-        ), access: RouteAccess::Public);
+        ),           access: RouteAccess::Public);
 
         $response = $router->dispatch(request: new Request(method: 'GET', path: '/hello'));
 
@@ -40,10 +40,10 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testReturnsMethodNotAllowedWhenPathExistsForAnotherMethod(): void
+    public function testReturnsMethodNotAllowedWhenPathExistsForAnotherMethod() : void
     {
         $router = new Router();
-        $router->add(method: 'POST', path: '/submit', handler: static fn(): Response => Response::text(body: 'ok'));
+        $router->add(method: 'POST', path: '/submit', handler: static fn () : Response => Response::text(body: 'ok'));
 
         $response = $router->dispatch(request: new Request(method: 'GET', path: '/submit'));
 
@@ -56,11 +56,11 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAllowListsAllRegisteredMethods(): void
+    public function testAllowListsAllRegisteredMethods() : void
     {
         $router = new Router();
-        $router->add(method: 'POST', path: '/submit', handler: static fn(): Response => Response::text(body: 'ok'));
-        $router->add(method: 'GET', path: '/submit', handler: static fn(): Response => Response::text(body: 'ok'));
+        $router->add(method: 'POST', path: '/submit', handler: static fn () : Response => Response::text(body: 'ok'));
+        $router->add(method: 'GET', path: '/submit', handler: static fn () : Response => Response::text(body: 'ok'));
 
         $response = $router->dispatch(request: new Request(method: 'DELETE', path: '/submit'));
 
@@ -73,22 +73,23 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testReturnsNotFoundForUnknownPath(): void
+    public function testReturnsNotFoundForUnknownPath() : void
     {
         $response = (new Router())->dispatch(request: new Request(method: 'GET', path: '/missing'));
 
         self::assertSame(404, $response->status());
     }
+
     /**
      * New routes without an explicit public designation must deny unauthenticated access.
      *
      * @return void No return value.
      */
-    public function testProtectedRouteFailsClosedWithoutGuard(): void
+    public function testProtectedRouteFailsClosedWithoutGuard() : void
     {
         $called = false;
         $router = new Router();
-        $router->add(method: 'GET', path: '/secret', handler: static function () use (&$called): Response {
+        $router->add(method: 'GET', path: '/secret', handler: static function () use (&$called) : Response {
             $called = true;
 
             return Response::text(body: 'secret');
@@ -103,10 +104,10 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testPublicPostWithoutGuardIsRejected(): void
+    public function testPublicPostWithoutGuardIsRejected() : void
     {
         $router = new Router();
-        $router->add(method: 'POST', path: '/signup', handler: static fn(): Response => Response::text(body: 'ok'), access: RouteAccess::Public);
+        $router->add(method: 'POST', path: '/signup', handler: static fn () : Response => Response::text(body: 'ok'), access: RouteAccess::Public);
 
         self::assertSame(403, $router->dispatch(request: new Request(method: 'POST', path: '/signup'))->status());
     }
@@ -116,10 +117,10 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testConfiguredRouteGuardControlsAccessBeforeHandlerRuns(): void
+    public function testConfiguredRouteGuardControlsAccessBeforeHandlerRuns() : void
     {
         $router = new Router();
-        $router->guardWith(static function (Request $request, RouteAccess $access): Response|null {
+        $router->guardWith(static function (Request $request, RouteAccess $access) : Response|null {
             if ($access === RouteAccess::Admin && $request->server(key: 'role') !== 'admin') {
                 return Response::text(body: 'Forbidden', status: 403);
             }
@@ -131,8 +132,8 @@ final class RouterTest extends TestCase
             return null;
         });
 
-        $router->add(method: 'GET', path: '/admin', handler: static fn(): Response => Response::text(body: 'admin'), access: RouteAccess::Admin);
-        $router->add(method: 'POST', path: '/signup', handler: static fn(): Response => Response::text(body: 'ok'), access: RouteAccess::Public);
+        $router->add(method: 'GET', path: '/admin', handler: static fn () : Response => Response::text(body: 'admin'), access: RouteAccess::Admin);
+        $router->add(method: 'POST', path: '/signup', handler: static fn () : Response => Response::text(body: 'ok'), access: RouteAccess::Public);
 
         self::assertSame(403, $router->dispatch(request: new Request(method: 'GET', path: '/admin'))->status());
         self::assertSame(200, $router->dispatch(request: new Request(method: 'GET', path: '/admin', server: ['role' => 'admin']))->status());
@@ -146,7 +147,7 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAllResponseTypesReceiveSecurityAndPrivacyHeaders(): void
+    public function testAllResponseTypesReceiveSecurityAndPrivacyHeaders() : void
     {
         $responses = [
             Response::text(body: 'Forbidden', status: 403),
@@ -177,7 +178,7 @@ final class RouterTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testHstsOnlyForTrustedHttpsTransport(): void
+    public function testHstsOnlyForTrustedHttpsTransport() : void
     {
         $prior = $_SERVER['HTTPS'] ?? null;
 

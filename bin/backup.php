@@ -27,18 +27,18 @@ if (! is_array(value: $arguments) || count(value: $arguments) !== 2
 umask(mask: 0077);
 
 /** @var array{databasePath: string} $config */
-$config = require dirname(path: __DIR__) . '/bootstrap/config.php';
-$sourcePath = $config['databasePath'];
-$backupPath = $arguments[1];
+$config          = require dirname(path: __DIR__) . '/bootstrap/config.php';
+$sourcePath      = $config['databasePath'];
+$backupPath      = $arguments[1];
 $backupDirectory = dirname(path: $backupPath);
 
 if (! is_file(filename: $sourcePath) || is_link(filename: $sourcePath)) {
     throw new RuntimeException(message: 'Source database does not exist or is not a regular file.');
 }
 
-$mode = is_dir(filename: $backupDirectory) ? fileperms(filename: $backupDirectory) : false;
+$mode  = is_dir(filename: $backupDirectory) ? fileperms(filename: $backupDirectory) : false;
 $owner = is_dir(filename: $backupDirectory) ? fileowner(filename: $backupDirectory) : false;
-$uid = function_exists(function: 'posix_geteuid') ? posix_geteuid() : null;
+$uid   = function_exists(function: 'posix_geteuid') ? posix_geteuid() : null;
 
 if (is_link(filename: $backupDirectory) || ! is_int(value: $mode) || ! is_int(value: $owner)
     || ($uid !== null && $owner !== $uid)
@@ -51,9 +51,9 @@ if (file_exists(filename: $backupPath) || is_link(filename: $backupPath)) {
     throw new RuntimeException(message: 'Backup destination already exists.');
 }
 
-$tempPath = $backupPath . '.pending-' . bin2hex(string: random_bytes(length: 8));
-$source = null;
-$destination = null;
+$tempPath     = $backupPath . '.pending-' . bin2hex(string: random_bytes(length: 8));
+$source       = null;
+$destination  = null;
 $verification = null;
 
 try {

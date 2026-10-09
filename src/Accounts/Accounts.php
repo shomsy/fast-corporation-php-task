@@ -41,26 +41,29 @@ final readonly class Accounts
     /**
      * Persist a regular user with a bcrypt hash, never a plaintext password.
      *
-     * @param string $username Username submitted or persisted for the account.
-     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @param string            $username  Username submitted or persisted for the account.
+     * @param string            $password  Secret credential; never log, echo, or include it in diagnostics.
      * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     *
      * @return Account The created user account with authoritative identifier and role.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
      * @throws UsernameRejected When a new username is invalid.
      */
-    public function createUser(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
+    public function createUser(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt) : Account
     {
         return $this->create(username: $username, password: $password, role: Role::User, createdAt: $createdAt);
     }
 
     /**
-     * Enforce the one account-creation path for both user and administrator roles. Reject bcrypt's silent truncation of input beyond 72 bytes.
+     * Enforce the one account-creation path for both user and administrator roles. Reject bcrypt's silent truncation
+     * of input beyond 72 bytes.
      *
-     * @param string $username Username submitted or persisted for the account.
-     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
-     * @param Role $role Explicit business role assigned to the account.
+     * @param string            $username  Username submitted or persisted for the account.
+     * @param string            $password  Secret credential; never log, echo, or include it in diagnostics.
+     * @param Role              $role      Explicit business role assigned to the account.
      * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     *
      * @return Account The newly persisted account snapshot.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
@@ -70,10 +73,11 @@ final readonly class Accounts
     private function create(
         string            $username,
         #[SensitiveParameter]
-        string $password,
+        string            $password,
         Role              $role,
         DateTimeImmutable $createdAt,
-    ): Account {
+    ) : Account
+    {
         // SQLite NOCASE uniqueness is ASCII-based; restrict new identifiers to that same alphabet.
         // Existing stored identifiers remain readable/authenticatable without forced migration.
         if (preg_match(pattern: '/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/D', subject: $username) !== 1) {
@@ -103,11 +107,11 @@ final readonly class Accounts
                     SQL,
             );
             $statement->execute(params: [
-                'username'      => $username,
-                'password_hash' => $passwordHash,
-                'role'          => $role->value,
-                'created_at'    => $createdAt->format(format: 'c'),
-            ]);
+                                            'username'      => $username,
+                                            'password_hash' => $passwordHash,
+                                            'role'          => $role->value,
+                                            'created_at'    => $createdAt->format(format: 'c'),
+                                        ]);
         } catch (PDOException $exception) {
             // SQLite code 19 also covers CHECK, NOT NULL, FK and trigger failures.
             // Only the named username UNIQUE constraint is a duplicate username.
@@ -130,30 +134,34 @@ final readonly class Accounts
     }
 
     /**
-     * Create a privileged account through the same credential policy as users. This capability is invoked by the trusted CLI, not public registration.
+     * Create a privileged account through the same credential policy as users. This capability is invoked by the
+     * trusted CLI, not public registration.
      *
-     * @param string $username Username submitted or persisted for the account.
-     * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     * @param string            $username  Username submitted or persisted for the account.
+     * @param string            $password  Secret credential; never log, echo, or include it in diagnostics.
      * @param DateTimeImmutable $createdAt Immutable creation time used in persistence.
+     *
      * @return Account The created administrator account with authoritative identifier and role.
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
      * @throws UsernameRejected When a new username is invalid.
      */
-    public function createAdmin(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt): Account
+    public function createAdmin(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt) : Account
     {
         return $this->create(username: $username, password: $password, role: Role::Admin, createdAt: $createdAt);
     }
 
     /**
-     * Return null on invalid credentials; malformed stored account data is an error. Password hashes may be transparently upgraded after successful verification.
+     * Return null on invalid credentials; malformed stored account data is an error. Password hashes may be
+     * transparently upgraded after successful verification.
      *
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     *
      * @return Account|null The verified account, or null for invalid credentials.
      * @throws PDOException When credential lookup or hash upgrade persistence fails.
      */
-    public function authenticate(string $username, #[SensitiveParameter] string $password): Account|null
+    public function authenticate(string $username, #[SensitiveParameter] string $password) : Account|null
     {
         if (strlen(string: $password) > 72 || str_contains(haystack: $password, needle: "\0")) {
             return null;
@@ -195,10 +203,11 @@ final readonly class Accounts
      * Validate untrusted database fields before constructing an Account.
      *
      * @param array<array-key, mixed> $row Raw SQLite result with unchecked values.
+     *
      * @return Account Reconstructed typed account from persisted fields.
      * @throws RuntimeException When a required external resource or stored value is invalid.
      */
-    private function accountFromRow(array $row): Account
+    private function accountFromRow(array $row) : Account
     {
         $id        = $row['id'] ?? null;
         $username  = $row['username'] ?? null;
@@ -215,9 +224,9 @@ final readonly class Accounts
         }
 
         return new Account(
-            id: (int) $id,
-            username: $username,
-            role: Role::from(value: $role),
+            id       : (int) $id,
+            username : $username,
+            role     : Role::from(value: $role),
             createdAt: new DateTimeImmutable(datetime: $createdAt),
         );
     }
@@ -226,9 +235,10 @@ final readonly class Accounts
      * Resolve the current account from authoritative storage, or null if deleted.
      *
      * @param int $id Input value for id.
+     *
      * @return Account|null The stored account, or null when no such account exists.
      */
-    public function findById(int $id): Account|null
+    public function findById(int $id) : Account|null
     {
         $statement = $this->pdo->prepare(
             query: 'SELECT id, username, role, created_at FROM accounts WHERE id = :id LIMIT 1',

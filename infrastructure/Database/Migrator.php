@@ -17,7 +17,7 @@ final readonly class Migrator
     /**
      * Register the configured database and owner-to-directory migration mapping.
      *
-     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     * @param PDO                   $pdo                  SQLite PDO connection with configured driver settings.
      * @param array<string, string> $migrationDirectories owner => absolute directory
      */
     public function __construct(
@@ -31,7 +31,7 @@ final readonly class Migrator
      * @return list<string> Migration identifiers newly applied by this run.
      * @throws RuntimeException When migration content, source or metadata is invalid.
      */
-    public function migrate(): array
+    public function migrate() : array
     {
         $migrations = $this->discoverMigrations();
         $this->pdo->exec(statement: 'BEGIN IMMEDIATE');
@@ -40,7 +40,7 @@ final readonly class Migrator
             $this->ensureMetadataTable();
             $this->upgradeLegacyLedger();
             $applied = $this->appliedMigrations();
-            $added = [];
+            $added   = [];
 
             foreach ($applied as $id => $checksum) {
                 if (! isset($migrations[$id])) {
@@ -94,7 +94,7 @@ final readonly class Migrator
      *
      * @return void No return value.
      */
-    private function ensureMetadataTable(): void
+    private function ensureMetadataTable() : void
     {
         $this->pdo->exec(
             statement: <<<'SQL'
@@ -113,7 +113,7 @@ final readonly class Migrator
      * @return void No return value.
      * @throws RuntimeException If metadata inspection fails.
      */
-    private function upgradeLegacyLedger(): void
+    private function upgradeLegacyLedger() : void
     {
         $statement = $this->pdo->query(query: 'PRAGMA table_info(schema_migrations)');
         if ($statement === false) {
@@ -139,7 +139,7 @@ final readonly class Migrator
      * @return array<string, string|null> Applied IDs to checksum or legacy null.
      * @throws RuntimeException If ledger metadata is invalid.
      */
-    private function appliedMigrations(): array
+    private function appliedMigrations() : array
     {
         $statement = $this->pdo->query(query: 'SELECT migration, checksum FROM schema_migrations');
         if ($statement === false) {
@@ -153,7 +153,7 @@ final readonly class Migrator
                 throw new RuntimeException(message: 'Invalid migration ledger row.');
             }
 
-            $id = $row['migration'] ?? null;
+            $id   = $row['migration'] ?? null;
             $hash = $row['checksum'] ?? null;
             if (! is_string(value: $id) || ($hash !== null && (! is_string(value: $hash) || strlen(string: $hash) !== 64))) {
                 throw new RuntimeException(message: 'Invalid migration metadata.');
@@ -169,7 +169,7 @@ final readonly class Migrator
      *
      * @return array<string, string> migration identifier => file path
      */
-    private function discoverMigrations(): array
+    private function discoverMigrations() : array
     {
         $migrations = [];
 
@@ -199,10 +199,11 @@ final readonly class Migrator
      * Read exact source bytes for SQL execution and SHA-256 fingerprint.
      *
      * @param string $file Trusted migration source path.
+     *
      * @return string Nonempty SQL source.
      * @throws RuntimeException If the source is missing or empty.
      */
-    private function readSql(string $file): string
+    private function readSql(string $file) : string
     {
         $sql = file_get_contents(filename: $file);
 

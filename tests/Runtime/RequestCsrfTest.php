@@ -19,24 +19,24 @@ final class RequestCsrfTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testSelectsCorrectCsrfTransport(): void
+    public function testSelectsCorrectCsrfTransport() : void
     {
         $form = new Request(method: 'POST', path: '/login',
-            post: ['csrf_token' => 'form-token'],
-            server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
+                            post  : ['csrf_token' => 'form-token'],
+                            server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
         self::assertSame('form-token', $form->csrfToken());
 
         $api = new Request(method: 'POST', path: '/api/accounts/login',
-            post: ['csrf_token' => 'form-token'],
-            server: ['CONTENT_TYPE' => 'application/json; charset=utf-8', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
+                           post  : ['csrf_token' => 'form-token'],
+                           server: ['CONTENT_TYPE' => 'application/json; charset=utf-8', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
         self::assertSame('header-token', $api->csrfToken());
 
         $missing = new Request(method: 'POST', path: '/api/accounts/login',
-            server: ['CONTENT_TYPE' => 'application/json']);
+                               server: ['CONTENT_TYPE' => 'application/json']);
         self::assertNull($missing->csrfToken());
 
         $wrongType = new Request(method: 'POST', path: '/api/accounts/login',
-            server: ['CONTENT_TYPE' => 'text/plain', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
+                                 server: ['CONTENT_TYPE' => 'text/plain', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
         self::assertNull($wrongType->csrfToken());
     }
 
@@ -45,19 +45,19 @@ final class RequestCsrfTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testNativeDownloadUsesFormCsrf(): void
+    public function testNativeDownloadUsesFormCsrf() : void
     {
         $request = new Request(method: 'POST', path: '/api/downloads/sample',
-            post: ['csrf_token' => 'hidden-value'],
-            server: [
-                'CONTENT_TYPE' => 'application/x-www-form-urlencoded',
-                'HTTP_X_CSRF_TOKEN' => 'not-the-form-token',
-            ]);
+                               post  : ['csrf_token' => 'hidden-value'],
+                               server: [
+                                           'CONTENT_TYPE'      => 'application/x-www-form-urlencoded',
+                                           'HTTP_X_CSRF_TOKEN' => 'not-the-form-token',
+                                       ]);
         self::assertSame('hidden-value', $request->csrfToken());
 
         $jsonRoute = new Request(method: 'POST', path: '/api/accounts/login',
-            post: ['csrf_token' => 'hidden-value'],
-            server: ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']);
+                                 post  : ['csrf_token' => 'hidden-value'],
+                                 server: ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']);
         self::assertNull($jsonRoute->csrfToken());
     }
 }

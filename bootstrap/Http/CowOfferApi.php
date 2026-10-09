@@ -18,11 +18,11 @@ final readonly class CowOfferApi
     /**
      * Inject the CowOffer owner and authoritative identity gate.
      *
-     * @param CowOffer $cow Business owner of view and accepted button-click events.
+     * @param CowOffer        $cow      Business owner of view and accepted button-click events.
      * @param RequireSignedIn $signedIn Server-side verified actor identity.
      */
     public function __construct(
-        private CowOffer $cow,
+        private CowOffer        $cow,
         private RequireSignedIn $signedIn,
     ) {}
 
@@ -31,7 +31,7 @@ final readonly class CowOfferApi
      *
      * @return Response Empty 204 after accepted view audit.
      */
-    public function view(): Response
+    public function view() : Response
     {
         $account = $this->signedIn->account();
         $this->cow->view(actorId: $account->id, actorLabel: $account->username);
@@ -44,7 +44,7 @@ final readonly class CowOfferApi
      *
      * @return Response JSON outcome, emitted only after successful audit write.
      */
-    public function buy(): Response
+    public function buy() : Response
     {
         $account = $this->signedIn->account();
         $outcome = $this->cow->buy(actorId: $account->id, actorLabel: $account->username);

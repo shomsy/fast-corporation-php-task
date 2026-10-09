@@ -28,8 +28,7 @@ final readonly class FixedClock implements ClockInterface
      * @return DateTimeImmutable Result described by the native PHP return type.
      */
     #[Override]
-
-    public function now(): DateTimeImmutable
+    public function now() : DateTimeImmutable
     {
         return $this->now;
     }

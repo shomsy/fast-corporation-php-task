@@ -25,7 +25,7 @@ final class RegisterTest extends AccountsTestCase
      *
      * @return iterable<string, array{string, string}>
      */
-    public static function invalidRegistrationProvider(): iterable
+    public static function invalidRegistrationProvider() : iterable
     {
         yield 'blank username' => ['   ', 'password'];
         yield 'blank password' => ['alice', ''];
@@ -36,7 +36,7 @@ final class RegisterTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testRegistrationCreatesUserAndStoresOnlyPasswordHash(): void
+    public function testRegistrationCreatesUserAndStoresOnlyPasswordHash() : void
     {
         $account = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: '  Alice  ', password: 'correct horse battery staple');
 
@@ -61,7 +61,7 @@ final class RegisterTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testDuplicateUsernameIsRejectedCaseInsensitively(): void
+    public function testDuplicateUsernameIsRejectedCaseInsensitively() : void
     {
         $register = new Register(accounts: $this->accounts, clock: $this->clock);
         $register->register(username: 'Alice', password: 'first password');
@@ -75,12 +75,12 @@ final class RegisterTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testUsernameTakenAllowsNullablePreviousCause(): void
+    public function testUsernameTakenAllowsNullablePreviousCause() : void
     {
         $withoutCause = new UsernameTaken();
         self::assertNull($withoutCause->getPrevious());
 
-        $cause = new PDOException(message: 'UNIQUE constraint failed');
+        $cause     = new PDOException(message: 'UNIQUE constraint failed');
         $withCause = new UsernameTaken(previous: $cause);
         self::assertSame($cause, $withCause->getPrevious());
         self::assertSame('Username is already taken.', $withCause->getMessage());
@@ -91,16 +91,16 @@ final class RegisterTest extends AccountsTestCase
      *
      * @return void No return value.
      */
-    public function testNonUniqueSQLiteConstraintFailureIsNotReportedAsUsernameTaken(): void
+    public function testNonUniqueSQLiteConstraintFailureIsNotReportedAsUsernameTaken() : void
     {
         $this->pdo->exec(
             statement: <<<'SQL'
-                             CREATE TRIGGER accounts_reject_alice BEFORE INSERT ON accounts
-                             WHEN NEW.username = 'alice'
-                             BEGIN
-                                 SELECT RAISE(ABORT, 'simulated CHECK constraint failure');
-                             END
-                             SQL,
+                CREATE TRIGGER accounts_reject_alice BEFORE INSERT ON accounts
+                WHEN NEW.username = 'alice'
+                BEGIN
+                    SELECT RAISE(ABORT, 'simulated CHECK constraint failure');
+                END
+                SQL,
         );
 
         try {
@@ -117,10 +117,11 @@ final class RegisterTest extends AccountsTestCase
      *
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     *
      * @return void No return value.
      */
     #[DataProvider('invalidRegistrationProvider')]
-    public function testBlankUsernameOrPasswordIsRejected(string $username, #[SensitiveParameter] string $password): void
+    public function testBlankUsernameOrPasswordIsRejected(string $username, #[SensitiveParameter] string $password) : void
     {
         $this->expectException(RegistrationRejected::class);
 

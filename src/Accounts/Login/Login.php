@@ -19,7 +19,7 @@ final readonly class Login
     /**
      * Use credential verification and the trusted server-session boundary.
      *
-     * @param Accounts $accounts Authoritative Accounts owner persistence API.
+     * @param Accounts        $accounts Authoritative Accounts owner persistence API.
      * @param SessionIdentity $identity Server-side authenticated identity access boundary.
      */
     public function __construct(
@@ -32,10 +32,11 @@ final readonly class Login
      *
      * @param string $username Username submitted or persisted for the account.
      * @param string $password Secret credential; never log, echo, or include it in diagnostics.
+     *
      * @return SignedInAccount The authenticated account snapshot, after session establishment.
      * @throws InvalidCredentials When the submitted credentials cannot authenticate an account.
      */
-    public function login(string $username, #[SensitiveParameter] string $password): SignedInAccount
+    public function login(string $username, #[SensitiveParameter] string $password) : SignedInAccount
     {
         $username = trim(string: $username);
 

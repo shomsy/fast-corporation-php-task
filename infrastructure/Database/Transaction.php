@@ -13,7 +13,7 @@ use Throwable;
  * Own a PDO transaction and roll back failed operations without swallowing their cause.
  *
  * @package InterviewTask\Infrastructure\Database
- * @see PDO
+ * @see     PDO
  */
 final readonly class Transaction
 {
@@ -29,11 +29,12 @@ final readonly class Transaction
      *
      * @template T
      * @param callable(): T $operation
+     *
      * @return T
      * @throws Throwable When the callback or commit fails; original error survives rollback errors.
      * @throws LogicException When called inside a transaction owned by another scope.
      */
-    public function run(callable $operation): mixed
+    public function run(callable $operation) : mixed
     {
         if ($this->pdo->inTransaction()) {
             throw new LogicException(message: 'Nested transactions are not supported.');

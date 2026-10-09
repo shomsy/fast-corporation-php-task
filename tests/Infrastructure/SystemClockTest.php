@@ -21,7 +21,7 @@ final class SystemClockTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testUsesUtc(): void
+    public function testUsesUtc() : void
     {
         self::assertSame('UTC', (new SystemClock())->now()->getTimezone()->getName());
     }
@@ -31,7 +31,7 @@ final class SystemClockTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testImplementsStandardPsr20Contract(): void
+    public function testImplementsStandardPsr20Contract() : void
     {
         $clock = new SystemClock();
 

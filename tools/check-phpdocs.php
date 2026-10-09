@@ -26,11 +26,12 @@ use PhpParser\ParserFactory;
  * Exception and deprecation annotations must correspond to real behavior;
  * narrative contracts and error semantics require human review.
  *
- * @param list<Stmt> $ast Parsed PHP statements.
- * @param string $path Path used in diagnostic messages.
+ * @param list<Stmt> $ast  Parsed PHP statements.
+ * @param string     $path Path used in diagnostic messages.
+ *
  * @return list<string> Missing contract annotations.
  */
-function inspectDocContracts(array $ast, string $path): array
+function inspectDocContracts(array $ast, string $path) : array
 {
     $visitor = new class ($path) extends NodeVisitorAbstract {
         /** @var list<string> */
@@ -45,17 +46,18 @@ function inspectDocContracts(array $ast, string $path): array
          * Check type declarations and callable member contracts.
          *
          * @param Node $node Node visited by PhpParser.
+         *
          * @return Node|null No AST changes; the visitor may return null.
          */
         #[Override]
-        public function enterNode(Node $node): Node|null
+        public function enterNode(Node $node) : Node|null
         {
-            if (!$node instanceof Stmt\ClassLike
-                && !$node instanceof Stmt\ClassMethod
-                && !$node instanceof Stmt\Function_
-                && !$node instanceof Stmt\Property
-                && !$node instanceof Stmt\ClassConst
-                && !$node instanceof Stmt\EnumCase
+            if (! $node instanceof Stmt\ClassLike
+                && ! $node instanceof Stmt\ClassMethod
+                && ! $node instanceof Stmt\Function_
+                && ! $node instanceof Stmt\Property
+                && ! $node instanceof Stmt\ClassConst
+                && ! $node instanceof Stmt\EnumCase
             ) {
                 return null;
             }
@@ -66,35 +68,38 @@ function inspectDocContracts(array $ast, string $path): array
                 return null;
             }
 
-            $doc = $node->getDocComment();
+            $doc  = $node->getDocComment();
             $line = $node->getStartLine();
             if ($doc === null) {
                 $this->issues[] = "{$this->path}:{$line} missing DocBlock";
+
                 return null;
             }
 
             $text = $doc->getText();
-            if (!preg_match('/\/\*\*\s*\*\s*\S/', $text)) {
+            if (! preg_match('/\/\*\*\s*\*\s*\S/', $text)) {
                 $this->issues[] = "{$this->path}:{$line} missing meaningful summary";
             }
 
             if ($node instanceof Stmt\ClassMethod || $node instanceof Stmt\Function_) {
                 foreach ($node->params as $param) {
-                    if (!$param->var instanceof Node\Expr\Variable || !is_string($param->var->name)) {
+                    if (! $param->var instanceof Node\Expr\Variable || ! is_string($param->var->name)) {
                         continue;
                     }
                     $name = preg_quote($param->var->name, '/');
-                    if (!preg_match('/@param\s+[^\r\n]*\s+\$' . $name . '\b/', $text)) {
+                    // MOI may wrap a long @param type onto subsequent PHPDoc lines.
+                    // Stop at the next tag, rather than matching a different tag's parameter.
+                    if (! preg_match('/@param\b(?:(?!\R[ \t]*\*[ \t]*@)[\s\S])*?\$' . $name . '\b/', $text)) {
                         $this->issues[] = "{$this->path}:{$line} missing @param \${$param->var->name}";
                     }
                 }
-                if ($node->name->toString() !== '__construct' && !preg_match('/@return\s+\S+/', $text)) {
+                if ($node->name->toString() !== '__construct' && ! preg_match('/@return\s+\S+/', $text)) {
                     $this->issues[] = "{$this->path}:{$line} missing @return";
                 }
             }
 
             if (($node instanceof Stmt\Property || $node instanceof Stmt\ClassConst)
-                && !preg_match('/@var\s+\S+/', $text)) {
+                && ! preg_match('/@var\s+\S+/', $text)) {
                 $this->issues[] = "{$this->path}:{$line} missing @var";
             }
 
@@ -109,23 +114,23 @@ function inspectDocContracts(array $ast, string $path): array
     return $visitor->issues;
 }
 
-$parser = (new ParserFactory())->createForNewestSupportedVersion();
-$errors = [];
+$parser    = (new ParserFactory())->createForNewestSupportedVersion();
+$errors    = [];
 $fileCount = 0;
-$roots = ['src', 'runtime', 'infrastructure', 'bootstrap', 'tests'];
+$roots     = ['src', 'runtime', 'infrastructure', 'bootstrap', 'tests'];
 
 foreach ($roots as $root) {
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
-        dirname(__DIR__) . '/' . $root,
-        FilesystemIterator::SKIP_DOTS,
-    ));
+                                               dirname(__DIR__) . '/' . $root,
+                                               FilesystemIterator::SKIP_DOTS,
+                                           ));
 
     foreach ($files as $file) {
-        if (!$file->isFile() || $file->getExtension() !== 'php') {
+        if (! $file->isFile() || $file->getExtension() !== 'php') {
             continue;
         }
 
-        $path = $file->getPathname();
+        $path   = $file->getPathname();
         $source = file_get_contents($path);
         if ($source === false) {
             $errors[] = $path . ' is unreadable';
@@ -139,9 +144,9 @@ foreach ($roots as $root) {
 
         $fileCount++;
         foreach (inspectDocContracts(
-            ast: $statements,
-            path: str_replace(dirname(__DIR__) . '/', '', $path),
-        ) as $error) {
+                     ast : $statements,
+                     path: str_replace(dirname(__DIR__) . '/', '', $path),
+                 ) as $error) {
             $errors[] = $error;
         }
     }

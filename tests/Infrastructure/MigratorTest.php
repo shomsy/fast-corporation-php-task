@@ -22,7 +22,7 @@ final class MigratorTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAppliesOwnerLocalMigrationsOnce(): void
+    public function testAppliesOwnerLocalMigrationsOnce() : void
     {
         $root     = dirname(path: __DIR__, levels: 2);
         $pdo      = SqliteConnection::memory();
@@ -58,7 +58,7 @@ final class MigratorTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testAccountsUsernameUniquenessIsCaseInsensitive(): void
+    public function testAccountsUsernameUniquenessIsCaseInsensitive() : void
     {
         $pdo = $this->migratedDatabase();
 
@@ -77,7 +77,7 @@ final class MigratorTest extends TestCase
      *
      * @return PDO Result described by the native PHP return type.
      */
-    private function migratedDatabase(): PDO
+    private function migratedDatabase() : PDO
     {
         $root = dirname(path: __DIR__, levels: 2);
         $pdo  = SqliteConnection::memory();
@@ -95,7 +95,7 @@ final class MigratorTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testActivitySchemaRejectsInvalidActionTargetCombination(): void
+    public function testActivitySchemaRejectsInvalidActionTargetCombination() : void
     {
         $pdo = $this->migratedDatabase();
 

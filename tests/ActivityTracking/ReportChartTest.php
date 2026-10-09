@@ -19,13 +19,13 @@ final class ReportChartTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testSparseUtcCalendarDatesAreSpacedProportionally(): void
+    public function testSparseUtcCalendarDatesAreSpacedProportionally() : void
     {
         $html = $this->render([
-            $this->day(date: '2026-10-01'),
-            $this->day(date: '2026-10-02'),
-            $this->day(date: '2026-10-10'),
-        ]);
+                                  $this->day(date: '2026-10-01'),
+                                  $this->day(date: '2026-10-02'),
+                                  $this->day(date: '2026-10-10'),
+                              ]);
 
         self::assertStringContainsString('cx="167.22"', $html);
         preg_match_all(pattern: '/<polyline\\b/', subject: $html, matches: $lines);
@@ -39,7 +39,7 @@ final class ReportChartTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLowCountsHaveUniqueYAxisTicksAndKeyboardReadableValues(): void
+    public function testLowCountsHaveUniqueYAxisTicksAndKeyboardReadableValues() : void
     {
         $html = $this->render([$this->day(date: '2026-10-08')]);
 
@@ -53,12 +53,13 @@ final class ReportChartTest extends TestCase
      * Build one report row with a single Page A view.
      *
      * @param string $date Trusted fixture UTC date.
+     *
      * @return array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}
      */
-    private function day(string $date): array
+    private function day(string $date) : array
     {
         return [
-            'date' => $date, 'page_a_views' => 1, 'page_b_views' => 0,
+            'date'           => $date, 'page_a_views' => 1, 'page_b_views' => 0,
             'buy_cow_clicks' => 0, 'download_clicks' => 0,
         ];
     }
@@ -66,14 +67,21 @@ final class ReportChartTest extends TestCase
     /**
      * Render the actual ActivityTracking HTML adapter with isolated report data.
      *
-     * @param list<array{date: string, page_a_views: int, page_b_views: int, buy_cow_clicks: int, download_clicks: int}> $daily
+     * @param list<array{
+     *     date: string,
+     *     page_a_views: int,
+     *     page_b_views: int,
+     *     buy_cow_clicks: int,
+     *     download_clicks: int
+     * }> $daily
+     *
      * @return string Escaped report HTML.
      */
-    private function render(array $daily): string
+    private function render(array $daily) : string
     {
         return (new Renderer())->render(
             template: dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/reports.php',
-            data: ['daily' => $daily, 'from' => '', 'to' => '', 'error' => ''],
+            data    : ['daily' => $daily, 'from' => '', 'to' => '', 'error' => ''],
         );
     }
 }

@@ -32,7 +32,7 @@ final class MigratorIntegrityTest extends TestCase
      * @return void No return value.
      */
     #[Override]
-    protected function setUp(): void
+    protected function setUp() : void
     {
         parent::setUp();
         $this->directory = sys_get_temp_dir() . '/fast-migrations-' . bin2hex(string: random_bytes(length: 8));
@@ -45,7 +45,7 @@ final class MigratorIntegrityTest extends TestCase
      * @return void No return value.
      */
     #[Override]
-    protected function tearDown(): void
+    protected function tearDown() : void
     {
         foreach (glob(pattern: $this->directory . '/*') ?: [] as $file) {
             if (is_file(filename: $file)) {
@@ -61,10 +61,10 @@ final class MigratorIntegrityTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testRejectsChangedAppliedSql(): void
+    public function testRejectsChangedAppliedSql() : void
     {
-        $path = $this->sql(name: '001_init.sql', contents: 'CREATE TABLE item (id INTEGER PRIMARY KEY);');
-        $pdo = SqliteConnection::memory();
+        $path     = $this->sql(name: '001_init.sql', contents: 'CREATE TABLE item (id INTEGER PRIMARY KEY);');
+        $pdo      = SqliteConnection::memory();
         $migrator = new Migrator(pdo: $pdo, migrationDirectories: ['Sample' => $this->directory]);
         self::assertSame(['Sample:001_init.sql'], $migrator->migrate());
         self::assertSame([], $migrator->migrate());
@@ -80,11 +80,11 @@ final class MigratorIntegrityTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testFailedBatchDoesNotLeavePartialSchemaOrLedger(): void
+    public function testFailedBatchDoesNotLeavePartialSchemaOrLedger() : void
     {
         $this->sql(name: '001_good.sql', contents: 'CREATE TABLE committed_too_early (id INTEGER);');
         $this->sql(name: '002_bad.sql', contents: 'THIS IS NOT VALID SQL');
-        $pdo = SqliteConnection::memory();
+        $pdo      = SqliteConnection::memory();
         $migrator = new Migrator(pdo: $pdo, migrationDirectories: ['Sample' => $this->directory]);
 
         try {
@@ -102,7 +102,7 @@ final class MigratorIntegrityTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testLegacyLedgerReceivesChecksumsOnFirstTrustedUpgrade(): void
+    public function testLegacyLedgerReceivesChecksumsOnFirstTrustedUpgrade() : void
     {
         $sql = 'CREATE TABLE legacy (id INTEGER);';
         $this->sql(name: '001_old.sql', contents: $sql);
@@ -123,16 +123,16 @@ final class MigratorIntegrityTest extends TestCase
      *
      * @return void No return value.
      */
-    public function testSecondRunnerWaitsForOrFailsOnMigrationLock(): void
+    public function testSecondRunnerWaitsForOrFailsOnMigrationLock() : void
     {
         $this->sql(name: '001_create.sql', contents: 'CREATE TABLE locked_case (id INTEGER);');
-        $file = $this->directory . '/runtime.sqlite';
-        $first = SqliteConnection::open(path: $file, createIfMissing: true);
+        $file   = $this->directory . '/runtime.sqlite';
+        $first  = SqliteConnection::open(path: $file, createIfMissing: true);
         $second = SqliteConnection::open(path: $file);
         $second->exec(statement: 'PRAGMA busy_timeout = 50');
         $first->exec(statement: 'BEGIN IMMEDIATE');
 
-        $runner = new Migrator(pdo: $second, migrationDirectories: ['Sample' => $this->directory]);
+        $runner     = new Migrator(pdo: $second, migrationDirectories: ['Sample' => $this->directory]);
         $wasBlocked = false;
 
         try {
@@ -153,11 +153,12 @@ final class MigratorIntegrityTest extends TestCase
     /**
      * Write a fixture SQL migration whose contents can be deliberately changed.
      *
-     * @param string $name Trusted fixture filename.
+     * @param string $name     Trusted fixture filename.
      * @param string $contents SQL fixture source text.
+     *
      * @return string Absolute path to the fixture.
      */
-    private function sql(string $name, string $contents): string
+    private function sql(string $name, string $contents) : string
     {
         $file = $this->directory . '/' . $name;
         self::assertNotFalse(file_put_contents(filename: $file, data: $contents));

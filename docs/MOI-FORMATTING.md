@@ -41,3 +41,14 @@ Original MOI.xml still owns whitespace, alignment, line breaks and PHPDoc layout
 PHP Hammer 2026.1.2 inspections NullableTypeFormatInspection and UnaryOperatorFormatInspection are enabled at ERROR severity in the global Default and Fast Corporation project profiles. Reload the IDE inspection profile after external editing. Existing projects using their own profile may need to select the global default or enable the same rules in that project profile.
 
 The repository's composer moi:check uses nikic/php-parser to examine PHP and PHPDoc. composer moi:self-test ensures invalid examples fail and nullsafe and coalescing operators remain accepted. Both run in composer quality and CI on PHP 8.3, 8.4 and 8.5. CI enforcement does not automatically extend to other repositories.
+
+
+## 2026-10-09 full-repository PHP code style audit
+
+The running PhpStorm 2026.3 EAP IDE, through its native MCP `reformat_file` action, applied the original **MOI** code style to all **114 Git-tracked PHP files**. **97** files changed presentation. A second full MOI reformat yielded **zero further file changes** (idempotence). No PHP-CS-Fixer or Rector reformatting was applied and the global `MOI.xml` was not modified.
+
+The formatter legitimately wrapped PHPDoc annotations, including long `array{...}` types; types were reorganized to remain understandable to PHPStan, and the structural PHPDoc checker now recognizes wrapped parameter types. Formatting mixed PHP/HTML templates also altered insignificant source whitespace around navigation text; HTTP navigation assertions now accept whitespace between visible words without losing presence/absence checks.
+
+**Evidence:** `composer quality` PASS (PHPStan, Deptrac, Composer audit, PHPDoc, MOI syntax checker, 160 PHPUnit tests / 6,745 assertions); 21 frontend tests PASS; Playwright browser acceptance PASS; live HTTP acceptance PASS; SPA/SSR route cutover/rollback PASS. An AST comparison against the pre-format commit across all 97 changed PHP files found no unexpected PHP-code differences; only the intentional PHPUnit HTML-text assertions and PHPDoc validator logic changed. Inline HTML spacing remains presentation-only and is covered by rendered-page acceptance tests.
+
+**Enforcement boundary:** `composer quality` checks the separately agreed `Type|null` and postfix syntax rules, but **does not enforce the full visual MOI style in CI**. For full visual formatting, use the IDE's MOI `Reformat Code` action. Other-language files were not reformatted, because MOI is the PHP style scheme.

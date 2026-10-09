@@ -44,7 +44,8 @@ declare(strict_types=1);
 <body>
 <main>
     <h1>Activity Tracker</h1>
-    <p>Signed in as <strong><?= $escape(value: $data['username']) ?></strong> (<?= $escape(value: $data['role']) ?>).</p>
+    <p>Signed in as <strong><?= $escape(value: $data['username']) ?></strong> (<?= $escape(value: $data['role']) ?>).
+    </p>
     <nav aria-label="Pages">
         <a href="/page-a">Page A</a>
         <a href="/page-b">Page B</a>

@@ -48,12 +48,12 @@ try {
 
     if (! headers_sent()) {
         (new \InterviewTask\Runtime\Http\Response(
-            body: 'Internal Server Error',
-            status: 500,
+            body   : 'Internal Server Error',
+            status : 500,
             headers: [
-                'Content-Type' => 'text/plain; charset=UTF-8',
-                'X-Request-ID' => $requestId,
-            ],
+                         'Content-Type' => 'text/plain; charset=UTF-8',
+                         'X-Request-ID' => $requestId,
+                     ],
         ))->send();
     } else {
         echo 'Internal Server Error';
