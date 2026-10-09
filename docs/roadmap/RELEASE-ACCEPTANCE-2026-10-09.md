@@ -35,12 +35,15 @@ These checks exercise automated user flows; they are not a usability study or an
 | `python3 tests/Flow/route_cutover.py` | PASS — SPA GET ownership and SSR rollback with the same SQLite database |
 | `python3 tests/Flow/sqlite_backup_restore.py` | PASS — SQLite WAL snapshot, restore, SQLITE_FULL injection, directory/file protection and no overwrite; 25 activity rows and four migrations restored |
 | `python3 tools/check_execution_ledger.py` | PASS — 45/48 uniquely tracked at the point of this report |
+| `python3 tests/Flow/auth_ingress_rate_limit.py` | PASS — pinned Docker Nginx, two mock upstreams, mixed-auth POST 429, `Retry-After: 60`, spoofed XFF ignored, safe logs; target public ingress unverified |
+
+**Scope update after C-05 local probe:** ADR-0021 records the checked-in Nginx snippets and negative real-HTTP test. C-05 is locally reproducible, but those snippets have not been attached to a deployed public hostname and do not establish shared global limits across independently exposed ingress replicas.
 
 ## Public release gates not met
 
 | Owner / gate | Missing evidence | Required proof before public GO |
 | --- | --- | --- |
-| Ingress security / C-05 | No deployed login/registration rate limit, no real repeated-attempt 429 or `Retry-After`; multi-instance/proxy-IP policy unverified | Enforce at controlled trusted ingress; prove limit/response with real requests, shared policy, source-IP trust boundary and account-lockout-DoS trade-offs |
+| Ingress security / C-05 | Locally tested Nginx ingress returns real `429` and `Retry-After: 60` across two upstreams, ignores forged XFF and omits POST secrets from logs; **no target public deployment** or independent ingress-replica shared state verified | Install/verify policy on actual trusted ingress; prove public routing cannot bypass gateway, origin attribution behind real proxies, TLS and aggregation/monitoring on the deployed topology |
 | TLS and identity | No verified public domain, certificate chain, trusted proxy `HTTPS` signaling, deployment worker UID/ACL or actual PHP-FPM session/database directory ownership | Test HTTPS, secure cookies, least privilege, parent-directory traversal and deny access to all non-`public/` files on a deployed host |
 | Persistence / recovery | Offline test only; no off-host backup retention and timed disaster recovery on target host; RPO/RTO objectives not agreed | Write measurable RPO/RTO objectives with service owner, restore a retained off-host WAL-consistent snapshot in the target environment and observe downtime/data loss |
 | Capacity / operations | 4-client/176-request local baseline, not PHP-FPM worker RSS/CPU, public latency/throughput SLO or traffic saturation | Test representative ingress and PHP-FPM workload, establish budget/capacity, alerting and runbook operations with target host metrics |

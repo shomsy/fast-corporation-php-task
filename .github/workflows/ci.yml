@@ -70,3 +70,7 @@ jobs:
         run: |
           google-chrome --version
           npm run test:browser
+
+      - name: Nginx authentication abuse limit (isolated Docker)
+        if: matrix.php == '8.5'
+        run: python3 tests/Flow/auth_ingress_rate_limit.py

@@ -55,7 +55,7 @@ Before any external traffic:
 6. Bring up a candidate release on a private port. Check `/healthz` 200 and `/readyz` 200; perform **real** login, privileged role checks, CSRF, Page A/B, download and reports against non-destructive fixtures.
 7. Only after successful ready + acceptance, switch ingress to the candidate, and monitor readiness, p95/error rate, SQLite `BUSY`, WAL size, session failures, disk availability, 5xx and correlated security logs. An upstream load balancer should remove a pod/instance on repeated readiness failure rather than restart it blindly.
 
-**Public GO is still blocked:** real proxy rate-limits (C-05: 429/Retry-After), verified service identity, reliable off-host backup retention, actual RPO/RTO, load measurements and explicit privacy/retention decisions (C-47) are not established.
+**Public GO is still blocked:** C-05 now has an isolated real-Nginx 429/Retry-After test with two upstreams (see [ADR-0021](architecture/ADR-0021-auth-ingress-abuse-controls.md)), but the policy has **not been installed and verified at a target public ingress**. Real client-IP proxy trust, ingress-replica aggregation, TLS, service identity, off-host backups, RPO/RTO, PHP-FPM load and privacy/log retention remain deployment decisions and evidence obligations (C-47).
 
 ## 4. Safe rollback versus forward recovery
 
