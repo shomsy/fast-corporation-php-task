@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02/M03/M04 IN PROGRESS; M05 C-14/C-15/C-16/C-17/C-18/C-19 done. 24/48 complete. Public production not yet certified.
+**Status:** M00/M01 DONE; M02/M03 IN PROGRESS; M04/M05 DONE at local evidence; M11 IN PROGRESS (C-23/C-26 done). 27/48 complete. Public production not certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** c872ebc35cb1849606a53548231a2fbf79961bf2 (C-25); earlier C-24 8aec184e82713f4ce7a847e12e8adbb03a7bf86b; C-22 ead0b66 (see Git).
-**Next legal action:** C-26 deployment/readiness and recovery runbook (requires C-25, now locally verified), then C-23 fixed artifact memory/integrity, C-28 representative load or C-29 backend responsibility boundaries as dependency allows. C-05 live edge rate-limit acceptance still needs actual reverse proxy. Run 2–4 separately verified tasks per RP turn before backend JSON API/Vanilla JS SPA phases.
+**Last implementation commit:** 84c734ab49bbf2b816300266886c416ba6bebc11 (C-28); C-23 ceb12f8b5edd2565f576c3b2d34e3a08578d4758; C-26 857926e8fac3e97dab0d179a1b9caa9b140ad6c0.
+**Next legal action:** Start M06 with C-29 HTTP/JSON vs business owner responsibility and C-30 measured misleading APIs, then C-33 transport/tooling choice (no framework without evidence). C-32 bootstrap measurements and C-34 PHPDoc/MOI remain candidates. C-05 live proxy rate limiting and target RPO/RTO/worker RSS remain public-release gates. Execute 2–4 tested coherent packets per RP turn.
 
 ## Milestone status
 
@@ -16,16 +16,16 @@
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
 | M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10/C-22 DONE** | Session GC/private files `effca0e`; fail-closed production boot `c5b5b80`; HTTP URI/method/HEAD/OPTIONS contract `ead0b66`; full quality and smoke PASS. |
-| M04 | DB/audit/durability | **IN PROGRESS — C-11/C-12/C-13/C-24/C-25 DONE** | Checked migrations `e635944`, audit `c539e96`, WAL `50ef500`, transaction compensation `8aec184`, and private-file online backup/restore `c872ebc`; local quality/smoke/recovery PASS; deployment target RPO/RTO remain a release gate. |
-| M05 | Analytics/performance | **IN PROGRESS — C-14/C-15/C-16/C-17/C-18/C-19 DONE** | `8697e63` SQL report measurement; `0505104` actor index; `e504afd` session-bound signed keyset traversal; `d5e0843` calendar-accurate chart; `0364b55` accepted click and view/prefetch semantics. Quality 132/6491, HTTP smoke PASS. |
+| M04 | DB/audit/durability | **DONE (local acceptance)** | C-11/C-12/C-13/C-18/C-19/C-24/C-25: checksummed migrations, audit/view/click semantics, WAL, transactional failure, online backup and restore passed. Host-specific RPO/RTO remain a public release gate, not claimed by local acceptance. |
+| M05 | Analytics/performance | **DONE (local acceptance)** | C-14/C-15/C-16/C-17/C-28 complete; report query plans, actor indexes, signed keyset, UTC chart, 4-client/176-request p95/p99 baseline `84c734a`, SQLite lock and bounded PHP heap. No public PHP-FPM load SLO claimed. |
 | M06 | Backend LLD & API | NOT STARTED | — |
 | M07 | SPA shell & security | NOT STARTED | — |
 | M08 | User screens | NOT STARTED | — |
 | M09 | Admin screens/tests | NOT STARTED | — |
 | M10 | Cutover | NOT STARTED | — |
-| M11 | Final acceptance | NOT STARTED | — |
+| M11 | Final acceptance | **IN PROGRESS — C-23/C-26 DONE** | `ceb12f8` fixed 2 MiB SHA-pinned PE; `857926e` liveness/readiness schema hashes and deployment recovery runbook, HTTP and local backup failure tests PASS. Final C-47 and deployment GO remain OPEN. |
 
-## Canonical packet status — 24 DONE / 48 TOTAL (24 OPEN)
+## Canonical packet status — 27 DONE / 48 TOTAL (21 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -49,12 +49,12 @@
 - [ ] **C-20** — Assess account disable/reset/admin recovery scope separately from interview acceptance. *(OPEN; no implementation evidence yet)*
 - [x] **C-21** — Differentiate client validation/authorization from dependency errors. **DONE:** `6cc9e1d`; existing 4xx/503/500 mappings verified, both real 500 causes remain safe generic responses with 24-hex-character X-Request-ID and matching server log reference. RED smoke before fix; GREEN after; quality 98/6038 PASS.
 - [x] **C-22** — Define safe URI parsing, HEAD/OPTIONS/Allow handling and output rules. **DONE:** `ead0b66`; validated malformed request target returns safe 400; HEAD suppresses body, OPTIONS and 405 expose correct Allow; router/response/entry integration covered in `tests/Runtime/HttpProtocolTest.php`, ADR-0010; full quality 142/6552, live HTTP smoke PASS.
-- [ ] **C-23** — Keep fixed server-selected artifact. *(OPEN; no implementation evidence yet)*
+- [x] **C-23** — Keep fixed server-selected artifact. DONE `ceb12f8b5edd2565f576c3b2d34e3a08578d4758`: reviewed 1024-byte PE pinned to SHA-256, Linux file mode 0644, rejects symlink/mismatch/oversize above 2 MiB before successful download audit; binary response and 503/500 boundaries unchanged. RED 3 new tests then 6/25 scoped PASS, final quality 148/6586, HTTP smoke PASS; ADR-0013.
 - [x] **C-24** — Define non-nesting transaction contract and preserve original failure if rollback/session compensation fails. **DONE:** `8aec184`; explicit transaction failure rules, original cause preserved across rollback/session compensation; regression tests `TransactionFailureTest` and `SessionCompensationTest`, ADR-0011; full quality 142/6552 PASS.
 - [x] **C-25** — Enforce least privilege for DB/config/session files and rehearse durable SQLite backup/restore. **DONE (local acceptance):** `c872ebc35cb1849606a53548231a2fbf79961bf2`; production DB/dir, WAL/SHM, .env and session private file checks, restrictive umask; create-only CLI SQLite online WAL snapshot plus integrity verification, no-overwrite and private directory policy. Rehearsal restored 25 activity rows/4 migration entries; SQLITE_FULL fault injection rollback/integrity PASS; quality 142/6552, live smoke PASS; ADR-0012. **Public deployment remains NO-GO:** host-specific service identity, offline/remote retention and actual RPO/RTO need C-26/C-47.
-- [ ] **C-26** — Define deployment/runbook/health/readiness/schema checks and safe rollback/forward recovery. *(OPEN; no implementation evidence yet)*
+- [x] **C-26** — Define deployment/runbook/health/readiness/schema checks and safe rollback/forward recovery. DONE (local acceptance) `857926e8fac3e97dab0d179a1b9caa9b140ad6c0`: early GET/HEAD healthz without DB or session; readyz validates DB/schema/owner SQL migration hashes; safe 503+correlation on failure; 3 new tests/19 assertions and real HTTP missing-table red/green PASS, composer quality 145/6572; operator recovery runbook. Public RPO/RTO and proxy still unverified.
 - [x] **C-27** — Allowlisted structured security logs for auth/CSRF/admin denials and failures; 24-hex request ID links response and server log; no raw exception message, SQL or credentials. DONE ee0cff65d1f3c90861a1846aa1961e660c7d9a13. RED then GREEN HTTP smoke + logger tests; quality 108/6128 PASS. Log retention/alert deployment remains C-26/C-47.
-- [ ] **C-28** — Measure latency, memory, DB lock, file download and resource utilization under target load. *(OPEN; no implementation evidence yet)*
+- [x] **C-28** — Measure latency, memory, DB lock, file download and resource utilization under target load. DONE (bounded local baseline) `84c734ab49bbf2b816300266886c416ba6bebc11`: 4 users, 176 timed HTTP requests, 0 errors; measured Page A p95/p99 2.68/3.33 ms, download 2.39/2.45 ms, readiness 2.00/2.17 ms; 105 DB audit events, SHA/length validated. PHP CLI allocation peak 8 MiB, file cap 2 MiB, SQLite WAL reader/writer/backup probe PASS. Real PHP-FPM worker RSS/CPU, multi-instance limits and public SLO **not measured**, remain C-47; ADR-0014. Full quality 148/6586 PASS.
 - [ ] **C-29** — Improve true responsibility boundaries: HTTP/JSON transport, auth policy, application orchestratio. *(OPEN; no implementation evidence yet)*
 - [ ] **C-30** — Review shallow wrappers, misleading side-effect names, redundant route helpers and module APIs wit. *(OPEN; no implementation evidence yet)*
 - [x] **C-31** — Validate untrusted input at transport boundary, typed invariants at owner. **DONE:** `c6f003d`; arrays/oversized credentials and activity filters rejected as 422 before business logic; wrong scalar password still 401. RED 2 tests first plus oversized filter; quality PASS 95/6031, HTTP smoke PASS.
@@ -82,6 +82,10 @@
 | 2026-10-09 | M05 / C-16 | `e504afdc46a2e66b8b15cce027a30842e9df280f` | RED absent keyset API; GREEN 2 tests/197 assertions, actual HTTP cursor Next/return and tamper checks 1/76, full quality 130/6468, real HTTP smoke PASS | Session-signed filter-bound keyset, legacy explicit OFFSET retained. |
 | 2026-10-09 | M05 / C-18 | `0364b55026e0a3459764b7b918fb13166437c3f4` | Two-tab/repeat click/download and invalid-CSRF regression 1/13, final quality 132/6491 and HTTP smoke PASS | Each accepted request counted, no invented purchase or exactly-once semantics. |
 | 2026-10-09 | M05 / C-19 | `0364b55026e0a3459764b7b918fb13166437c3f4` | Unauthorized and speculative Page A/B fetch, two accepted revisits test 1/10, final quality 132/6491 and HTTP smoke PASS | Prefetch does not count; explicit active-screen view POST planned for SPA. |
+
+| 2026-10-09 | M11 / C-26 | `857926e8fac3e97dab0d179a1b9caa9b140ad6c0` | RED /healthz missing; GREEN 3 probe tests/19 assertions and real HTTP database-down health=200/ready=503; full quality 145/6572 | Liveness without DB, readiness with owner migration hashes and safe runbook; external deployment still NO-GO. |
+| 2026-10-09 | M11 / C-23 | `ceb12f8b5edd2565f576c3b2d34e3a08578d4758` | RED absent artifact size/hash/symlink checks; GREEN 6/25 scoped, quality 148/6586, PE HTTP smoke PASS | Fixed SHA-pinned 2 MiB ceiling, no successful audit on mismatch, mode 0644. |
+| 2026-10-09 | M05 / C-28 | `84c734ab49bbf2b816300266886c416ba6bebc11` | 4 clients/176 calls, zero errors, isolated PHP 8MiB allocated heap, SQLite writer contention WAL probe PASS, quality 148/6586 | Measured local baseline, not production PHP-FPM CPU/RSS or SLO; C-47 remains. |
 
 ## Current blockers
 
