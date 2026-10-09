@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02 IN PROGRESS; M03 C-08/C-10 done; M04 C-11/C-12/C-13 done. 15/48 complete. Public production not yet certified.
+**Status:** M00/M01 DONE; M02/M03/M04 IN PROGRESS; M05 C-14/C-15/C-17 done. 18/48 complete. Public production not yet certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** 50ef5001facc64be7f8891cf5b9afa9079400699 (C-13); C-12 c539e965128573ec40002a8ebefc51171850f37e; C-08 effca0e37aaf0e8ce131737830ff2009bb239248.
-**Next legal action:** C-14 representative daily report aggregation measurements; then C-15 query/index plans and C-17 calendar/chart correctness when dependencies allow. Other unblocked packets include C-22/C-24/C-25. C-05 deployment rate limiting still needs actual edge/proxy evidence. Batch 2–4 tested tasks per turn.
+**Last implementation commit:** d5e0843ecc597100b39cdf4c5342cf1ee543a2f1 (C-17); C-15 050510492ddfccced2aaa22d33b307d4d27d576c; C-14 8697e633772eb66473c582d5fd51f04d7edfd3e5.
+**Next legal action:** C-16 stable pagination under concurrent event insertions, then C-18 accepted click/replay semantics and C-19 Page A/B navigation semantics if unblocked. Other unblocked C-22/C-24/C-25 remain. Public deployment C-05 still needs actual edge/proxy evidence. Batch 2–4 tested tasks per turn.
 
 ## Milestone status
 
@@ -17,7 +17,7 @@
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
 | M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10 DONE** | `effca0e`: native GC now retains up to 12h and production uses private session storage; measured native file locking. `c5b5b80`: fail-closed production boot; quality/smoke PASS. |
 | M04 | DB/audit/durability | **IN PROGRESS — C-11/C-12/C-13 DONE** | `e635944` atomic checksummed migrations; `c539e96` accepted-event audit contract; `50ef500` measured WAL concurrency and safe backup policy; quality/smoke PASS. |
-| M05 | Analytics/performance | NOT STARTED | — |
+| M05 | Analytics/performance | **IN PROGRESS — C-14/C-15/C-17 DONE** | `8697e63` measured 100k-event daily SQL report and rejected speculative rollup; `0505104` selective actor index with date-plan guard; `d5e0843` accurate sparse UTC chart/accessible ticks. Quality 127/6195, HTTP smoke PASS. |
 | M06 | Backend LLD & API | NOT STARTED | — |
 | M07 | SPA shell & security | NOT STARTED | — |
 | M08 | User screens | NOT STARTED | — |
@@ -25,7 +25,7 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 15 DONE / 48 TOTAL (33 OPEN)
+## Canonical packet status — 18 DONE / 48 TOTAL (30 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -40,10 +40,10 @@
 - [x] **C-11** — Make migrations deterministic and drift-detectable with SQL-content checksums and safe concurrent runs. DONE `e6359440b1cf3af55975be8beb5bf6e3a821919d`: SHA-256 detects applied SQL drift, BEGIN IMMEDIATE serializes full batch and prevents partial schema writes. Legacy ledgers receive current-source hashes once; pre-upgrade edits cannot be detected. RED drift/partial/legacy regressions, GREEN 7 migrations tests/25 assertions, full quality 118/6161 and live HTTP smoke PASS.
 - [x] **C-12** — Define accepted-event audit semantics, caller authority, retention, tamper threat model and UTC policy. **DONE:** `c539e965128573ec40002a8ebefc51171850f37e`; ADR-0003 defines exact accepted actions and server-owned actor authority, historical snapshots, UTC, disposable-demo retention and absence of DB-privileged tamper evidence. Rejected-login separation regression + existing CSRF/transaction/download tests PASS; full quality 124/6181 and HTTP smoke PASS. Public retention/deletion remain C-25/C-26/C-47.
 - [x] **C-13** — Measure file-backed concurrent readers/writers, SQLITE_BUSY, WAL/rollback journaling, connection lifecycle and backup. **DONE:** `50ef5001facc64be7f8891cf5b9afa9079400699`; separate-process rollback reader blocks writer (~151ms at probe timeout), WAL reader permits writer (~0.1ms); second writer still blocks, subsequent writes succeed; WAL checkpoint and online-backup restore PASS. Trusted CLI provisioning now enables and verifies WAL, no web journal mutation or unsafe automatic replay. RED default-journal regression, GREEN quality 124/6183 + HTTP smoke PASS; ADR-0004 limits conclusions and documents release backup gate.
-- [ ] **C-14** — Benchmark report aggregation over growing history, then choose bounded date window, query/index im. *(OPEN; no implementation evidence yet)*
-- [ ] **C-15** — Evaluate actor/action/date filter query plans and selective indexes with representative distributi. *(OPEN; no implementation evidence yet)*
+- [x] **C-14** — Benchmark report aggregation over growing history and choose an earned query/rollup policy. **DONE:** `8697e633772eb66473c582d5fd51f04d7edfd3e5`; 100k synthetic events/180 days, 20-query warm p95 current SQL aggregation ~21ms using idx_activity_day; lower-window variant ~16ms changes dataset. Retain 30 recent active dates, no unearned rollup. Reproducible benchmark + ADR-0005; scoped reports 20/5547 PASS.
+- [x] **C-15** — Evaluate actor/action/date filter plans and measured index write overhead. **DONE:** `050510492ddfccced2aaa22d33b307d4d27d576c`; 100k skewed actors: rare lookup ~13.7ms to ~0.019ms via idx_activity_actor_recent; mixed common/date could regress ~0.5ms to ~6.6ms so date filters use idx_activity_day explicitly (~0.48ms). 3000 inserts ~5.2ms before index vs ~6.84ms after in synthetic batch. Versioned migration 003, RED missing-index plan regression then 21/5551 scoped PASS, quality 125/6188, live HTTP smoke PASS; ADR-0006.
 - [ ] **C-16** — Define stable pagination contract. *(OPEN; no implementation evidence yet)*
-- [ ] **C-17** — Repair day-axis semantics, missing/zero days, Y ticks and chart accessibility. *(OPEN; no implementation evidence yet)*
+- [x] **C-17** — Repair sparse UTC day-axis, omitted zero-event day gaps, unique Y ticks and chart accessibility. **DONE:** `d5e0843ecc597100b39cdf4c5342cf1ee543a2f1`; chart x values now proportional to real UTC date spans, disconnected lines across omitted no-activity days, 2 distinct 0/1 ticks when max=1, per-point keyboard label, four visually differentiated series. Chart+table reuse authoritative 30-active-day dataset; no fake zero rows. RED two regressions then GREEN 22 scoped tests/5554 assertions, quality 127/6195, HTTP smoke PASS.
 - [ ] **C-18** — Specify whether raw clicks or accepted unique actions are counted. *(OPEN; no implementation evidence yet)*
 - [ ] **C-19** — Clarify Page A/B view counts: accepted authorized navigation versus actual rendering. *(OPEN; no implementation evidence yet)*
 - [ ] **C-20** — Assess account disable/reset/admin recovery scope separately from interview acceptance. *(OPEN; no implementation evidence yet)*
@@ -105,6 +105,10 @@
 | 2026-10-09 | M03 / C-08 | `effca0e37aaf0e8ce131737830ff2009bb239248` | RED session GC 1440s / missing private storage; GREEN 17 scoped tests/43 assertions, quality 123/6177 and HTTP smoke PASS | Production 0700 private files + 12h GC, measured same-session serialization, no custom handler. |
 | 2026-10-09 | M04 / C-12 | `c539e965128573ec40002a8ebefc51171850f37e` | Explicit accepted-event security separation test GREEN, existing flow and activity tests; quality 124/6181, HTTP smoke PASS | ADR-0003 authoritative audit meanings and retention/tamper limitations; production gate remains. |
 | 2026-10-09 | M04 / C-13 | `50ef5001facc64be7f8891cf5b9afa9079400699` | RED SQLite DELETE journal test, GREEN 9 scoped tests/34 checks; separate-process DELETE/WAL reader-writer probe + backup/restore PASS, full quality 124/6183, HTTP smoke PASS | WAL at CLI provisioning only; preserve single-writer and busy failure semantics. |
+
+| 2026-10-09 | M05 / C-14 | `8697e633772eb66473c582d5fd51f04d7edfd3e5` | 100k-event index-backed report query measurement (~21ms unbounded / ~16ms last 30 calendar days), EXPLAIN idx_activity_day, scoped 20/5547 PASS | Keep last 30 active-day SQL aggregate, no rollup without evidence. |
+| 2026-10-09 | M05 / C-15 | `050510492ddfccced2aaa22d33b307d4d27d576c` | RED missing actor-first index; GREEN EXPLAIN regression + 100k selective/skewed comparison; quality 125/6188 and real HTTP smoke PASS | New actor-index migration and date-query plan guard; ~32% extra writes in isolated 3000-row sample. |
+| 2026-10-09 | M05 / C-17 | `d5e0843ecc597100b39cdf4c5342cf1ee543a2f1` | RED sparse UTC spacing and repeated Y labels; GREEN 22 scoped/5554 assertions, full quality 127/6195, real HTTP smoke PASS | Break missing-day gaps, show true calendar spacing and accessible labels; preserve 30 active-day counts. |
 
 ## Decisions log
 
