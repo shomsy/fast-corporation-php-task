@@ -2,6 +2,7 @@ import { createNavigator, showPlaceholder } from './navigate.js';
 import { createHttpClient } from './requestJson.js';
 import { renderAccounts } from './Accounts/showAccounts.js';
 import { showPageA } from './CowOffer/showPageA.js';
+import { showPageB } from './Downloads/showPageB.js';
 
 /**
  * Start the deliberately small application shell without taking ownership of SSR features.
@@ -38,6 +39,8 @@ export function startNavigation(page, win) {
       renderAccounts(screen, lifecycle, { client, navigate: (path) => navigator.navigate(path) });
     } else if (screen.path === '/app/page-a') {
       showPageA(lifecycle, { client, navigate: (path) => navigator.navigate(path) });
+    } else if (screen.path === '/app/page-b') {
+      showPageB(lifecycle, { client, navigate: (path) => navigator.navigate(path) });
     } else {
       showPlaceholder(screen, lifecycle);
     }

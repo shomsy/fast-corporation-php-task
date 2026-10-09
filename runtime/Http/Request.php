@@ -146,6 +146,18 @@ final readonly class Request
      */
     public function csrfToken(): mixed
     {
+        // Only the native binary download is an API-path HTML form.
+        if ($this->path === '/api/downloads/sample') {
+            $contentType = $this->server(key: 'CONTENT_TYPE');
+
+            if (! is_string(value: $contentType)
+                || strtolower(string: trim(string: explode(separator: ';', string: $contentType, limit: 2)[0])) !== 'application/x-www-form-urlencoded') {
+                return null;
+            }
+
+            return $this->post(key: 'csrf_token');
+        }
+
         if (str_starts_with(haystack: $this->path, needle: '/api/')) {
             $contentType = $this->server(key: 'CONTENT_TYPE');
 

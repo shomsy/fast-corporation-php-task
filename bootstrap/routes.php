@@ -28,6 +28,7 @@ use InterviewTask\Bootstrap\Http\SessionApi;
 use InterviewTask\Bootstrap\Http\ActivityPages;
 use InterviewTask\Bootstrap\Http\CowOfferApi;
 use InterviewTask\Bootstrap\Http\CowOfferPages;
+use InterviewTask\Bootstrap\Http\DownloadApi;
 use InterviewTask\Bootstrap\Http\DownloadPages;
 use InterviewTask\Bootstrap\Http\HtmlPage;
 use InterviewTask\CowOffer\CowOffer;
@@ -120,16 +121,18 @@ return static function (Router $router) use ($config): void {
     $cowOffer      = new CowOffer(activityLog: $activity);
     $cowPages      = new CowOfferPages(cow: $cowOffer, signedIn: $signedIn, csrf: $csrf, html: $html);
     $cowOfferApi   = new CowOfferApi(cow: $cowOffer, signedIn: $signedIn);
+    $downloadFile  = new DownloadFile(
+        activityLog: $activity,
+        artifactPath: $config['root'] . '/assets/sample.exe',
+        expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
+    );
     $downloadPages = new DownloadPages(
-        downloads: new DownloadFile(
-            activityLog: $activity,
-            artifactPath: $config['root'] . '/assets/sample.exe',
-            expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
-        ),
+        downloads: $downloadFile,
         signedIn: $signedIn,
         csrf: $csrf,
         html: $html,
     );
+    $downloadApi   = new DownloadApi(downloads: $downloadFile, signedIn: $signedIn);
     $activityPages = new ActivityPages(
         statistics: new Statistics(pdo: $pdo),
         reports: new DailyReports(pdo: $pdo),
@@ -159,6 +162,7 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'GET', path: '/app/requestJson.js', handler: static fn(): Response => $spaFile('app/requestJson.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/Accounts/showAccounts.js', handler: static fn(): Response => $spaFile('app/Accounts/showAccounts.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/CowOffer/showPageA.js', handler: static fn(): Response => $spaFile('app/CowOffer/showPageA.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/Downloads/showPageB.js', handler: static fn(): Response => $spaFile('app/Downloads/showPageB.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
@@ -169,6 +173,8 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'POST', path: '/api/accounts/logout', handler: static fn(): Response => $accountApi->logout(), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/api/cow-offer/view', handler: static fn(): Response => $cowOfferApi->view(), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/api/cow-offer/buy', handler: static fn(): Response => $cowOfferApi->buy(), access: RouteAccess::SignedIn);
+    $router->add(method: 'POST', path: '/api/downloads/page/view', handler: static fn(): Response => $downloadApi->view(), access: RouteAccess::SignedIn);
+    $router->add(method: 'POST', path: '/api/downloads/sample', handler: static fn(Request $request): Response => $downloadPages->download(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm(), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);
