@@ -80,7 +80,7 @@ final readonly class Accounts
     {
         // SQLite NOCASE uniqueness is ASCII-based; restrict new identifiers to that same alphabet.
         // Existing stored identifiers remain readable/authenticatable without forced migration.
-        if (preg_match(pattern: '/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/D', subject: $username) !== 1) {
+        if (preg_match(pattern: '/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/', subject: $username) !== 1) {
             throw new UsernameRejected(message: 'Username must be 1-64 ASCII letters, digits, dots, underscores or hyphens, starting with a letter or digit.');
         }
 

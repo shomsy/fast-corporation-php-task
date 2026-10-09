@@ -104,3 +104,20 @@ test('a 401 expires the old CSRF and the next mutation obtains a fresh server to
     ['/api/csrf', '/api/accounts/login', '/api/csrf', '/api/accounts/login']);
   assert.notEqual(calls[1][1], calls[3][1]);
 });
+
+
+test('null and array error bodies never cause secondary TypeError during HTTP error handling', async () => {
+  for (const body of [null, [], 'unstructured']) {
+    const client = createHttpClient({
+      origin: 'https://example.test',
+      fetchImpl: async () => response(422, body),
+    });
+    await assert.rejects(client.getSession(), (error) => {
+      assert.equal(error instanceof HttpError, true);
+      assert.equal(error.status, 422);
+      assert.equal(error.code, 'request_failed');
+      assert.equal(error.message, 'Request denied.');
+      return true;
+    });
+  }
+});

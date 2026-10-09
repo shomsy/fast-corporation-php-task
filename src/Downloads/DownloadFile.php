@@ -35,7 +35,7 @@ final readonly class DownloadFile
         private int         $maxBytes = 2097152,
     )
     {
-        if ($maxBytes < 1 || ($expectedSha256 !== null && preg_match(pattern: '/\\A[a-f0-9]{64}\\z/D', subject: $expectedSha256) !== 1)) {
+        if ($maxBytes < 1 || ($expectedSha256 !== null && preg_match(pattern: '/\\A[a-f0-9]{64}\\z/', subject: $expectedSha256) !== 1)) {
             throw new \InvalidArgumentException(message: 'Invalid trusted download artifact policy.');
         }
     }

@@ -26,6 +26,16 @@ final readonly class SignedInAccount
     ) {}
 
     /**
+     * Answer the public authorization question without exposing the internal Role type.
+     *
+     * @return bool Whether this verified identity has administrator privileges.
+     */
+    public function isAdmin() : bool
+    {
+        return $this->role === Role::Admin;
+    }
+
+    /**
      * Project a stored account into the narrow authenticated identity contract.
      *
      * @param Account $account Immutable account from authoritative storage.

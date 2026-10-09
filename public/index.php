@@ -44,16 +44,21 @@ try {
     $router->dispatch(request: $request)->send();
 } catch (Throwable $error) {
     // One outermost diagnostic boundary; expected 4xx responses do not throw.
-    $requestId = SecurityEvents::record(event: 'runtime.unhandled', error: $error);
+    $requestId = null;
+    try {
+        $requestId = SecurityEvents::record(event: 'runtime.unhandled', error: $error);
+    } catch (Throwable) {
+        // Diagnostics are best-effort; never let a secondary failure hide the HTTP 500.
+    }
 
     if (! headers_sent()) {
+        $headers = ['Content-Type' => 'text/plain; charset=UTF-8'];
+        if ($requestId !== null) {
+            $headers['X-Request-ID'] = $requestId;
+        }
+
         (new \InterviewTask\Runtime\Http\Response(
-            body   : 'Internal Server Error',
-            status : 500,
-            headers: [
-                         'Content-Type' => 'text/plain; charset=UTF-8',
-                         'X-Request-ID' => $requestId,
-                     ],
+            body: 'Internal Server Error', status: 500, headers: $headers,
         ))->send();
     } else {
         echo 'Internal Server Error';

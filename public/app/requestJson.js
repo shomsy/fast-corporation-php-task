@@ -78,10 +78,12 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
       const requestId = response.headers.get('x-request-id');
       const retryValue = response.headers.get('retry-after');
       const retryAfter = retryValue && /^\d+$/.test(retryValue) ? Number(retryValue) : null;
+      const serverError = payload !== null && typeof payload === 'object' && !Array.isArray(payload)
+        ? payload.error : null;
       const safeMessage = response.status >= 500 ? 'The server could not complete this request.'
-        : typeof payload?.error?.message === 'string' ? payload.error.message : 'Request denied.';
+        : typeof serverError?.message === 'string' ? serverError.message : 'Request denied.';
       throw new HttpError(response.status, safeMessage, {
-        code: typeof payload?.error?.code === 'string' ? payload.error.code : 'request_failed',
+        code: typeof serverError?.code === 'string' ? serverError.code : 'request_failed',
         requestId, retryAfter,
       });
     }

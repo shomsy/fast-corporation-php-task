@@ -59,8 +59,7 @@ final class StablePaginationTest extends TestCase
         $this->seed(pdo: $pdo, count: 61);
         $statistics = new Statistics(pdo: $pdo);
         $first      = $statistics->cursorPage(key: 'first-key', action: 'view-page');
-        $cursor     = $first['nextCursor'];
-        self::assertNotNull($cursor);
+        $cursor     = $first['nextCursor'] ?? throw new \LogicException('Expected a next cursor.');
 
         foreach ([
                      static fn () : array => $statistics->cursorPage(cursor: substr(string: $cursor, offset: 0, length: -1) . 'x', key: 'first-key', action: 'view-page'),

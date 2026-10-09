@@ -82,24 +82,7 @@ final class Router
     {
         $method  = $request->method();
         $path    = $request->path();
-        $allowed = [];
-
-        foreach ($this->routes as $registeredMethod => $registeredRoutes) {
-            if (array_key_exists(key: $path, array: $registeredRoutes)) {
-                $allowed[] = $registeredMethod;
-            }
-        }
-
-        if (in_array(needle: 'GET', haystack: $allowed, strict: true)) {
-            $allowed[] = 'HEAD';
-        }
-        if ($allowed !== []) {
-            $allowed[] = 'OPTIONS';
-        }
-        $allowed  = array_values(array_unique(array: $allowed));
-        $priority = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
-        $rank     = array_flip(array: $priority);
-        usort(array: $allowed, callback: static fn (string $a, string $b) : int => ($rank[$a] ?? 99) <=> ($rank[$b] ?? 99));
+        $allowed = $this->allowedMethods(path: $path);
 
         if ($method === 'OPTIONS' && $allowed !== []) {
             return new Response(body: '', status: 204, headers: ['Allow' => implode(separator: ', ', array: $allowed)]);
@@ -108,19 +91,11 @@ final class Router
         $route = $this->routes[$method][$path] ?? ($method === 'HEAD' ? ($this->routes['GET'][$path] ?? null) : null);
 
         if ($route !== null) {
-            if ($this->guard === null) {
-                // No application security binding: protected routes and all unsafe verbs fail closed.
-                if ($route['access'] !== RouteAccess::Public || ! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)) {
-                    return $method === 'HEAD' ? new Response(body: '', status: 403) : Response::text(body: 'Forbidden', status: 403);
-                }
-            } else {
-                $denied = ($this->guard)($request, $route['access']);
-
-                if ($denied !== null) {
-                    return $method === 'HEAD'
-                        ? new Response(body: '', status: $denied->status(), headers: $denied->headers())
-                        : $denied;
-                }
+            $denied = $this->authorize(request: $request, access: $route['access']);
+            if ($denied !== null) {
+                return $method === 'HEAD'
+                    ? new Response(body: '', status: $denied->status(), headers: $denied->headers())
+                    : $denied;
             }
 
             // Tracking GET handlers must never be invoked by HEAD (no view event).
@@ -140,4 +115,59 @@ final class Router
 
         return Response::text(body: 'Not Found', status: 404);
     }
+
+    /**
+     * Enumerate exact-method matches, including HTTP's implicit HEAD and OPTIONS verbs.
+     *
+     * @param string $path Canonical request path.
+     *
+     * @return list<string> Stable Allow-header method order.
+     */
+    private function allowedMethods(string $path) : array
+    {
+        $allowed = [];
+
+        foreach ($this->routes as $registeredMethod => $registeredRoutes) {
+            if (array_key_exists(key: $path, array: $registeredRoutes)) {
+                $allowed[] = $registeredMethod;
+            }
+        }
+
+        if (in_array(needle: 'GET', haystack: $allowed, strict: true)) {
+            $allowed[] = 'HEAD';
+        }
+        if ($allowed !== []) {
+            $allowed[] = 'OPTIONS';
+        }
+        $allowed  = array_values(array_unique(array: $allowed));
+        $priority = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+        $rank     = array_flip(array: $priority);
+        usort(array: $allowed, callback: static fn (string $a, string $b) : int => ($rank[$a] ?? 99) <=> ($rank[$b] ?? 99));
+
+        return $allowed;
+    }
+
+    /**
+     * Resolve the configured security boundary without invoking a business handler.
+     *
+     * @param Request     $request Current request.
+     * @param RouteAccess $access  Route-specific security policy.
+     *
+     * @return Response|null Denial or permission to proceed.
+     */
+    private function authorize(Request $request, RouteAccess $access) : Response|null
+    {
+        if ($this->guard !== null) {
+            return ($this->guard)($request, $access);
+        }
+
+        // Without the guard, all protected routes and unsafe methods fail closed.
+        if ($access !== RouteAccess::Public
+            || ! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)) {
+            return Response::text(body: 'Forbidden', status: 403);
+        }
+
+        return null;
+    }
+
 }

@@ -52,24 +52,13 @@ function inspectDocContracts(array $ast, string $path) : array
         #[Override]
         public function enterNode(Node $node) : Node|null
         {
-            if (! $node instanceof Stmt\ClassLike
-                && ! $node instanceof Stmt\ClassMethod
-                && ! $node instanceof Stmt\Function_
-                && ! $node instanceof Stmt\Property
-                && ! $node instanceof Stmt\ClassConst
-                && ! $node instanceof Stmt\EnumCase
-            ) {
+            if (! self::needsContract($node)
+                || ($node instanceof Stmt\ClassLike && $node->name === null)) {
                 return null;
             }
 
-            // Inline anonymous classes are expressions, not named contracts.
-            // Document their binding variable and each declared member instead.
-            if ($node instanceof Stmt\ClassLike && $node->name === null) {
-                return null;
-            }
-
-            $doc  = $node->getDocComment();
             $line = $node->getStartLine();
+            $doc  = $node->getDocComment();
             if ($doc === null) {
                 $this->issues[] = "{$this->path}:{$line} missing DocBlock";
 
@@ -82,20 +71,7 @@ function inspectDocContracts(array $ast, string $path) : array
             }
 
             if ($node instanceof Stmt\ClassMethod || $node instanceof Stmt\Function_) {
-                foreach ($node->params as $param) {
-                    if (! $param->var instanceof Node\Expr\Variable || ! is_string($param->var->name)) {
-                        continue;
-                    }
-                    $name = preg_quote($param->var->name, '/');
-                    // MOI may wrap a long @param type onto subsequent PHPDoc lines.
-                    // Stop at the next tag, rather than matching a different tag's parameter.
-                    if (! preg_match('/@param\b(?:(?!\R[ \t]*\*[ \t]*@)[\s\S])*?\$' . $name . '\b/', $text)) {
-                        $this->issues[] = "{$this->path}:{$line} missing @param \${$param->var->name}";
-                    }
-                }
-                if ($node->name->toString() !== '__construct' && ! preg_match('/@return\s+\S+/', $text)) {
-                    $this->issues[] = "{$this->path}:{$line} missing @return";
-                }
+                $this->checkCallable(node: $node, text: $text, line: $line);
             }
 
             if (($node instanceof Stmt\Property || $node instanceof Stmt\ClassConst)
@@ -105,6 +81,48 @@ function inspectDocContracts(array $ast, string $path) : array
 
             return null;
         }
+
+        /**
+         * Define declarations whose public structure requires PHPDoc.
+         *
+         * @param Node $node Candidate syntax tree node.
+         *
+         * @return bool Whether it is a contract-bearing declaration.
+         */
+        private static function needsContract(Node $node) : bool
+        {
+            return $node instanceof Stmt\ClassLike || $node instanceof Stmt\ClassMethod
+                || $node instanceof Stmt\Function_ || $node instanceof Stmt\Property
+                || $node instanceof Stmt\ClassConst || $node instanceof Stmt\EnumCase;
+        }
+
+        /**
+         * Verify each parameter and a non-constructor's declared result.
+         *
+         * @param Stmt\ClassMethod|Stmt\Function_ $node Callable declaration.
+         * @param string                          $text Complete PHPDoc text (possibly multiline).
+         * @param int                             $line Source declaration line.
+         *
+         * @return void No return value.
+         */
+        private function checkCallable(Stmt\ClassMethod|Stmt\Function_ $node, string $text, int $line) : void
+        {
+            foreach ($node->params as $param) {
+                if (! $param->var instanceof Node\Expr\Variable || ! is_string($param->var->name)) {
+                    continue;
+                }
+                $name = preg_quote($param->var->name, '/');
+                // A wrapped type may span multiple lines; stop before the next PHPDoc tag.
+                if (! preg_match('/@param\b(?:(?!\R[ \t]*\*[ \t]*@)[\s\S])*?\$' . $name . '\b/', $text)) {
+                    $this->issues[] = "{$this->path}:{$line} missing @param \${$param->var->name}";
+                }
+            }
+
+            if ($node->name->toString() !== '__construct' && ! preg_match('/@return\s+\S+/', $text)) {
+                $this->issues[] = "{$this->path}:{$line} missing @return";
+            }
+        }
+
     };
 
     $traverser = new NodeTraverser();

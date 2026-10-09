@@ -15,7 +15,6 @@ use InterviewTask\Accounts\Accounts;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\Role;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
@@ -31,12 +30,12 @@ use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
-use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Time\SystemClock;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\RouteAccess;
+use InterviewTask\Bootstrap\Http\RouteGuard;
 use InterviewTask\Runtime\Http\Response;
 use InterviewTask\Runtime\Http\Router;
 
@@ -70,59 +69,30 @@ return static function (Router $router) use ($config) : void {
     $activity = new ActivityLog(pdo: $pdo, clock: $clock);
     $signedIn = new RequireSignedIn(identity: $identity);
 
-    // Authorization and CSRF are enforced before all route handlers, including future ones.
-    $router->guardWith(static function (Request $request, RouteAccess $access) use ($current, $csrf) : Response|null {
-        if ($access !== RouteAccess::Public) {
-            $account = $current->current();
+    // One explicit transport policy owns both access and CSRF before any handler runs.
+    $router->guardWith(new RouteGuard(account: $current, csrf: $csrf));
 
-            if ($account === null) {
-                return str_starts_with(haystack: $request->path(), needle: '/api/')
-                    ? Response::json(payload: ['error' => ['code' => 'unauthenticated', 'message' => 'Sign in required.']], status: 401)
-                    : Response::redirect(location: '/login');
-            }
-
-            if ($access === RouteAccess::Admin && $account->role !== Role::Admin) {
-                $denied = str_starts_with(haystack: $request->path(), needle: '/api/')
-                    ? Response::json(payload: ['error' => ['code' => 'forbidden', 'message' => 'Forbidden.']], status: 403)
-                    : Response::text(body: 'Forbidden', status: 403);
-
-                return $denied->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.admin_denied'));
-            }
-        }
-
-        if (! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)
-            && ! $csrf->matches(submitted: $request->csrfToken())) {
-            $denied = str_starts_with(haystack: $request->path(), needle: '/api/')
-                ? Response::json(payload: ['error' => ['code' => 'csrf_denied', 'message' => 'Session verification failed.']], status: 403)
-                : Response::text(body: 'Forbidden', status: 403);
-
-            return $denied->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.csrf_denied'));
-        }
-
-        return null;
-    });
-
-    $lifecycle     = new AccountLifecycle(
+    $lifecycle    = new AccountLifecycle(
         register   : new Register(accounts: $accounts, clock: $clock),
         login      : new Login(accounts: $accounts, identity: $identity),
         identity   : $identity,
         activity   : $activity,
         transaction: new Transaction(pdo: $pdo),
     );
-    $sessionApi    = new SessionApi(identity: $current, csrf: $csrf);
-    $accountApi    = new AccountApi(lifecycle: $lifecycle, csrf: $csrf);
-    $cowOffer      = new CowOffer(activityLog: $activity);
-    $cowOfferApi   = new CowOfferApi(cow: $cowOffer, signedIn: $signedIn);
-    $downloadFile  = new DownloadFile(
+    $sessionApi   = new SessionApi(identity: $current, csrf: $csrf);
+    $accountApi   = new AccountApi(lifecycle: $lifecycle, csrf: $csrf);
+    $cowOffer     = new CowOffer(activityLog: $activity);
+    $cowOfferApi  = new CowOfferApi(cow: $cowOffer, signedIn: $signedIn);
+    $downloadFile = new DownloadFile(
         activityLog   : $activity,
         artifactPath  : $config['root'] . '/assets/sample.exe',
         expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
     );
-    $downloadApi   = new DownloadApi(downloads: $downloadFile, signedIn: $signedIn);
-    $statistics    = new Statistics(pdo: $pdo);
-    $reports       = new DailyReports(pdo: $pdo);
-    $admin         = new RequireAdmin(identity: $identity);
-    $activityApi   = new ActivityApi(statistics: $statistics, reports: $reports, admin: $admin, session: $session);
+    $downloadApi  = new DownloadApi(downloads: $downloadFile, signedIn: $signedIn);
+    $statistics   = new Statistics(pdo: $pdo);
+    $reports      = new DailyReports(pdo: $pdo);
+    $admin        = new RequireAdmin(identity: $identity);
+    $activityApi  = new ActivityApi(statistics: $statistics, reports: $reports, admin: $admin, session: $session);
 
 
     // Fixed, allowlisted SPA assets: no untrusted request path is ever used as a filesystem path.
@@ -152,41 +122,41 @@ return static function (Router $router) use ($config) : void {
 
     // Stable legacy bookmark aliases. SPA is the sole presentation owner.
     $spaEntrypoints = [
-            '/'           => '/app/home',
-            '/login'      => '/app/login',
-            '/register'   => '/app/register',
-            '/page-a'     => '/app/page-a',
-            '/page-b'     => '/app/page-b',
-            '/statistics' => '/app/statistics',
-            '/reports'    => '/app/reports',
-        ];
+        '/'           => '/app/home',
+        '/login'      => '/app/login',
+        '/register'   => '/app/register',
+        '/page-a'     => '/app/page-a',
+        '/page-b'     => '/app/page-b',
+        '/statistics' => '/app/statistics',
+        '/reports'    => '/app/reports',
+    ];
     foreach ($spaEntrypoints as $legacyPath => $screenPath) {
-            $router->add(
-                method : 'GET',
-                path   : $legacyPath,
-                handler: static function (Request $request) use ($screenPath) : Response {
-                    $filters    = [];
-                    $filterKeys = match ($screenPath) {
-                        '/app/statistics' => ['date', 'user', 'action', 'cursor'],
-                        '/app/reports'    => ['from', 'to'],
-                        default           => [],
-                    };
-                    foreach ($filterKeys as $key) {
-                        $value = $request->query(key: $key);
-                        if ($value !== null && ! is_string(value: $value)) {
-                            return Response::text(body: 'Invalid query parameter.', status: 422);
-                        }
-                        if (is_string(value: $value)) {
-                            $filters[$key] = $value;
-                        }
+        $router->add(
+            method : 'GET',
+            path   : $legacyPath,
+            handler: static function (Request $request) use ($screenPath) : Response {
+                $filters    = [];
+                $filterKeys = match ($screenPath) {
+                    '/app/statistics' => ['date', 'user', 'action', 'cursor'],
+                    '/app/reports'    => ['from', 'to'],
+                    default           => [],
+                };
+                foreach ($filterKeys as $key) {
+                    $value = $request->query(key: $key);
+                    if ($value !== null && ! is_string(value: $value)) {
+                        return Response::text(body: 'Invalid query parameter.', status: 422);
                     }
-                    $query = $filters === [] ? '' : '?' . http_build_query(data: $filters);
+                    if (is_string(value: $value)) {
+                        $filters[$key] = $value;
+                    }
+                }
+                $query = $filters === [] ? '' : '?' . http_build_query(data: $filters);
 
-                    return Response::redirect(location: $screenPath . $query);
-                },
-                access : RouteAccess::Public,
-            );
-        }
+                return Response::redirect(location: $screenPath . $query);
+            },
+            access : RouteAccess::Public,
+        );
+    }
 
     $router->add(method: 'GET', path: '/api/session', handler: static fn () : Response => $sessionApi->session(), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/api/csrf', handler: static fn () : Response => $sessionApi->csrf(), access: RouteAccess::Public);

@@ -146,7 +146,7 @@ final readonly class Response
      */
     public function withHeader(string $name, string $value) : self
     {
-        if (preg_match(pattern: '/\A[A-Za-z0-9-]+\z/D', subject: $name) !== 1
+        if (preg_match(pattern: '/\A[A-Za-z0-9-]+\z/', subject: $name) !== 1
             || str_contains(haystack: $value, needle: "\r")
             || str_contains(haystack: $value, needle: "\n")) {
             throw new InvalidArgumentException(message: 'Invalid response header.');

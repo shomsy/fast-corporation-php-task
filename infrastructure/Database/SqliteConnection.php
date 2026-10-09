@@ -52,7 +52,8 @@ final class SqliteConnection
             // Journal mode changes are provisioning decisions, never a web-request side effect.
             $mode = $pdo->query(query: 'PRAGMA journal_mode = WAL');
 
-            if ($mode === false || strtolower(string: (string) $mode->fetchColumn()) !== 'wal') {
+            $journalMode = $mode === false ? false : $mode->fetchColumn();
+            if (! is_string(value: $journalMode) || strtolower(string: $journalMode) !== 'wal') {
                 throw new RuntimeException(message: 'Unable to enable SQLite WAL journal.');
             }
         }
