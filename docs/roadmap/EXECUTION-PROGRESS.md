@@ -1,31 +1,31 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01/M03/M04/M05/M06/M07/M08/M09 DONE at local acceptance; M02/M11 IN PROGRESS, M10 NOT STARTED. 41/48 complete. Public production not certified.
+**Status:** M00/M01/M03/M04/M05/M06/M07/M08/M09/M10 DONE locally; M02/M11 IN PROGRESS. 45/48 complete. Public production not certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** 61a3377502171d8649860ffc2431f4c65f3eb30d (C-45, plus CI f2373af53701e8227d266bd2e41ab65cf810b8ce); C-44 ab9d38fe39c375b31824f392bea79fb214d86337; C-43 88c5d854bf7c65cfe5e4b14f25185009c42e005e.
-**Next legal action:** M10 C-46 reversible route ownership cutover for proven SPA slices, with explicit opt-in/default decision, real browser routing parity and tested rollback; preserve working SSR until migration gate is proven. Then disposition C-20/C-35/C-36/C-48 against actual evidence, not unchecked status alone. Public C-05 proxy rate limiting and C-47 deployment RPO/RTO/FPM/HTTPS gates remain unverified. Do not repeat C-43/C-44/C-45.
+**Last implementation commit:** 7a779c75816cca3a783151e999d7230543a0dc13 C-46; be7076c9e1a2d7b9d34ceef187a6afddaee0023a C-36; d702e6dad130151731a453baaf7a9f5e5f027521 C-35; 63074758ec11116129795c3edd053f3f7e7dae4a C-20.
+**Next legal action:** M11 C-47 final recruiter acceptance and public GO/NO-GO evidence; C-05 real deployed proxy 429/Retry-After remains unverified/OPEN. Then C-48 optional-scope disposition after C-47. SSR safe default, UI_ENTRYPOINT=spa is tested opt-in. Do not repeat C-20/C-35/C-36/C-46.
 
 ## Milestone status
 
 | Phase | Goal | State | Evidence (commit/test) |
 |---|---|---|---|
-| M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
+| M00 | Baseline & evidence | **DONE locally** | bb420841 baseline; C-35 d702e6d regression/CI evidence, C-36 be7076c project agents and 48-ID validator; full quality, HTTP, Chrome PASS. |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
 | M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10/C-22/C-32 DONE** | Session and production boot gates PASS; `694093c` measured 40 real requests each on health/ready/404/login/session, retained current eager wiring, no speculative DI. |
 | M04 | DB/audit/durability | **DONE (local acceptance)** | C-11/C-12/C-13/C-18/C-19/C-24/C-25: checksummed migrations, audit/view/click semantics, WAL, transactional failure, online backup and restore passed. Host-specific RPO/RTO remain a public release gate, not claimed by local acceptance. |
 | M05 | Analytics/performance | **DONE (local acceptance)** | C-14/C-15/C-16/C-17/C-28 complete; report query plans, actor indexes, signed keyset, UTC chart, 4-client/176-request p95/p99 baseline `84c734a`, SQLite lock and bounded PHP heap. No public PHP-FPM load SLO claimed. |
-| M06 | Backend LLD & API | **IN PROGRESS — C-29/C-30/C-33/C-34 DONE** | Session/CSRF JSON, explicit audit side effect, tooling ADR; `9917d65` truthful PHPDoc and named-argument compatibility regression, quality 151 tests/6614 checks and HTTP smoke PASS. |
+| M06 | Backend LLD & API | **DONE locally** | C-29/C-30/C-33/C-34 JSON/auth, side effects, tooling/docs and named argument tests PASS. |
 | M07 | SPA shell & security | **DONE (local/browser acceptance)** | C-37–39 shell/cookie/CSRF/History; C-44 `ab9d38f` focusable ARIA errors, native form keyboard handling, double-submit and stale abort, XSS-safe DOM and AA contrast checks. 21 Node tests pass, real Chrome login/role/navigation pass. |
 | M08 | User screens | **DONE (real browser acceptance)** | C-40 `720b677` Accounts, C-41 `4fa0fb1` CowOffer, C-42 `cae5010` native fixed SHA PE. Browser C-45 verifies registration/login/logout, 401/403, click/download and role boundaries; exact SQLite/API acceptance and SSR fallback maintained. |
 | M09 | Admin screens/tests | **DONE (local/browser acceptance)** | C-43 `88c5d85`: owner-reused admin-only JSON stats/cursor and 30-active-UTC-day reports, safe tables and gap-aware SVG; C-45 `61a3377` browser E2E + CSP connect-src fix; CI `f2373af` adds Node/Chrome gates to PHP 8.5. Full quality 158/6737, Node 21/21, Chrome PASS, SSR HTTP PASS. |
-| M10 | Cutover | NOT STARTED | — |
-| M11 | Final acceptance | **IN PROGRESS — C-23/C-26 DONE** | `ceb12f8` fixed 2 MiB SHA-pinned PE; `857926e` liveness/readiness schema hashes and deployment recovery runbook, HTTP and local backup failure tests PASS. Final C-47 and deployment GO remain OPEN. |
+| M10 | Cutover | **DONE locally; reversible** | C-46 7a779c7: old GET to SPA aliases, real browser and same-DB SSR rollback PASS, APIs/POSTs unchanged; ADR-0019. |
+| M11 | Final acceptance | **IN PROGRESS — C-20/C-23/C-26 DONE** | C-20 6307475 recovery scope deferred; public C-05/C-47 and optional C-48 remain OPEN. |
 
-## Canonical packet status — 41 DONE / 48 TOTAL (7 OPEN)
+## Canonical packet status — 45 DONE / 48 TOTAL (3 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -46,7 +46,7 @@
 - [x] **C-17** — Repair sparse UTC day-axis, omitted zero-event day gaps, unique Y ticks and chart accessibility. **DONE:** `d5e0843ecc597100b39cdf4c5342cf1ee543a2f1`; chart x values now proportional to real UTC date spans, disconnected lines across omitted no-activity days, 2 distinct 0/1 ticks when max=1, per-point keyboard label, four visually differentiated series. Chart+table reuse authoritative 30-active-day dataset; no fake zero rows. RED two regressions then GREEN 22 scoped tests/5554 assertions, quality 127/6195, HTTP smoke PASS.
 - [x] **C-18** — Click replay/counting policy: **DONE** `0364b55026e0a3459764b7b918fb13166437c3f4`; count every accepted CSRF-valid Buy Cow or fixed-file Download POST, including double-click/two tabs/repeat after reload; no purchase/transfer semantics and no automatic POST retry. Denied actions do not produce event. Scoped repeated-click test 1/13; final full quality 132/6491, HTTP smoke PASS; ADR-0008.
 - [x] **C-19** — View count/navigation policy: **DONE** `0364b55026e0a3459764b7b918fb13166437c3f4`; actual authorized SSR visits and revisit/back-forward GET count once per accepted navigation; recognized HTTP Sec-Purpose/Purpose/X-Moz prefetch returns 204 without audit after auth, unauthorized views not recorded. Future SPA activates explicit POST view per mounted navigation; no prefetch/data GET side effect. Scoped navigation test 1/10; final full quality 132/6491, HTTP smoke PASS; ADR-0009.
-- [ ] **C-20** — Assess account disable/reset/admin recovery scope separately from interview acceptance. *(OPEN; no implementation evidence yet)*
+- [x] **C-20** — Account disable/reset/admin recovery assessment deferred (ADR-0020), DONE 63074758ec11116129795c3edd053f3f7e7dae4a. TASK.md does not require it; public identity triggers documented, no feature claim.
 - [x] **C-21** — Differentiate client validation/authorization from dependency errors. **DONE:** `6cc9e1d`; existing 4xx/503/500 mappings verified, both real 500 causes remain safe generic responses with 24-hex-character X-Request-ID and matching server log reference. RED smoke before fix; GREEN after; quality 98/6038 PASS.
 - [x] **C-22** — Define safe URI parsing, HEAD/OPTIONS/Allow handling and output rules. **DONE:** `ead0b66`; validated malformed request target returns safe 400; HEAD suppresses body, OPTIONS and 405 expose correct Allow; router/response/entry integration covered in `tests/Runtime/HttpProtocolTest.php`, ADR-0010; full quality 142/6552, live HTTP smoke PASS.
 - [x] **C-23** — Keep fixed server-selected artifact. DONE `ceb12f8b5edd2565f576c3b2d34e3a08578d4758`: reviewed 1024-byte PE pinned to SHA-256, Linux file mode 0644, rejects symlink/mismatch/oversize above 2 MiB before successful download audit; binary response and 503/500 boundaries unchanged. RED 3 new tests then 6/25 scoped PASS, final quality 148/6586, HTTP smoke PASS; ADR-0013.
@@ -61,8 +61,8 @@
 - [x] **C-32** — Measure eager PDO/config/router wiring and duplicate authoritative account lookups before lazy optimization. DONE `694093cf20dcee692299997bb59fda29b4b05df5`: isolated 40-request/route real HTTP probe: initial p95 health 0.365ms, readiness 0.719ms, missing 404 0.763ms, login 0.721ms, session API 0.689ms. Second probe PASS, ADR-0018 preserves early healthz and eager wiring without speculative DI; source notes two authoritative account reload paths but no isolated duplicate-query saving claim.
 - [x] **C-33** — Evaluate OSS choices for PHP routing/templates/logging and SPA routing/chart/testing. **DONE:** `a578f845acd0a8c3646417215ee3e6be93c1f904`; ADR-0017 compares Slim PSR-15, Twig, Monolog, native History/ES Modules, client routing libraries, Chart.js and testing with maintenance/dependency/security/fit trade-offs. Retain smallest tested implementation until a library earns its cost; no new dependency. Quality 150/6608 PASS.
 - [x] **C-34** — Keep useful PHPDoc, remove misleading generic text, preserve MOI and named-argument public contract. DONE `9917d659ccb48a5d2c3aecae8954b1b32f66955f`: five HTTP/adapter files now document real response outcomes, CSRF/audit and HTTP path semantics; regression NamedArgumentContractTest 1/6, PHPDoc checker 97 PHP files, quality 151/6614 PHPStan/Deptrac/audit PASS and real HTTP smoke PASS. MOI unchanged.
-- [ ] **C-35** — Extend tests beyond happy paths and preserve Composer/PHPStan/Deptrac baseline, pinned CI where ju. *(OPEN; no implementation evidence yet)*
-- [ ] **C-36** — Create project-specific agent guidance and deterministic RP iteration, checkpoint, reconciliation . *(OPEN; no implementation evidence yet)*
+- [x] **C-35** — Test coverage and pinned CI evidence complete, DONE d702e6dad130151731a453baaf7a9f5e5f027521. PHP 158/6737, Node 21, Chrome, SSR/cutover HTTP, static/dependency audit PASS; remote CI run unverified.
+- [x] **C-36** — Project AGENTS.md, stable Homer resume/reconciliation rules and 48-ID validator in CI, DONE be7076c9e1a2d7b9d34ceef187a6afddaee0023a. Original reviews unchanged.
 - [x] **C-37** — Introduce no-framework, no-bundler ES-module SPA shell served from same origin. DONE `a69a5013f8faa26be622c19923242a388b626e79`: public/app/index.html and startApp.js with local public/assets/app.css, fixed allowlisted /app and /app/login routes and JS/CSS MIME; CSP allows same-origin CSS. Before-fix real HTTP shell 404 RED, then real HTTP assets/SSR smoke PASS and native Node 2/2 ESM tests PASS; PHP quality 151/6614, security audit clear. No user feature/navigation cutover yet, SSR unchanged; browser E2E belongs to C-45.
 - [x] **C-38** — History navigation, bounded mount/dispose and cancel lifecycle. DONE `407a977113e329ba4ad0221d8b66116a80f936f9`: allowlisted SPA deep links and server 404 for unknown routes; native navigation tests 3/3 (history, modifier links, cleanup), real HTTP smoke PASS; no SSR cutover.
 - [x] **C-39** — Same-origin JSON HTTP client with cookies, CSRF bootstrap, error contract, cancellation and no automatic unsafe retry. DONE `0eb0a2764af7e64d27f92948400590aa40ca399a`: Request::csrfToken selects API header only with application/json and legacy form field otherwise; central guard JSON denials, static allowlisted JS. RED 1 PHP test undefined method, GREEN 1/4; Node 8/8 overall, composer quality 152/6618, PHPStan/Deptrac/security audit and live HTTP smoke PASS. No JWT/browser credential storage. Actual Accounts JSON writes and browser E2E remain C-40/C-45.
@@ -72,7 +72,7 @@
 - [x] **C-43** — Admin ActivityTracking SPA. DONE `88c5d854bf7c65cfe5e4b14f25185009c42e005e`: server-side role/filters/signed cursor via existing Statistics, 30 active UTC days via DailyReports, query URL and safe table/SVG with missing-calendar gaps. RED missing adapter; GREEN 1/64 scoped, real HTTP 401/403 admin/filter/date 422 and report parity; quality 158/6723, Node 14/14, SSR smoke PASS.
 - [x] **C-44** — Safe DOM and a11y. DONE `ab9d38fe39c375b31824f392bea79fb214d86337`: RED 3 focus failures -> GREEN 7 dedicated assertions/test cases, focusable/announced errors across four SPA screens, XSS insertion scan, AA contrast calculation, native labels, pending submit dedup, 401 redirect and stale async disposal; 21/21 frontend tests PASS; quality/SSR preserved.
 - [x] **C-45** — Real browser and CI gate. DONE `61a3377502171d8649860ffc2431f4c65f3eb30d` plus CI `f2373af53701e8227d266bd2e41ab65cf810b8ce`: pinned OSS Playwright dev-only (2 packages, no browser download) and installed Chrome; disposable SQLite/PHP login/registration/CowOffer/native 1024-byte SHA PE/admin filtered stats/report SVG tests PASS. Found true browser-only CSP fetch failure, reproduced PHPUnit RED and fixed `connect-src 'self'` without relaxing default/script; full PHP quality 158/6737, Node 21/21, real Chrome PASS, SSR smoke PASS, npm audit 0. PHP 8.5 CI browser/frontend job YAML parsed; remote CI result not yet observed.
-- [ ] **C-46** — Migrate one vertical slice at a time, preserve old SSR behavior until verified, switch route owner. *(OPEN; no implementation evidence yet)*
+- [x] **C-46** — Reversible known GET owner switch, DONE 7a779c75816cca3a783151e999d7230543a0dc13. UI_ENTRYPOINT default SSR; SPA opt-in, same-DB SSR rollback, Chrome aliases and PHP 158/6737 PASS; no legacy template deletion.
 - [ ] **C-47** — Verify recruiter task fully, all production security/persistence gates and honest GO/NO-GO split. *(OPEN; no implementation evidence yet)*
 - [ ] **C-48** — Track optional features separately: password reset, account status, token/JWT, framework migration. *(OPEN; no implementation evidence yet)*
 
@@ -89,7 +89,7 @@
 
 ## Current blockers
 
-- C-46 is next: decide reversible route cutover with actual browser parity and rollback before removing SSR presentation. C-05/C-47 public deployment remains NO-GO (proxy limits, service permissions, HTTPS, RPO/RTO and PHP-FPM capacity not yet deployed/verified); remote CI run after push is not yet evidenced. C-20/C-35/C-36/C-48 need explicit evidence/scope disposition. Root-owned historical PHPStan cache remains quarantined; current cache works.
+- C-05/C-47 public deployment NO-GO until actual proxy 429, HTTPS, service rights, RPO/RTO and PHP-FPM capacity evidence. C-48 depends on C-47. Remote CI run unverified; root-owned historical PHPStan cache quarantined.
 
 ## Phase evidence log
 
@@ -137,6 +137,11 @@
 | 2026-10-09 | M09 / C-43 | `88c5d854bf7c65cfe5e4b14f25185009c42e005e` | RED missing admin JSON adapter -> GREEN 1/64, Node 14/14, full quality 158/6723, HTTP 401/403/422/admin reports PASS | Same authoritative Statistics and DailyReports; UTC gaps and table/chart parity. |
 | 2026-10-09 | M07 / C-44 | `ab9d38fe39c375b31824f392bea79fb214d86337` | RED 3 a11y failures -> GREEN 7/7 targeted, frontend 21/21, PHP quality and HTTP smoke PASS | Focusable announced errors, native label/keyboard, stale abort and duplicate submit contracts. |
 | 2026-10-09 | M09 / C-45 | `61a3377502171d8649860ffc2431f4c65f3eb30d` (CI `f2373af53701e8227d266bd2e41ab65cf810b8ce`) | Real Chrome E2E RED blocked fetch; PHP CSP regression RED, GREEN `connect-src 'self'` and Chrome journey PASS; full 158/6737, Node 21/21, audit clear, reproducible npm ci | Dev-only OSS Playwright + installed Chrome; CI configured, remote execution not claimed. |
+
+| 2026-10-09 | M10 / C-46 | 7a779c75816cca3a783151e999d7230543a0dc13 | Dual SSR/SPA same-DB rollback, Chrome aliases, quality 158/6737 PASS | Verified scope only; public production not certified. |
+| 2026-10-09 | M00 / C-36 | be7076c9e1a2d7b9d34ceef187a6afddaee0023a | AGENTS, 48-ID validator and CI gate PASS | Verified scope only; public production not certified. |
+| 2026-10-09 | M00 / C-35 | d702e6dad130151731a453baaf7a9f5e5f027521 | Negative regression evidence; npm audit 0, PHP/Node/Chrome/HTTP PASS | Verified scope only; public production not certified. |
+| 2026-10-09 | M11 / C-20 | 63074758ec11116129795c3edd053f3f7e7dae4a | Optional account recovery deferred with triggers in ADR-0020 | Verified scope only; public production not certified. |
 
 ## Decisions log
 
