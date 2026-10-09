@@ -26,28 +26,67 @@ final readonly class Migrator
     ) {}
 
     /**
-     * Apply new owner migrations once and return their identifiers.
+     * Validate applied SQL and atomically apply any missing migrations under one SQLite writer lock.
      *
-     * @return list<string> migration identifiers applied by this run
+     * @return list<string> Migration identifiers newly applied by this run.
+     * @throws RuntimeException When migration content, source or metadata is invalid.
      */
     public function migrate(): array
     {
-        $this->ensureMetadataTable();
+        $migrations = $this->discoverMigrations();
+        $this->pdo->exec(statement: 'BEGIN IMMEDIATE');
 
-        $applied      = array_fill_keys(keys: $this->appliedMigrationIds(), value: true);
-        $migrations   = $this->discoverMigrations();
-        $newlyApplied = [];
+        try {
+            $this->ensureMetadataTable();
+            $this->upgradeLegacyLedger();
+            $applied = $this->appliedMigrations();
+            $added = [];
 
-        foreach ($migrations as $identifier => $file) {
-            if (isset($applied[$identifier])) {
-                continue;
+            foreach ($applied as $id => $checksum) {
+                if (! isset($migrations[$id])) {
+                    throw new RuntimeException(message: 'Recorded migration source missing: ' . $id);
+                }
+
+                $actual = hash(algo: 'sha256', data: $this->readSql(file: $migrations[$id]));
+                if ($checksum !== null && ! hash_equals(known_string: $checksum, user_string: $actual)) {
+                    throw new RuntimeException(message: 'Applied migration changed: ' . $id);
+                }
+
+                if ($checksum === null) {
+                    $statement = $this->pdo->prepare(query: 'UPDATE schema_migrations SET checksum = :hash WHERE migration = :id');
+                    if ($statement === false) {
+                        throw new RuntimeException(message: 'Cannot update legacy checksum.');
+                    }
+                    $statement->execute(params: ['hash' => $actual, 'id' => $id]);
+                }
             }
 
-            $this->apply(identifier: $identifier, file: $file);
-            $newlyApplied[] = $identifier;
-        }
+            foreach ($migrations as $id => $file) {
+                if (array_key_exists(key: $id, array: $applied)) {
+                    continue;
+                }
 
-        return $newlyApplied;
+                $sql = $this->readSql(file: $file);
+                $this->pdo->exec(statement: $sql);
+                $statement = $this->pdo->prepare(query: 'INSERT INTO schema_migrations (migration, checksum, applied_at) VALUES (:id, :hash, :at)');
+                if ($statement === false) {
+                    throw new RuntimeException(message: 'Cannot record migration.');
+                }
+                $statement->execute(params: ['id' => $id, 'hash' => hash(algo: 'sha256', data: $sql), 'at' => gmdate(format: 'c')]);
+                $added[] = $id;
+            }
+
+            $this->pdo->exec(statement: 'COMMIT');
+
+            return $added;
+        } catch (\Throwable $error) {
+            try {
+                $this->pdo->exec(statement: 'ROLLBACK');
+            } catch (\Throwable) {
+                // Keep the first failure visible.
+            }
+            throw $error;
+        }
     }
 
     /**
@@ -61,6 +100,7 @@ final readonly class Migrator
             statement: <<<'SQL'
                 CREATE TABLE IF NOT EXISTS schema_migrations (
                     migration TEXT PRIMARY KEY,
+                    checksum TEXT NOT NULL,
                     applied_at TEXT NOT NULL
                 )
                 SQL,
@@ -68,30 +108,60 @@ final readonly class Migrator
     }
 
     /**
-     * Read the migration ledger and validate every recorded identifier.
+     * Upgrade the old two-column ledger without dropping migration history.
      *
-     * @return list<string>
+     * @return void No return value.
+     * @throws RuntimeException If metadata inspection fails.
      */
-    private function appliedMigrationIds(): array
+    private function upgradeLegacyLedger(): void
     {
-        $statement = $this->pdo->query(query: 'SELECT migration FROM schema_migrations ORDER BY migration');
-
+        $statement = $this->pdo->query(query: 'PRAGMA table_info(schema_migrations)');
         if ($statement === false) {
-            throw new RuntimeException(message: 'Unable to read applied migrations.');
+            throw new RuntimeException(message: 'Cannot inspect migration metadata.');
         }
 
-        $rows       = $statement->fetchAll(mode: PDO::FETCH_COLUMN);
-        $migrations = [];
-
-        foreach ($rows as $row) {
-            if (! is_string(value: $row)) {
-                throw new RuntimeException(message: 'Migration identifier must be a string.');
+        foreach ($statement->fetchAll(mode: PDO::FETCH_ASSOC) as $column) {
+            if (! is_array(value: $column)) {
+                throw new RuntimeException(message: 'Invalid migration table metadata.');
             }
 
-            $migrations[] = $row;
+            if (($column['name'] ?? null) === 'checksum') {
+                return;
+            }
         }
 
-        return $migrations;
+        $this->pdo->exec(statement: 'ALTER TABLE schema_migrations ADD COLUMN checksum TEXT');
+    }
+
+    /**
+     * Validate migration IDs and persisted hashes.
+     *
+     * @return array<string, string|null> Applied IDs to checksum or legacy null.
+     * @throws RuntimeException If ledger metadata is invalid.
+     */
+    private function appliedMigrations(): array
+    {
+        $statement = $this->pdo->query(query: 'SELECT migration, checksum FROM schema_migrations');
+        if ($statement === false) {
+            throw new RuntimeException(message: 'Cannot read migration ledger.');
+        }
+
+        $applied = [];
+
+        foreach ($statement->fetchAll(mode: PDO::FETCH_ASSOC) as $row) {
+            if (! is_array(value: $row)) {
+                throw new RuntimeException(message: 'Invalid migration ledger row.');
+            }
+
+            $id = $row['migration'] ?? null;
+            $hash = $row['checksum'] ?? null;
+            if (! is_string(value: $id) || ($hash !== null && (! is_string(value: $hash) || strlen(string: $hash) !== 64))) {
+                throw new RuntimeException(message: 'Invalid migration metadata.');
+            }
+            $applied[$id] = $hash;
+        }
+
+        return $applied;
     }
 
     /**
@@ -126,14 +196,13 @@ final readonly class Migrator
     }
 
     /**
-     * Execute one migration together with its ledger entry as one transaction.
+     * Read exact source bytes for SQL execution and SHA-256 fingerprint.
      *
-     * @param string $identifier Unique, owner-qualified migration identifier.
-     * @param string $file Trusted SQL migration file path.
-     * @return void No return value.
-     * @throws RuntimeException When a required external resource or stored value is invalid.
+     * @param string $file Trusted migration source path.
+     * @return string Nonempty SQL source.
+     * @throws RuntimeException If the source is missing or empty.
      */
-    private function apply(string $identifier, string $file): void
+    private function readSql(string $file): string
     {
         $sql = file_get_contents(filename: $file);
 
@@ -141,17 +210,7 @@ final readonly class Migrator
             throw new RuntimeException(message: 'Migration is empty or unreadable: ' . $file);
         }
 
-        (new Transaction(pdo: $this->pdo))->run(operation: function () use ($sql, $identifier): void {
-            $this->pdo->exec(statement: $sql);
-
-            $statement = $this->pdo->prepare(
-                query: 'INSERT INTO schema_migrations (migration, applied_at) VALUES (:migration, :applied_at)',
-            );
-
-            $statement->execute(params: [
-                'migration'  => $identifier,
-                'applied_at' => gmdate(format: 'c'),
-            ]);
-        });
+        return $sql;
     }
+
 }
