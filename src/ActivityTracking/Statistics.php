@@ -56,7 +56,14 @@ final readonly class Statistics
      * @param string|null $action Canonical action value; invalid values are rejected.
      * @param int         $page   1-based page number.
      *
-     * @return list<ActivityEventRow>
+     * @return list<array{
+     *     id: int,
+     *     actor_id: int,
+     *     actor_label: string,
+     *     action: string,
+     *     target: string|null,
+     *     occurred_at: string
+     * }>
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function events(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1) : array
