@@ -136,6 +136,27 @@ final readonly class Request
     }
 
     /**
+     * Obtain a CSRF submission from the correct transport without mixing browser forms and JSON APIs.
+     *
+     * @return mixed Submitted session token or null when the transport is inappropriate.
+     */
+    public function csrfToken(): mixed
+    {
+        if (str_starts_with(haystack: $this->path, needle: '/api/')) {
+            $contentType = $this->server(key: 'CONTENT_TYPE');
+
+            if (! is_string(value: $contentType)
+                || strtolower(string: trim(string: explode(separator: ';', string: $contentType, limit: 2)[0])) !== 'application/json') {
+                return null;
+            }
+
+            return $this->server(key: 'HTTP_X_CSRF_TOKEN');
+        }
+
+        return $this->post(key: 'csrf_token');
+    }
+
+    /**
      * Fetch untrusted HTTP server metadata.
      *
      * @param string $key Name of a session or HTTP input value.

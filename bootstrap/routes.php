@@ -79,17 +79,27 @@ return static function (Router $router) use ($config): void {
             $account = $current->current();
 
             if ($account === null) {
-                return Response::redirect(location: '/login');
+                return str_starts_with(haystack: $request->path(), needle: '/api/')
+                    ? Response::json(payload: ['error' => ['code' => 'unauthenticated', 'message' => 'Sign in required.']], status: 401)
+                    : Response::redirect(location: '/login');
             }
 
             if ($access === RouteAccess::Admin && $account->role !== Role::Admin) {
-                return Response::text(body: 'Forbidden', status: 403)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.admin_denied'));
+                $denied = str_starts_with(haystack: $request->path(), needle: '/api/')
+                    ? Response::json(payload: ['error' => ['code' => 'forbidden', 'message' => 'Forbidden.']], status: 403)
+                    : Response::text(body: 'Forbidden', status: 403);
+
+                return $denied->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.admin_denied'));
             }
         }
 
         if (! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)
-            && ! $csrf->matches(submitted: $request->post(key: 'csrf_token'))) {
-            return Response::text(body: 'Forbidden', status: 403)->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.csrf_denied'));
+            && ! $csrf->matches(submitted: $request->csrfToken())) {
+            $denied = str_starts_with(haystack: $request->path(), needle: '/api/')
+                ? Response::json(payload: ['error' => ['code' => 'csrf_denied', 'message' => 'Session verification failed.']], status: 403)
+                : Response::text(body: 'Forbidden', status: 403);
+
+            return $denied->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.csrf_denied'));
         }
 
         return null;
@@ -141,6 +151,7 @@ return static function (Router $router) use ($config): void {
     }
     $router->add(method: 'GET', path: '/app/startApp.js', handler: static fn(): Response => $spaFile('app/startApp.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/navigate.js', handler: static fn(): Response => $spaFile('app/navigate.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/requestJson.js', handler: static fn(): Response => $spaFile('app/requestJson.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);

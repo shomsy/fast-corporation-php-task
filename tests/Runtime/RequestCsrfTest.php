@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace InterviewTask\Tests\Runtime;
+
+use InterviewTask\Runtime\Http\Request;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * HTTP transport contract: JSON API headers cannot bypass legacy form CSRF checks.
+ *
+ * @package InterviewTask\Tests\Runtime
+ */
+final class RequestCsrfTest extends TestCase
+{
+    /**
+     * Only JSON API unsafe requests accept the CSRF header; SSR must use the form field.
+     *
+     * @return void No return value.
+     */
+    public function testSelectsCorrectCsrfTransport(): void
+    {
+        $form = new Request(method: 'POST', path: '/login',
+            post: ['csrf_token' => 'form-token'],
+            server: ['CONTENT_TYPE' => 'application/json', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
+        self::assertSame('form-token', $form->csrfToken());
+
+        $api = new Request(method: 'POST', path: '/api/accounts/login',
+            post: ['csrf_token' => 'form-token'],
+            server: ['CONTENT_TYPE' => 'application/json; charset=utf-8', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
+        self::assertSame('header-token', $api->csrfToken());
+
+        $missing = new Request(method: 'POST', path: '/api/accounts/login',
+            server: ['CONTENT_TYPE' => 'application/json']);
+        self::assertNull($missing->csrfToken());
+
+        $wrongType = new Request(method: 'POST', path: '/api/accounts/login',
+            server: ['CONTENT_TYPE' => 'text/plain', 'HTTP_X_CSRF_TOKEN' => 'header-token']);
+        self::assertNull($wrongType->csrfToken());
+    }
+}
