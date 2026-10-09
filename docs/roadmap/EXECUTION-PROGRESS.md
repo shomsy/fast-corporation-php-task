@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M01 DONE; M02 IN PROGRESS: C-03/C-04/C-06/C-07/C-09 done; C-27 diagnostics done. 10/48 complete. Public production not yet certified.
+**Status:** M00/M01 DONE; M02 IN PROGRESS; M03 C-10 done; M04 C-11 done. 12/48 complete. Public production not yet certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** ee0cff65d1f3c90861a1846aa1961e660c7d9a13 (C-27); C-09 bd62a5a3abfb473ac45a604d40616013229809e5.
-**Next legal action:** C-10 production fail-closed boot and DB provisioning, then C-08 session storage/GC/locking if measured. Evaluate C-05 rate limits with actual deployment. Batch 2-4 coherent tasks per RP turn.
+**Last implementation commit:** e6359440b1cf3af55975be8beb5bf6e3a821919d (C-11); C-10 c5b5b80a8e4335f48d3c3450719d449d3b9c2b60.
+**Next legal action:** C-08 session storage/GC/locking: measure before changing defaults. Then C-12 audit semantics and C-13 SQLite concurrency (unblocked). C-05 deployment limiting needs edge/proxy evidence. Batch 2–4 tested tasks per RP turn.
 
 ## Milestone status
 
@@ -15,8 +15,8 @@
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
-| M03 | Runtime/session/config | NOT STARTED | — |
-| M04 | DB/audit/durability | NOT STARTED | — |
+| M03 | Runtime/session/config | IN PROGRESS — C-10 DONE | `c5b5b80`: migrated SQLite required at HTTP boot; explicit CLI provisioning and secure production configuration; quality/smoke PASS. |
+| M04 | DB/audit/durability | IN PROGRESS — C-11 DONE | `e635944`: SHA-256 source checks, atomic SQLite BEGIN IMMEDIATE, legacy checksum migration; quality/smoke PASS. |
 | M05 | Analytics/performance | NOT STARTED | — |
 | M06 | Backend LLD & API | NOT STARTED | — |
 | M07 | SPA shell & security | NOT STARTED | — |
@@ -25,7 +25,7 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 10 DONE / 48 TOTAL (38 OPEN)
+## Canonical packet status — 12 DONE / 48 TOTAL (36 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -36,8 +36,8 @@
 - [x] **C-07** — Session ID and CSRF token rotate on login; pre-login tokens cannot authorize authenticated POST, and logout/expiry revoke session. **DONE:** `c62a03d`; RED token test, GREEN session and HTTP smoke with role-demotion regression.
 - [ ] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization before changing n. *(OPEN; no implementation evidence yet)*
 - [x] **C-09** — Unified privacy and browser security headers on every dynamic response, including 200/3xx/4xx/5xx, JSON and binary; CSP disallows inline JS; HSTS only on trusted HTTPS. DONE bd62a5a3abfb473ac45a604d40616013229809e5. RED then GREEN 9 Router tests/65 assertions, quality 106/6118 and live smoke PASS. Legacy inline CSS retained until SPA.
-- [ ] **C-10** — Reject unsafe production configuration. *(OPEN; no implementation evidence yet)*
-- [ ] **C-11** — Make migrations deterministic and drift-detectable with SQL-content checksums and safe concurrent-. *(OPEN; no implementation evidence yet)*
+- [x] **C-10** — Reject unsafe production configuration. DONE `c5b5b80a8e4335f48d3c3450719d449d3b9c2b60`: only trusted CLI migrator provisions DB; production checks HTTPS cookie, no debug, https URL and trusted TLS; existing migrated DB required for HTTP. RED missing DB / production tests, GREEN 6 C-10 tests/11 assertions, full quality 114/6141, live HTTP smoke PASS.
+- [x] **C-11** — Make migrations deterministic and drift-detectable with SQL-content checksums and safe concurrent runs. DONE `e6359440b1cf3af55975be8beb5bf6e3a821919d`: SHA-256 detects applied SQL drift, BEGIN IMMEDIATE serializes full batch and prevents partial schema writes. Legacy ledgers receive current-source hashes once; pre-upgrade edits cannot be detected. RED drift/partial/legacy regressions, GREEN 7 migrations tests/25 assertions, full quality 118/6161 and live HTTP smoke PASS.
 - [ ] **C-12** — Define accepted-event audit semantics, caller authority, retention, tamper threat model and UTC ti. *(OPEN; no implementation evidence yet)*
 - [ ] **C-13** — Measure real concurrent readers/writers, SQLITE_BUSY, WAL versus rollback journaling, connection l. *(OPEN; no implementation evidence yet)*
 - [ ] **C-14** — Benchmark report aggregation over growing history, then choose bounded date window, query/index im. *(OPEN; no implementation evidence yet)*
@@ -75,6 +75,9 @@
 - [ ] **C-46** — Migrate one vertical slice at a time, preserve old SSR behavior until verified, switch route owner. *(OPEN; no implementation evidence yet)*
 - [ ] **C-47** — Verify recruiter task fully, all production security/persistence gates and honest GO/NO-GO split. *(OPEN; no implementation evidence yet)*
 - [ ] **C-48** — Track optional features separately: password reset, account status, token/JWT, framework migration. *(OPEN; no implementation evidence yet)*
+
+| 2026-10-09 | M03 / C-10 | `c5b5b80a8e4335f48d3c3450719d449d3b9c2b60` | RED missing DB / unsafe prod settings; GREEN 6 C-10 tests, quality 114/6141 and real HTTP smoke PASS | CLI-only provisioning, fail-closed production startup. |
+| 2026-10-09 | M04 / C-11 | `e6359440b1cf3af55975be8beb5bf6e3a821919d` | RED drift/legacy/partial batch; GREEN 7 migration tests/25 checks, quality 118/6161 and real HTTP smoke PASS | Hash checks and atomic writer-locked migration batches; legacy trust boundary documented. |
 
 ## Current blockers
 
