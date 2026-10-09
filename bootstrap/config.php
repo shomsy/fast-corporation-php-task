@@ -58,11 +58,39 @@ if (! in_array(needle: $environment, haystack: ['local', 'test', 'production'], 
 }
 
 if ($environment === 'production') {
+    $workerUid = function_exists(function: 'posix_geteuid') ? posix_geteuid() : null;
+
+    $isPrivate = static function (string $path, bool $directory) use ($workerUid): bool {
+        if (is_link(filename: $path) || ($directory ? ! is_dir(filename: $path) : ! is_file(filename: $path))) {
+            return false;
+        }
+        $mode = fileperms(filename: $path);
+        $owner = fileowner(filename: $path);
+
+        return is_int(value: $mode) && is_int(value: $owner)
+            && ($workerUid === null || $owner === $workerUid)
+            && ($mode & 0077) === 0
+            && ($directory ? ($mode & 0700) === 0700 : (($mode & 0600) === 0600 && ($mode & 0100) === 0));
+    };
+
     if ($sessionPath === null || ! str_starts_with(haystack: $sessionPath, needle: '/')
-        || ! is_dir(filename: $sessionPath) || is_link(filename: $sessionPath)
-        || ! is_writable(filename: $sessionPath)
-        || (fileperms(filename: $sessionPath) & 0077) !== 0) {
+        || ! $isPrivate(path: $sessionPath, directory: true) || ! is_writable(filename: $sessionPath)) {
         throw new RuntimeException(message: 'Production requires preprovisioned private session storage.');
+    }
+
+    if (file_exists(filename: $envFile) && ! $isPrivate(path: $envFile, directory: false)) {
+        throw new RuntimeException(message: 'Production environment file is not private.');
+    }
+
+    $databaseDirectory = dirname(path: $dbPath);
+    if (is_dir(filename: $databaseDirectory) && ! $isPrivate(path: $databaseDirectory, directory: true)) {
+        throw new RuntimeException(message: 'Production database directory is not private.');
+    }
+
+    foreach ([$dbPath, $dbPath . '-wal', $dbPath . '-shm'] as $databaseFile) {
+        if (file_exists(filename: $databaseFile) && ! $isPrivate(path: $databaseFile, directory: false)) {
+            throw new RuntimeException(message: 'Production database files are not private.');
+        }
     }
 
     $appUrl = getenv(name: 'APP_URL');

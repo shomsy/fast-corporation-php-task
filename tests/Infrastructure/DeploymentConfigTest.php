@@ -97,6 +97,14 @@ final class DeploymentConfigTest extends TestCase
      */
     private function withEnvironment(array $overrides, callable $action): void
     {
+        // Production test cases must not depend on the developer's local (possibly unsafe) DB.
+        $directory = sys_get_temp_dir() . '/fast-config-private-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $directory, permissions: 0700));
+        $database = $directory . '/db.sqlite';
+        self::assertNotFalse(file_put_contents(filename: $database, data: 'test'));
+        self::assertTrue(chmod(filename: $database, permissions: 0600));
+        $overrides['DB_PATH'] = $overrides['DB_PATH'] ?? $database;
+
         /** @var array<string, string|false> $previous */
         $previous = [];
 
@@ -116,6 +124,9 @@ final class DeploymentConfigTest extends TestCase
                     putenv(assignment: $key . '=' . $value);
                 }
             }
+
+            unlink(filename: $database);
+            rmdir(directory: $directory);
         }
     }
 
@@ -201,6 +212,8 @@ final class DeploymentConfigTest extends TestCase
     {
         $path = sys_get_temp_dir() . '/fast-public-session-' . bin2hex(string: random_bytes(length: 8));
         self::assertTrue(mkdir(directory: $path, permissions: 0755));
+        self::assertTrue(chmod(filename: $path, permissions: 0755));
+        clearstatcache(clear_realpath_cache: true, filename: $path);
 
         try {
             $rejected = false;

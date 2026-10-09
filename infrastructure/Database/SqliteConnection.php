@@ -26,6 +26,9 @@ final class SqliteConnection
      */
     public static function open(string $path, bool $createIfMissing = false): PDO
     {
+        // SQLite creates WAL/SHM files lazily. Keep the whole worker/CLI process private.
+        umask(mask: 0077);
+
         if (! $createIfMissing && ! is_file(filename: $path)) {
             throw new RuntimeException(message: 'Database has not been provisioned.');
         }
