@@ -50,12 +50,21 @@ if (! str_starts_with(haystack: $dbPath, needle: '/')) {
 $debug        = filter_var(value: getenv(name: 'APP_DEBUG') ?: '0', filter: FILTER_VALIDATE_BOOL);
 $secureCookie = filter_var(value: getenv(name: 'SESSION_COOKIE_SECURE') ?: '0', filter: FILTER_VALIDATE_BOOL);
 $environment  = getenv(name: 'APP_ENV') ?: 'local';
+$sessionPath = getenv(name: 'SESSION_STORAGE_PATH');
+$sessionPath = is_string(value: $sessionPath) && $sessionPath !== '' ? $sessionPath : null;
 
 if (! in_array(needle: $environment, haystack: ['local', 'test', 'production'], strict: true)) {
     throw new RuntimeException(message: 'Unsupported application environment.');
 }
 
 if ($environment === 'production') {
+    if ($sessionPath === null || ! str_starts_with(haystack: $sessionPath, needle: '/')
+        || ! is_dir(filename: $sessionPath) || is_link(filename: $sessionPath)
+        || ! is_writable(filename: $sessionPath)
+        || (fileperms(filename: $sessionPath) & 0077) !== 0) {
+        throw new RuntimeException(message: 'Production requires preprovisioned private session storage.');
+    }
+
     $appUrl = getenv(name: 'APP_URL');
     $parts  = is_string(value: $appUrl) ? parse_url(url: $appUrl) : false;
 
@@ -72,7 +81,8 @@ if ($environment === 'production') {
  *     environment: string,
  *     debug: bool,
  *     databasePath: string,
- *     sessionCookieSecure: bool
+ *     sessionCookieSecure: bool,
+ *     sessionStoragePath: string|null
  * }
  */
 return [
@@ -81,4 +91,5 @@ return [
     'debug'               => $debug,
     'databasePath'        => $dbPath,
     'sessionCookieSecure' => $secureCookie,
+    'sessionStoragePath'  => $sessionPath,
 ];

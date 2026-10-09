@@ -63,6 +63,32 @@ final class DeploymentConfigTest extends TestCase
     }
 
     /**
+     * Production must fail closed without a dedicated private session directory.
+     *
+     * @return void No return value.
+     */
+    public function testProductionRejectsMissingPrivateSessionDirectory(): void
+    {
+        $rejected = false;
+        $this->withEnvironment(
+            overrides: [
+                'APP_ENV' => 'production', 'APP_DEBUG' => '0',
+                'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+                'SESSION_STORAGE_PATH' => '',
+            ],
+            action: static function () use (&$rejected): void {
+                try {
+                    require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
+                } catch (RuntimeException) {
+                    $rejected = true;
+                }
+            },
+        );
+
+        self::assertTrue($rejected, 'Production requires dedicated private session storage.');
+    }
+
+    /**
      * Environment mutations used in tests must not leak between test cases.
      *
      * @param array<string, string> $overrides Trusted test configuration.
@@ -129,6 +155,8 @@ final class DeploymentConfigTest extends TestCase
      */
     public function testProductionRuntimeRequiresTrustedTls(): void
     {
+        $sessionPath = sys_get_temp_dir() . '/fast-private-session-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $sessionPath, permissions: 0700));
         $previousHttps = $_SERVER['HTTPS'] ?? null;
         $_SERVER['HTTPS'] = 'off';
 
@@ -140,6 +168,7 @@ final class DeploymentConfigTest extends TestCase
                     'APP_DEBUG'             => '0',
                     'APP_URL'               => 'https://example.test',
                     'SESSION_COOKIE_SECURE' => '1',
+                    'SESSION_STORAGE_PATH'  => $sessionPath,
                 ],
                 action: static function () use (&$rejected): void {
                     try {
@@ -157,6 +186,69 @@ final class DeploymentConfigTest extends TestCase
             } else {
                 $_SERVER['HTTPS'] = $previousHttps;
             }
+
+            rmdir(directory: $sessionPath);
+        }
+    }
+
+
+    /**
+     * Private session storage must not be group- or world-accessible.
+     *
+     * @return void No return value.
+     */
+    public function testProductionRejectsGroupReadableSessionDirectory(): void
+    {
+        $path = sys_get_temp_dir() . '/fast-public-session-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $path, permissions: 0755));
+
+        try {
+            $rejected = false;
+            $this->withEnvironment(
+                overrides: [
+                    'APP_ENV' => 'production', 'APP_DEBUG' => '0',
+                    'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+                    'SESSION_STORAGE_PATH' => $path,
+                ],
+                action: static function () use (&$rejected): void {
+                    try {
+                        require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
+                    } catch (RuntimeException) {
+                        $rejected = true;
+                    }
+                },
+            );
+            self::assertTrue($rejected);
+        } finally {
+            rmdir(directory: $path);
+        }
+    }
+
+    /**
+     * A precreated private session directory is valid for production.
+     *
+     * @return void No return value.
+     */
+    public function testProductionAcceptsPrivateSessionDirectory(): void
+    {
+        $path = sys_get_temp_dir() . '/fast-valid-session-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $path, permissions: 0700));
+
+        try {
+            $this->withEnvironment(
+                overrides: [
+                    'APP_ENV' => 'production', 'APP_DEBUG' => '0',
+                    'APP_URL' => 'https://example.test', 'SESSION_COOKIE_SECURE' => '1',
+                    'SESSION_STORAGE_PATH' => $path,
+                ],
+                action: static function () use ($path): void {
+                    $config = require dirname(path: __DIR__, levels: 2) . '/bootstrap/config.php';
+                    self::assertIsArray($config);
+                    self::assertSame($path, $config['sessionStoragePath']);
+                },
+            );
+        } finally {
+            rmdir(directory: $path);
         }
     }
 

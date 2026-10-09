@@ -91,6 +91,54 @@ final class SessionExpiryTest extends AccountsTestCase
     }
 
     /**
+     * Native garbage collection must not discard a session before the 12-hour server-side limit.
+     *
+     * @return void No return value.
+     */
+    public function testNativeSessionGcCoversAbsoluteAuthenticationLifetime(): void
+    {
+        ini_set(option: 'session.gc_maxlifetime', value: '1440');
+
+        $this->session()->start();
+
+        self::assertGreaterThanOrEqual(43200, (int) ini_get(option: 'session.gc_maxlifetime'));
+    }
+
+    /**
+     * A configured private session directory must be applied before native session startup.
+     *
+     * @return void No return value.
+     */
+    public function testNativeSessionUsesConfiguredPrivateStorage(): void
+    {
+        $path = sys_get_temp_dir() . '/fast-session-files-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $path, permissions: 0700));
+        $oldPath = session_save_path();
+        self::assertIsString($oldPath);
+
+        try {
+            (new PhpSession(name: 'isolated-storage-test', savePath: $path))->start();
+            self::assertSame($path, session_save_path());
+            self::assertGreaterThanOrEqual(43200, (int) ini_get(option: 'session.gc_maxlifetime'));
+
+            $files = glob(pattern: $path . '/sess_*');
+            self::assertIsArray($files);
+            self::assertCount(1, $files);
+        } finally {
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_destroy();
+            }
+            session_id(id: '');
+            session_save_path(path: $oldPath);
+
+            foreach (glob(pattern: $path . '/sess_*') ?: [] as $file) {
+                unlink(filename: $file);
+            }
+            rmdir(directory: $path);
+        }
+    }
+
+    /**
      * Verify idle timeout revokes previously valid authentication through the public behavior.
      *
      * @return void No return value.

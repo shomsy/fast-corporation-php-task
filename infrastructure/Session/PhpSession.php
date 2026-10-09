@@ -18,10 +18,12 @@ final readonly class PhpSession
      *
      * @param string $name         Configured session name or lookup name.
      * @param bool   $secureCookie Whether PHP cookies require HTTPS.
+     * @param string|null $savePath Preprovisioned private directory for native session files.
      */
     public function __construct(
         private string $name = 'fast_task',
         private bool   $secureCookie = false,
+        private ?string $savePath = null,
     ) {}
 
     /**
@@ -53,6 +55,15 @@ final readonly class PhpSession
         if (ini_set(option: 'session.use_strict_mode', value: '1') === false) {
             throw new RuntimeException(message: 'Unable to enforce strict session mode.');
         }
+        // Native file GC must never precede the server's 12-hour absolute session expiry.
+        if (ini_set(option: 'session.gc_maxlifetime', value: '43200') === false) {
+            throw new RuntimeException(message: 'Unable to enforce session retention.');
+        }
+
+        if ($this->savePath !== null && session_save_path(path: $this->savePath) === false) {
+            throw new RuntimeException(message: 'Unable to configure private session storage.');
+        }
+
         session_name(name: $this->name);
 
         if (ini_get(option: 'session.use_cookies')) {

@@ -41,7 +41,7 @@ use InterviewTask\Runtime\Http\RouteAccess;
 use InterviewTask\Runtime\Http\Response;
 use InterviewTask\Runtime\Http\Router;
 
-/** @var array{databasePath: string, sessionCookieSecure: bool, root: string, environment: string} $config */
+/** @var array{databasePath: string, sessionCookieSecure: bool, sessionStoragePath: string|null, root: string, environment: string} $config */
 $config = require __DIR__ . '/config.php';
 
 return static function (Router $router) use ($config): void {
@@ -63,7 +63,7 @@ return static function (Router $router) use ($config): void {
         throw new RuntimeException(message: 'Database migrations have not been applied.');
     }
     $accounts = new Accounts(pdo: $pdo);
-    $session  = new PhpSession(secureCookie: $config['sessionCookieSecure']);
+    $session  = new PhpSession(secureCookie: $config['sessionCookieSecure'], savePath: $config['sessionStoragePath']);
     $clock    = new SystemClock();
     $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
     $current  = new CurrentAccount(identity: $identity);
