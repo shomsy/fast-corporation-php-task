@@ -29,7 +29,7 @@ final readonly class RequireAdmin
     {
         $account = $this->identity->current();
 
-        if ($account === null || $account->role !== Role::Admin) {
+        if ($account === null || ! $account->isAdmin()) {
             throw new AccessDenied(message: 'Administrator access required.');
         }
 

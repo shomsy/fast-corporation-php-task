@@ -36,7 +36,7 @@ final class LoginTest extends AccountsTestCase
         self::assertNotSame($before, session_id());
         self::assertSame($account->id, $signedIn->id);
         self::assertSame('alice', $signedIn->username);
-        self::assertSame(Role::User, $signedIn->role);
+        self::assertSame(Role::User->value, $signedIn->roleCode());
         self::assertEquals($signedIn, $identity->current());
     }
 

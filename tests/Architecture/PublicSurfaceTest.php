@@ -6,6 +6,7 @@ namespace InterviewTask\Tests\Architecture;
 
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\CurrentAccount;
+use InterviewTask\Accounts\SignedInAccount;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Use_;
@@ -211,6 +212,47 @@ final class PublicSurfaceTest extends TestCase
         $registerReturn = $lifecycle->getMethod(name: 'register')->getReturnType();
         self::assertInstanceOf(ReflectionNamedType::class, $registerReturn);
         self::assertSame('void', $registerReturn->getName());
+    }
+
+    /**
+     * Enforce the public authenticated identity does not expose the Accounts-private Role enum.
+     *
+     * @return void No return value.
+     */
+    public function testAuthenticatedIdentityDoesNotExposePrivateRoleType() : void
+    {
+        $exported  = new ReflectionClass(objectOrClass: SignedInAccount::class);
+        $forbidden = 'InterviewTask\Accounts\Role';
+        $leaks     = [];
+
+        foreach ($exported->getProperties() as $property) {
+            if (! $property->isPublic()) {
+                continue;
+            }
+            $type = $property->getType();
+            if ($type instanceof ReflectionNamedType && $type->getName() === $forbidden) {
+                $leaks[] = 'property ' . $property->getName();
+            }
+        }
+
+        foreach ($exported->getMethods() as $method) {
+            if (! $method->isPublic()) {
+                continue;
+            }
+            $return = $method->getReturnType();
+            if ($return instanceof ReflectionNamedType && $return->getName() === $forbidden) {
+                $leaks[] = 'return of ' . $method->getName();
+            }
+            foreach ($method->getParameters() as $param) {
+                $type = $param->getType();
+                if ($type instanceof ReflectionNamedType && $type->getName() === $forbidden) {
+                    $leaks[] = 'parameter $' . $param->getName() . ' of ' . $method->getName();
+                }
+            }
+        }
+
+        self::assertSame([], $leaks, 'Exported identity leaks private Role type.');
+        self::assertFalse($exported->hasMethod(name: 'fromAccount'), 'Private Account must not appear in public factory parameters.');
     }
 
     /**

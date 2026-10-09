@@ -78,7 +78,7 @@ final readonly class SessionIdentity
         $this->session->put(key: self::ISSUED_AT, value: $now);
         $this->session->put(key: self::LAST_SEEN_AT, value: $now);
 
-        return SignedInAccount::fromAccount(account: $account);
+        return new SignedInAccount(id: $account->id, username: $account->username, role: $account->role->value);
     }
 
     /**
@@ -129,7 +129,7 @@ final readonly class SessionIdentity
 
         $this->session->put(key: self::LAST_SEEN_AT, value: $now);
 
-        return SignedInAccount::fromAccount(account: $account);
+        return new SignedInAccount(id: $account->id, username: $account->username, role: $account->role->value);
     }
 
     /**

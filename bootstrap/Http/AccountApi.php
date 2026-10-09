@@ -75,7 +75,7 @@ final readonly class AccountApi
         }
 
         return Response::json(payload: [
-                                           'user'      => ['id' => $account->id, 'username' => $account->username, 'role' => $account->role->value],
+                                           'user'      => ['id' => $account->id, 'username' => $account->username, 'role' => $account->roleCode()],
                                            'csrfToken' => $this->csrf->token(),
                                        ]);
     }

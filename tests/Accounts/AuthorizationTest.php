@@ -60,7 +60,7 @@ final class AuthorizationTest extends AccountsTestCase
             $guard->account();
             self::fail('Ordinary user must not pass admin authorization.');
         } catch (AccessDenied) {
-            self::assertSame(Role::User, $identity->current()?->role);
+            self::assertSame(Role::User->value, $identity->current()?->roleCode());
         }
 
         $identity->signOut();
@@ -68,7 +68,7 @@ final class AuthorizationTest extends AccountsTestCase
         $admin = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $identity->signIn(account: $admin);
 
-        self::assertSame(Role::Admin, $guard->account()->role);
+        self::assertSame(Role::Admin->value, $guard->account()->roleCode());
     }
 
     /**
@@ -82,13 +82,13 @@ final class AuthorizationTest extends AccountsTestCase
         $guard    = new RequireAdmin(identity: $identity);
         $admin    = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $identity->signIn(account: $admin);
-        self::assertSame(Role::Admin, $guard->account()->role);
+        self::assertSame(Role::Admin->value, $guard->account()->roleCode());
 
         $update = $this->pdo->prepare(query: 'UPDATE accounts SET role = :role WHERE id = :id');
         self::assertNotFalse($update);
         self::assertTrue($update->execute(['role' => Role::User->value, 'id' => $admin->id]));
 
-        self::assertSame(Role::User, $identity->current()?->role);
+        self::assertSame(Role::User->value, $identity->current()?->roleCode());
         $this->expectException(AccessDenied::class);
         $guard->account();
     }

@@ -13,17 +13,39 @@ namespace InterviewTask\Accounts;
 final readonly class SignedInAccount
 {
     /**
-     * Capture the immutable account ID, display name, and current role.
+     * Keep the internal Role enum private while accepting the stable public role value.
      *
-     * @param int    $id       Input value for id.
-     * @param string $username Username submitted or persisted for the account.
-     * @param Role   $role     Explicit business role assigned to the account.
+     * @param int    $id       Authenticated account ID.
+     * @param string $username Authenticated account username.
+     * @param string $role     Canonical persisted role code, user or admin.
+     *
+     * @throws \ValueError When a role value is unknown.
      */
     public function __construct(
         public int    $id,
         public string $username,
-        public Role   $role,
-    ) {}
+        string        $role,
+    )
+    {
+        $this->role = Role::from(value: $role);
+    }
+
+    /**
+     * Private validated authorization role, never part of the exported object shape.
+     *
+     * @var Role
+     */
+    private Role $role;
+
+    /**
+     * Export the canonical role code without leaking the private enum type.
+     *
+     * @return string Public role code, user or admin.
+     */
+    public function roleCode() : string
+    {
+        return $this->role->value;
+    }
 
     /**
      * Answer the public authorization question without exposing the internal Role type.
@@ -33,17 +55,5 @@ final readonly class SignedInAccount
     public function isAdmin() : bool
     {
         return $this->role === Role::Admin;
-    }
-
-    /**
-     * Project a stored account into the narrow authenticated identity contract.
-     *
-     * @param Account $account Immutable account from authoritative storage.
-     *
-     * @return self Narrow public read-only identity projection.
-     */
-    public static function fromAccount(Account $account) : self
-    {
-        return new self(id: $account->id, username: $account->username, role: $account->role);
     }
 }

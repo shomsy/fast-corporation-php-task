@@ -39,7 +39,7 @@ final readonly class SessionApi
                                            'user' => $account === null ? null : [
                                                'id'       => $account->id,
                                                'username' => $account->username,
-                                               'role'     => $account->role->value,
+                                               'role'     => $account->roleCode(),
                                            ],
                                        ]);
     }
