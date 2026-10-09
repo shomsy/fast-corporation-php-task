@@ -45,13 +45,6 @@ final readonly class ReadArtifact
             throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 
-        clearstatcache(clear_realpath_cache: true, filename: $this->path);
-        $size = filesize(filename: $this->path);
-
-        if (! is_int(value: $size) || $size < 1 || $size > $this->maxBytes) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
-        }
-
         $stream = fopen(filename: $this->path, mode: 'rb');
 
         if ($stream === false) {
@@ -59,14 +52,23 @@ final readonly class ReadArtifact
         }
 
         try {
+            // Check the actual opened file, not a path-level filesize() value that can become stale.
+            $stat = fstat(stream: $stream);
+            $size = is_array(value: $stat) ? ($stat['size'] ?? null) : null;
+
+            if (! is_int(value: $size) || $size < 1 || $size > $this->maxBytes) {
+                throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
+            }
+
+            // The +1 read detects a file growing after its descriptor was inspected.
             $contents = stream_get_contents(stream: $stream, length: $this->maxBytes + 1);
+
+            if (! is_string(value: $contents) || strlen(string: $contents) !== $size
+                || strlen(string: $contents) > $this->maxBytes) {
+                throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
+            }
         } finally {
             fclose(stream: $stream);
-        }
-
-        if (! is_string(value: $contents) || strlen(string: $contents) !== $size
-            || strlen(string: $contents) > $this->maxBytes) {
-            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 
         $expectedSha256 = $this->expectedSha256;

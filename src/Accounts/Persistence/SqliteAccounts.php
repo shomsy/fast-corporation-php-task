@@ -74,10 +74,10 @@ final readonly class SqliteAccounts
      *
      * @param string $username Username to look up.
      *
-     * @return array{account: Account, hash: string|null}|null Stored account and hash, or null.
+     * @return StoredCredentials|null Stored account and hash, or null.
      * @throws RuntimeException If stored account fields are malformed.
      */
-    public function credentialsFor(string $username) : array|null
+    public function credentialsFor(string $username) : StoredCredentials|null
     {
         $statement = $this->pdo->prepare(query: 'SELECT id, username, password_hash, role, created_at FROM accounts WHERE username = :username LIMIT 1');
         $statement->execute(params: ['username' => $username]);
@@ -88,7 +88,10 @@ final readonly class SqliteAccounts
 
         $hash = $row['password_hash'] ?? null;
 
-        return ['account' => $this->accountFromRow(row: $row), 'hash' => is_string(value: $hash) ? $hash : null];
+        return new StoredCredentials(
+            account: $this->accountFromRow(row: $row),
+            hash   : is_string(value: $hash) ? $hash : null,
+        );
     }
 
     /**

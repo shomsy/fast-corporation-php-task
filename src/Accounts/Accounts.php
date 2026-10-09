@@ -110,12 +110,12 @@ final readonly class Accounts
             return null;
         }
 
-        $hash = $stored['hash'];
+        $hash = $stored->hash;
         if (! $this->bcrypt->verify(password: $password, hash: $hash)) {
             return null;
         }
 
-        $account = $stored['account'];
+        $account = $stored->account;
         if ($hash !== null && $this->bcrypt->needsRehash(hash: $hash)) {
             $this->storage->upgradeHash(
                 id          : $account->id,
