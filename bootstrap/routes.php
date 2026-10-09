@@ -46,7 +46,7 @@ use InterviewTask\Runtime\Http\RouteAccess;
 use InterviewTask\Runtime\Http\Response;
 use InterviewTask\Runtime\Http\Router;
 
-/** @var array{databasePath: string, sessionCookieSecure: bool, sessionStoragePath: string|null, root: string, environment: string} $config */
+/** @var array{databasePath: string, sessionCookieSecure: bool, sessionStoragePath: string|null, root: string, environment: string, uiEntrypoint: string} $config */
 $config = require __DIR__ . '/config.php';
 
 return static function (Router $router) use ($config): void {
@@ -172,7 +172,54 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'GET', path: '/app/ActivityTracking/drawChart.js', handler: static fn(): Response => $spaFile('app/ActivityTracking/drawChart.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
+    // Only known document GET paths switch owner. API, POST, binary downloads and assets never switch.
+    if ($config['uiEntrypoint'] === 'spa') {
+        $spaEntrypoints = [
+            '/' => '/app/home',
+            '/login' => '/app/login',
+            '/register' => '/app/register',
+            '/page-a' => '/app/page-a',
+            '/page-b' => '/app/page-b',
+            '/statistics' => '/app/statistics',
+            '/reports' => '/app/reports',
+        ];
+        foreach ($spaEntrypoints as $legacyPath => $screenPath) {
+            $router->add(
+                method: 'GET',
+                path: $legacyPath,
+                handler: static function (Request $request) use ($screenPath): Response {
+                    $filters = [];
+                    $filterKeys = match ($screenPath) {
+                        '/app/statistics' => ['date', 'user', 'action', 'cursor'],
+                        '/app/reports' => ['from', 'to'],
+                        default => [],
+                    };
+                    foreach ($filterKeys as $key) {
+                        $value = $request->query(key: $key);
+                        if ($value !== null && ! is_string(value: $value)) {
+                            return Response::text(body: 'Invalid query parameter.', status: 422);
+                        }
+                        if (is_string(value: $value)) {
+                            $filters[$key] = $value;
+                        }
+                    }
+                    $query = $filters === [] ? '' : '?' . http_build_query(data: $filters);
+
+                    return Response::redirect(location: $screenPath . $query);
+                },
+                access: RouteAccess::Public,
+            );
+        }
+    } else {
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm(), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/page-a', handler: static fn(Request $request): Response => $cowPages->pageA(request: $request), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/page-b', handler: static fn(Request $request): Response => $downloadPages->pageB(request: $request), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request), access: RouteAccess::Admin);
+    $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request), access: RouteAccess::Admin);
+    }
+
     $router->add(method: 'GET', path: '/api/session', handler: static fn(): Response => $sessionApi->session(), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/api/csrf', handler: static fn(): Response => $sessionApi->csrf(), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/api/accounts/register', handler: static fn(Request $request): Response => $accountApi->register(request: $request), access: RouteAccess::Public);
@@ -182,17 +229,11 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'POST', path: '/api/cow-offer/buy', handler: static fn(): Response => $cowOfferApi->buy(), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/api/downloads/page/view', handler: static fn(): Response => $downloadApi->view(), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/api/downloads/sample', handler: static fn(Request $request): Response => $downloadPages->download(request: $request), access: RouteAccess::SignedIn);
-    $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm(), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request), access: RouteAccess::Public);
-    $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginSubmit(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/logout', handler: static fn(Request $request): Response => $accountPages->logoutSubmit(request: $request), access: RouteAccess::SignedIn);
-    $router->add(method: 'GET', path: '/page-a', handler: static fn(Request $request): Response => $cowPages->pageA(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/buy-cow', handler: static fn(Request $request): Response => $cowPages->buyCow(request: $request), access: RouteAccess::SignedIn);
-    $router->add(method: 'GET', path: '/page-b', handler: static fn(Request $request): Response => $downloadPages->pageB(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/download', handler: static fn(Request $request): Response => $downloadPages->download(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/api/activity/statistics', handler: static fn(Request $request): Response => $activityApi->statistics(request: $request), access: RouteAccess::Admin);
     $router->add(method: 'GET', path: '/api/activity/reports', handler: static fn(Request $request): Response => $activityApi->reports(request: $request), access: RouteAccess::Admin);
-    $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request), access: RouteAccess::Admin);
-    $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request), access: RouteAccess::Admin);
 };

@@ -44,6 +44,9 @@ jobs:
       - name: Live HTTP and CLI acceptance
         run: python3 tests/Flow/live_smoke.py
 
+      - name: Reversible UI route cutover and rollback
+        run: python3 tests/Flow/route_cutover.py
+
       - name: Set up Node for browser acceptance
         if: matrix.php == '8.5'
         uses: actions/setup-node@v4

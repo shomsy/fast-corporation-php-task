@@ -15,7 +15,7 @@ def main():
     with TemporaryDirectory(prefix="fast-browser-e2e-") as tmp:
         db = Path(tmp) / "browser.sqlite"
         env = os.environ.copy()
-        env.update({"DB_PATH": str(db), "APP_DEBUG": "0", "SESSION_COOKIE_SECURE": "0"})
+        env.update({"DB_PATH": str(db), "APP_DEBUG": "0", "SESSION_COOKIE_SECURE": "0", "UI_ENTRYPOINT": "spa"})
         subprocess.run(base.php_command(tmp, ["bin/migrate.php"], db_path=db),
                        cwd=base.ROOT, env=env, text=True, capture_output=True, check=True)
         admin = subprocess.run(base.php_command(tmp, ["bin/create-admin.php", "review-admin", "--password-stdin"], db_path=db),
@@ -28,10 +28,13 @@ def main():
         origin = f"http://127.0.0.1:{port}"
         log = Path(tmp) / "server.log"
         with log.open("wb") as stderr:
-            server = subprocess.Popen(base.php_command(tmp, ["-S",
+            launch = base.php_command(tmp, ["-S",
                 ("0.0.0.0:" if base.DOCKER_PHP else "127.0.0.1:") + str(port),
-                "-t", "public", "public/index.php"], port, db_path=db),
-                cwd=base.ROOT, env=env, stdout=subprocess.DEVNULL, stderr=stderr)
+                "-t", "public", "public/index.php"], port, db_path=db)
+            if base.DOCKER_PHP:
+                launch[launch.index("php:8.5-cli"):launch.index("php:8.5-cli")] = ["-e", "UI_ENTRYPOINT=spa"]
+            server = subprocess.Popen(launch, cwd=base.ROOT, env=env,
+                                      stdout=subprocess.DEVNULL, stderr=stderr)
             try:
                 for attempt in range(70):
                     try:
