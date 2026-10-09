@@ -124,6 +124,22 @@ return static function (Router $router) use ($config): void {
         session: $session,
     );
 
+    // Fixed, allowlisted SPA assets: no untrusted request path is ever used as a filesystem path.
+    $spaFile = static function (string $relativePath, string $contentType) use ($config): Response {
+        $body = file_get_contents(filename: $config['root'] . '/public/' . $relativePath);
+
+        if ($body === false) {
+            throw new RuntimeException(message: 'Required SPA asset is missing.');
+        }
+
+        return new Response(body: $body, headers: ['Content-Type' => $contentType]);
+    };
+
+    $router->add(method: 'GET', path: '/app', handler: static fn(): Response => $spaFile('app/index.html', 'text/html; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/login', handler: static fn(): Response => $spaFile('app/index.html', 'text/html; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/startApp.js', handler: static fn(): Response => $spaFile('app/startApp.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
+
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/api/session', handler: static fn(): Response => $sessionApi->session(), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/api/csrf', handler: static fn(): Response => $sessionApi->csrf(), access: RouteAccess::Public);

@@ -127,6 +127,24 @@ def main():
                         )
                     time.sleep(0.08)
             assert status == 200
+            # The first SPA shell is independent of existing SSR and has no external runtime.
+            shell_status, shell_headers, shell_body = request(user, base, "/app/login")
+            assert shell_status == 200
+            assert "text/html" in shell_headers.get("Content-Type", "")
+            assert b'id="app-root"' in shell_body and b'/app/startApp.js' in shell_body
+            assert b'/assets/app.css' in shell_body
+            root_status, _, root_body = request(user, base, "/app")
+            assert root_status == 200 and b'id="app-root"' in root_body
+            unknown_status, _, _ = request(user, base, "/app/unknown")
+            assert unknown_status == 404
+            script_status, script_headers, script_body = request(user, base, "/app/startApp.js")
+            assert script_status == 200
+            assert "javascript" in script_headers.get("Content-Type", "")
+            assert b"startApp" in script_body
+            css_status, css_headers, css_body = request(user, base, "/assets/app.css")
+            assert css_status == 200 and "text/css" in css_headers.get("Content-Type", "")
+            assert b".app-shell" in css_body
+            assert "style-src 'self'" in shell_headers.get("Content-Security-Policy", "")
             api_status, api_headers, api_body = request(user, base, "/api/session")
             assert api_status == 200
             assert api_headers["Content-Type"] == "application/json; charset=UTF-8"

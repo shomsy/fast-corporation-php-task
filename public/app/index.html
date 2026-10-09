@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Fast Corporation — App</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/app/startApp.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#app-root">Skip to application</a>
+  <main id="app-root" class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">Fast Corporation</p>
+      <h1>Application shell</h1>
+      <p>Vanilla JavaScript. Same-origin PHP sessions. No JWT, framework or external CDN.</p>
+    </header>
+    <section class="app-content" aria-labelledby="shell-status-title">
+      <h2 id="shell-status-title">Frontend rollout</h2>
+      <p data-shell-status role="status" aria-live="polite">Starting the application shell…</p>
+      <p>The original server-rendered workflow remains available until the SPA features are verified.</p>
+      <nav aria-label="Existing application">
+        <a href="/login">Sign in using the existing form</a>
+        <a href="/register">Register</a>
+      </nav>
+    </section>
+  </main>
+</body>
+</html>
