@@ -26,3 +26,10 @@ a:focus-visible, .skip-link:focus-visible {
   .app-shell { margin: 1rem auto; }
   .app-content { padding: 1.25rem; }
 }
+
+.app-content form { display: grid; gap: 0.6rem; max-width: 25rem; }
+.app-content form input { font: inherit; padding: 0.65rem; border: 1px solid #65758d; border-radius: 0.4rem; }
+.app-content button { font: inherit; padding: 0.65rem 0.85rem; border-radius: 0.4rem; border: 1px solid #3453a9; background: #1248b9; color: #fff; cursor: pointer; }
+.app-content button:disabled { opacity: 0.65; cursor: wait; }
+.app-content button:focus-visible, .app-content input:focus-visible { outline: 3px solid #1248b9; outline-offset: 3px; }
+.app-content [role="alert"] { color: #8c1818; }

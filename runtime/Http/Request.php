@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace InterviewTask\Runtime\Http;
 
 use InvalidArgumentException;
+use JsonException;
+use stdClass;
 
 /**
  * Immutable HTTP request boundary; input values remain untrusted until parsed.
@@ -21,6 +23,7 @@ final readonly class Request
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, mixed> $server
+     * @param ?string $rawBody Optional injected JSON body for deterministic tests.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function __construct(
@@ -29,6 +32,7 @@ final readonly class Request
         private array  $query = [],
         private array  $post = [],
         private array  $server = [],
+        private ?string $rawBody = null,
     ) {
         if ($path === '' || ! str_starts_with(haystack: $path, needle: '/')) {
             throw new InvalidArgumentException(message: 'Request path must start with "/".');
@@ -154,6 +158,44 @@ final readonly class Request
         }
 
         return $this->post(key: 'csrf_token');
+    }
+
+    /**
+     * Parse a bounded JSON object from an API request without coercing client values.
+     *
+     * @return array<string, mixed> Untrusted JSON properties for the owning adapter to validate.
+     * @throws InvalidArgumentException When the transport, JSON or payload size is invalid.
+     */
+    public function jsonObject(): array
+    {
+        $contentType = $this->server(key: 'CONTENT_TYPE');
+
+        if (! str_starts_with(haystack: $this->path, needle: '/api/')
+            || ! is_string(value: $contentType)
+            || strtolower(string: trim(string: explode(separator: ';', string: $contentType, limit: 2)[0])) !== 'application/json') {
+            throw new InvalidArgumentException(message: 'JSON request content type required.');
+        }
+
+        $body = $this->rawBody ?? file_get_contents(filename: 'php://input', offset: 0, length: 16385);
+
+        if (! is_string(value: $body) || strlen(string: $body) > 16384) {
+            throw new InvalidArgumentException(message: 'JSON body too large.');
+        }
+
+        try {
+            $decoded = json_decode(json: $body, associative: false, depth: 16, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new InvalidArgumentException(message: 'Invalid JSON body.');
+        }
+
+        if (! $decoded instanceof stdClass) {
+            throw new InvalidArgumentException(message: 'JSON object required.');
+        }
+
+        /** @var array<string, mixed> $fields */
+        $fields = get_object_vars(object: $decoded);
+
+        return $fields;
     }
 
     /**

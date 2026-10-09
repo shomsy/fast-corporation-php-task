@@ -22,6 +22,7 @@ use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Statistics;
+use InterviewTask\Bootstrap\Http\AccountApi;
 use InterviewTask\Bootstrap\Http\AccountPages;
 use InterviewTask\Bootstrap\Http\SessionApi;
 use InterviewTask\Bootstrap\Http\ActivityPages;
@@ -114,6 +115,7 @@ return static function (Router $router) use ($config): void {
     );
     $accountPages  = new AccountPages(lifecycle: $lifecycle, identity: $current, csrf: $csrf, html: $html);
     $sessionApi    = new SessionApi(identity: $current, csrf: $csrf);
+    $accountApi    = new AccountApi(lifecycle: $lifecycle, csrf: $csrf);
     $cowPages      = new CowOfferPages(cow: new CowOffer(activityLog: $activity), signedIn: $signedIn, csrf: $csrf, html: $html);
     $downloadPages = new DownloadPages(
         downloads: new DownloadFile(
@@ -152,11 +154,15 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'GET', path: '/app/startApp.js', handler: static fn(): Response => $spaFile('app/startApp.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/navigate.js', handler: static fn(): Response => $spaFile('app/navigate.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/requestJson.js', handler: static fn(): Response => $spaFile('app/requestJson.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/Accounts/showAccounts.js', handler: static fn(): Response => $spaFile('app/Accounts/showAccounts.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/api/session', handler: static fn(): Response => $sessionApi->session(), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/api/csrf', handler: static fn(): Response => $sessionApi->csrf(), access: RouteAccess::Public);
+    $router->add(method: 'POST', path: '/api/accounts/register', handler: static fn(Request $request): Response => $accountApi->register(request: $request), access: RouteAccess::Public);
+    $router->add(method: 'POST', path: '/api/accounts/login', handler: static fn(Request $request): Response => $accountApi->login(request: $request), access: RouteAccess::Public);
+    $router->add(method: 'POST', path: '/api/accounts/logout', handler: static fn(): Response => $accountApi->logout(), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/register', handler: static fn(): Response => $accountPages->registerForm(), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/register', handler: static fn(Request $request): Response => $accountPages->registerSubmit(request: $request), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);

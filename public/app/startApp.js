@@ -1,4 +1,6 @@
-import { createNavigator } from './navigate.js';
+import { createNavigator, showPlaceholder } from './navigate.js';
+import { createHttpClient } from './requestJson.js';
+import { renderAccounts } from './Accounts/showAccounts.js';
 
 /**
  * Start the deliberately small application shell without taking ownership of SSR features.
@@ -27,7 +29,17 @@ export function startApp(page) {
 
 export function startNavigation(page, win) {
   const outlet = page.getElementById('route-outlet');
-  return outlet === null ? null : createNavigator({ page, win, outlet });
+  if (outlet === null) return null;
+  const client = createHttpClient({ origin: win.location.origin });
+  let navigator;
+  navigator = createNavigator({ page, win, outlet, render(screen, lifecycle) {
+    if (['/app', '/app/home', '/app/login', '/app/register'].includes(screen.path)) {
+      renderAccounts(screen, lifecycle, { client, navigate: (path) => navigator.navigate(path) });
+    } else {
+      showPlaceholder(screen, lifecycle);
+    }
+  } });
+  return navigator;
 }
 
 if (typeof document !== 'undefined') {

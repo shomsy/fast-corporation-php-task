@@ -15,7 +15,7 @@ export function screenForPath(path) {
     : { path, title: 'Page not found', status: 404 };
 }
 
-function showPlaceholder(screen, { page, outlet }) {
+export function showPlaceholder(screen, { page, outlet }) {
   const section = page.createElement('section');
   const heading = page.createElement('h2');
   heading.textContent = screen.title;
