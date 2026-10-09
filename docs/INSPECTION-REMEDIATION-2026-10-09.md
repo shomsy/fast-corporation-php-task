@@ -100,3 +100,8 @@ The table below is produced mechanically from XML files generated in the **21:36
 | `UnnecessaryAssertionInspection` | 1 | 0 / 0 / 1 | Advisory; assess per finding |
 | `UnnecessaryCastingInspection` | 1 | 0 / 0 / 1 | Advisory; assess per finding |
 | `UnnecessaryLocalVariableJS` | 1 | 0 / 1 / 0 | Advisory; assess per finding |
+
+
+## Scoped Statistics.php follow-up (supersedes the earlier untouched-file statement)
+
+A subsequent, **surgically staged and independently verified** patch explicitly declares the returned `page()` array shape (to align with `events()` for PHP-LSP), documents the cursor's exception contract, and initializes `$parts` before evaluating an optionally short-circuited `preg_match()`. PHPStan and 22 statistics tests passed. These were staged as isolated HEAD-relative hunks using `git apply --cached`; the unrelated pre-existing `JsonException` import and relocation of `encodeCursor()` remain **unstaged** in the working tree and were not included in our commit. A new PhpStorm full export is still required to show whether the IDE's alias and flow findings have disappeared. The valid named-argument names of native `strtr()` are not rewritten because the secondary PHP-LSP uses inconsistent parameter stubs.

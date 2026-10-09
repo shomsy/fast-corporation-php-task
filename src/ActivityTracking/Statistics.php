@@ -80,7 +80,17 @@ final readonly class Statistics
      * @param string|null $action Canonical ActivityAction value, or null.
      * @param int         $page   1-based page number.
      *
-     * @return ActivityPageResult
+     * @return array{
+     *     events: list<array{
+     *         id: int,
+     *         actor_id: int,
+     *         actor_label: string,
+     *         action: string,
+     *         target: string|null,
+     *         occurred_at: string
+     *     }>,
+     *     hasNext: bool
+     * }
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      * @throws PDOException When the underlying SQLite operation fails.
      * @throws RuntimeException When the query cannot be prepared.
@@ -119,7 +129,7 @@ final readonly class Statistics
         $statement->bindValue(param: ':offset', value: ($page - 1) * self::PAGE_SIZE, type: PDO::PARAM_INT);
         $statement->execute();
 
-        /** @var list<ActivityEventRow> $rows */
+        /** @var list<array{id: int, actor_id: int, actor_label: string, action: string, target: string|null, occurred_at: string}> $rows */
         $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
 
         return [
@@ -187,6 +197,10 @@ final readonly class Statistics
      * @param string|null $action Optional action filter.
      *
      * @return CursorPageResult
+     * @throws InvalidArgumentException When signing context, filters or a cursor are invalid.
+     * @throws RuntimeException When the SQLite query cannot be prepared.
+     * @throws PDOException When the SQLite statement fails.
+     * @throws \JsonException When serializing the signed cursor fails.
      */
     public function cursorPage(string|null $cursor = null, string $key = '', string|null $date = null, string|null $user = null, string|null $action = null) : array
     {
@@ -284,6 +298,7 @@ final readonly class Statistics
      */
     private function decodeCursor(string $cursor, string $key, string $fingerprint) : array
     {
+        $parts = [];
         if (strlen(string: $cursor) > 768 || preg_match(pattern: '/\\A([A-Za-z0-9_-]+)\\.([a-f0-9]{64})\\z/D', subject: $cursor, matches: $parts) !== 1) {
             throw new InvalidArgumentException(message: 'Invalid activity cursor.');
         }
