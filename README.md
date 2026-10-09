@@ -35,6 +35,39 @@ in at `/login`. Run `php bin/migrate.php` again to verify that there are no pend
 The default database is `var/database/app.sqlite`; `.env` and local database files are ignored by Git. Use an alternate
 `DB_PATH` in `.env` to isolate an installation. Keep `public/` as the only web document root.
 
+## Vanilla JavaScript SPA and reversible migration
+
+The original SSR screens are the **safe default** (`UI_ENTRYPOINT=ssr`). To exercise the same-origin,
+no-framework ES-module SPA, set `UI_ENTRYPOINT=spa` in `.env` **before starting the local PHP server**.
+The seven known document URLs (`/`, `/login`, `/register`, `/page-a`, `/page-b`,
+`/statistics`, `/reports`) then redirect to their `/app/*` SPA counterparts.
+Business modules, JSON APIs, session cookies, CSRF and native POST download routes are shared.
+There is **no JWT**, no browser credential storage and no JS runtime build step.
+
+Rollback is reversible without database migration: change `UI_ENTRYPOINT=ssr` and restart
+the application PHP server. The legacy SSR templates and POST handlers remain available.
+See [ADR-0019](docs/architecture/ADR-0019-reversible-ui-cutover.md) for the tested
+same-database rollback and owner boundaries.
+
+For a full isolated acceptance rehearsal, install the **optional test-only** npm dependencies using
+`npm ci --ignore-scripts`; Playwright uses the installed Google Chrome on the test host (no
+runtime npm dependency is required for visitors):
+
+```bash
+composer quality
+python3 tests/Flow/live_smoke.py
+python3 tests/Flow/route_cutover.py
+python3 tests/Flow/sqlite_backup_restore.py
+npm run test:frontend
+npm run test:browser
+python3 tools/check_execution_ledger.py
+```
+
+These are local tests. [Final recruiter acceptance](docs/roadmap/RELEASE-ACCEPTANCE-2026-10-09.md)
+separates **interview functional GO** from **public-production NO-GO**; real ingress
+rate limiting, public TLS/worker ownership, off-host backup RPO/RTO and PHP-FPM capacity
+are not established by the test suite.
+
 **Provisioning and production boot:** Only `php bin/migrate.php` is permitted to create the database and its parent directory. HTTP requests and admin account creation require an existing database; HTTP startup also verifies that the migration ledger and owner tables exist. Always execute migrations *before* the web server accepts traffic. Migration SQL is hashed (SHA-256, exact source bytes) in `schema_migrations`: reruns reject changes to applied files and missing recorded sources. One SQLite `BEGIN IMMEDIATE` protects the entire batch and ledger from concurrent migrators and partial SQL application. CLI provisioning also enables SQLite WAL after a measured two-process contention check; the trade-offs, backup/restore requirements and retry policy are recorded in [ADR-0004](docs/architecture/ADR-0004-sqlite-wal-and-recovery.md). **Legacy two-column ledgers** gain hashes from the currently deployed SQL on their first trusted upgrade; this cannot prove that the historical SQL was unchanged before that upgrade, so preserve a trusted Git release and a database backup. Before a public deployment, rehearse the private-storage and verified WAL backup/restore procedure in [ADR-0012](docs/architecture/ADR-0012-private-db-and-recovery.md). The create-only backup command is `php bin/backup.php /absolute/private/backup-dir/new-snapshot.sqlite`; it must never overwrite an existing snapshot. For a public deployment explicitly set `APP_ENV=production`, `APP_DEBUG=0`, `APP_URL=https://your-host.example`, and `SESSION_COOKIE_SECURE=1`. Production HTTP handling additionally requires the trusted PHP server TLS indication (`HTTPS=on` or `HTTPS=1`); configure your trusted reverse proxy/web server accordingly. Do not trust browser-supplied `X-Forwarded-Proto` as proof of HTTPS. A missing database, unapplied migrations, or unsafe production settings fail closed with a generic HTTP 500.
 
 ## Pages and roles
