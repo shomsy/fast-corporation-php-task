@@ -26,6 +26,7 @@ use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
+use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use InterviewTask\Bootstrap\Http\AccountApi;
 use InterviewTask\Bootstrap\Http\SessionApi;
 use InterviewTask\Bootstrap\Http\ActivityApi;
@@ -94,7 +95,7 @@ return static function (Router $router) use ($config) : void {
         expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
     );
     $downloadApi  = new DownloadApi(downloads: $downloadFile, signedIn: $signedIn);
-    $statistics   = new Statistics(pdo: $pdo);
+    $statistics   = new Statistics(reader: new ReadActivityHistory(pdo: $pdo));
     $reports      = new DailyReports(reader: new ReadDailyActivity(pdo: $pdo));
     $admin        = new RequireAdmin(identity: $identity);
     $activityApi  = new ActivityApi(statistics: $statistics, reports: $reports, admin: $admin, session: $session);

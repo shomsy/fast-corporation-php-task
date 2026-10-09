@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace InterviewTask\ActivityTracking;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use PDOException;
@@ -55,15 +54,11 @@ final readonly class DailyReports
                 continue;
             }
 
-            if (preg_match(pattern: '/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', subject: $value) !== 1) {
+            $date = UtcDate::tryFrom(value: $value);
+            if ($date === null) {
                 throw new InvalidArgumentException(message: 'Invalid report date.');
             }
-
-            $parsed = DateTimeImmutable::createFromFormat(format: '!Y-m-d', datetime: $value);
-            if ($parsed === false || $parsed->format(format: 'Y-m-d') !== $value) {
-                throw new InvalidArgumentException(message: 'Invalid report date.');
-            }
-            $parameters[$name] = $value;
+            $parameters[$name] = $date->value();
         }
 
         if (isset($parameters['from'], $parameters['to']) && $parameters['from'] > $parameters['to']) {

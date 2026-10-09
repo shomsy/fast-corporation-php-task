@@ -7,6 +7,7 @@ namespace InterviewTask\Tests\Architecture;
 use InterviewTask\Accounts\Accounts;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\DailyReports;
+use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Downloads\DownloadFile;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -29,6 +30,7 @@ final class OwnerTechnologyBoundaryTest extends TestCase
             Accounts::class     => ['->prepare(', '->fetch(', '->execute(', 'password_hash(', 'password_verify('],
             ActivityLog::class  => ['->prepare(', '->fetch(', '->execute('],
             DailyReports::class => ['->prepare(', '->fetch(', '->execute('],
+            Statistics::class   => ['->prepare(', '->fetch(', '->fetchAll(', '->bindValue(', '->execute('],
             DownloadFile::class => ['fopen(', 'is_file(', 'is_link(', 'stream_get_contents(', 'hash_equals('],
         ];
 
@@ -60,6 +62,9 @@ final class OwnerTechnologyBoundaryTest extends TestCase
                      'ActivityTracking' => [
                          'InterviewTask\ActivityTracking\Persistence\RecordActivity',
                          'InterviewTask\ActivityTracking\Persistence\ReadDailyActivity',
+                         'InterviewTask\ActivityTracking\Persistence\ReadActivityHistory',
+                         'InterviewTask\ActivityTracking\ActivityFilters',
+                         'InterviewTask\ActivityTracking\UtcDate',
                      ],
                      'Downloads'        => ['InterviewTask\Downloads\Storage\ReadArtifact'],
                  ] as $owner => $realizations) {

@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
+use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InvalidArgumentException;
@@ -385,7 +386,7 @@ final class StatisticsReportsTest extends TestCase
             'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
         ]))->migrate();
 
-        $this->statistics = new Statistics(pdo: $this->pdo);
+        $this->statistics = new Statistics(reader: new ReadActivityHistory(pdo: $this->pdo));
         $this->reports    = new DailyReports(reader: new ReadDailyActivity(pdo: $this->pdo));
 
         foreach ([

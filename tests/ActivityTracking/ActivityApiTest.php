@@ -14,6 +14,7 @@ use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
+use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use InterviewTask\Bootstrap\Http\ActivityApi;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
@@ -46,7 +47,7 @@ final class ActivityApiTest extends TestCase
         $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
         $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
         $api      = new ActivityApi(
-            statistics: new Statistics(pdo: $pdo),
+            statistics: new Statistics(reader: new ReadActivityHistory(pdo: $pdo)),
             reports   : new DailyReports(reader: new ReadDailyActivity(pdo: $pdo)),
             admin     : new RequireAdmin(identity: $identity),
             session   : $session,

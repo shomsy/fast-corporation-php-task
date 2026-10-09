@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\ActivityTracking;
 
 use InterviewTask\ActivityTracking\Statistics;
+use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InvalidArgumentException;
@@ -27,7 +28,7 @@ final class StablePaginationTest extends TestCase
     {
         $pdo = $this->database();
         $this->seed(pdo: $pdo, count: 115);
-        $statistics = new Statistics(pdo: $pdo);
+        $statistics = new Statistics(reader: new ReadActivityHistory(pdo: $pdo));
         $key        = 'test-session-only-secret';
         $first      = $statistics->cursorPage(key: $key);
         self::assertCount(50, $first['events']);
@@ -57,7 +58,7 @@ final class StablePaginationTest extends TestCase
     {
         $pdo = $this->database();
         $this->seed(pdo: $pdo, count: 61);
-        $statistics = new Statistics(pdo: $pdo);
+        $statistics = new Statistics(reader: new ReadActivityHistory(pdo: $pdo));
         $first      = $statistics->cursorPage(key: 'first-key', action: 'view-page');
         $cursor     = $first['nextCursor'] ?? throw new \LogicException('Expected a next cursor.');
 

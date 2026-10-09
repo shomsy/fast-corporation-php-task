@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace InterviewTask\ActivityTracking;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
-use PDO;
+use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use PDOException;
 use RuntimeException;
 
@@ -44,9 +43,9 @@ final readonly class Statistics
     /**
      * Use the ActivityTracking owner database for read-only history queries.
      *
-     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     * @param ReadActivityHistory $reader Owner-private SQLite read model.
      */
-    public function __construct(private PDO $pdo) {}
+    public function __construct(private ReadActivityHistory $reader) {}
 
     /**
      * Return one 1-based page of event rows, excluding pagination metadata.
@@ -101,91 +100,10 @@ final readonly class Statistics
             throw new InvalidArgumentException(message: 'Invalid page.');
         }
 
-        $filters    = $this->filters(date: $date, user: $user, action: $action);
-        $where      = $filters['where'];
-        $parameters = $filters['parameters'];
+        $filters = new ActivityFilters(date: $date, user: $user, action: $action);
 
-        // Date-filtered requests must stay on the existing day expression index even
-        // for frequent actors; a competing actor-first index can cause a long scan.
-        $table = $date !== null && $date !== '' ? 'activity_events INDEXED BY idx_activity_day' : 'activity_events';
-        $sql   = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
-
-        if ($where !== []) {
-            $sql .= ' WHERE ' . implode(separator: ' AND ', array: $where);
-        }
-
-        $sql .= ' ORDER BY occurred_at DESC, id DESC LIMIT :limit OFFSET :offset';
-
-        $statement = $this->pdo->prepare(query: $sql);
-
-        if ($statement === false) {
-            throw new RuntimeException(message: 'Unable to prepare activity statistics query.');
-        }
-
-        foreach ($parameters as $key => $value) {
-            $statement->bindValue(param: ':' . $key, value: $value, type: PDO::PARAM_STR);
-        }
-        $statement->bindValue(param: ':limit', value: self::PAGE_SIZE + 1, type: PDO::PARAM_INT);
-        $statement->bindValue(param: ':offset', value: ($page - 1) * self::PAGE_SIZE, type: PDO::PARAM_INT);
-        $statement->execute();
-
-        /** @var list<array{id: int, actor_id: int, actor_label: string, action: string, target: string|null, occurred_at: string}> $rows */
-        $rows = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
-
-        return [
-            'events'  => array_slice(array: $rows, offset: 0, length: self::PAGE_SIZE),
-            'hasNext' => count(value: $rows) > self::PAGE_SIZE,
-        ];
+        return $this->reader->page(filters: $filters, page: $page);
     }
-
-    /**
-     * Validate shared public statistics filters and create bound SQL predicates.
-     *
-     * @param string|null $date   Exact UTC date.
-     * @param string|null $user   Historical username.
-     * @param string|null $action Canonical event action.
-     *
-     * @return array{where: list<string>, parameters: array<string, string>}
-     */
-    private function filters(string|null $date, string|null $user, string|null $action) : array
-    {
-        $where      = [];
-        $parameters = [];
-
-        if ($date !== null && $date !== '') {
-            if (preg_match(pattern: '/\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/', subject: $date) !== 1) {
-                throw new InvalidArgumentException(message: 'Invalid date. Expected YYYY-MM-DD.');
-            }
-
-            $parsed = DateTimeImmutable::createFromFormat(format: '!Y-m-d', datetime: $date);
-
-            if ($parsed === false || $parsed->format(format: 'Y-m-d') !== $date) {
-                throw new InvalidArgumentException(message: 'Invalid date. Expected YYYY-MM-DD.');
-            }
-
-            $where[]            = 'substr(occurred_at, 1, 10) = :date';
-            $parameters['date'] = $date;
-        }
-
-        if ($user !== null && trim(string: $user) !== '') {
-            $where[]            = 'actor_label = :user COLLATE NOCASE';
-            $parameters['user'] = trim(string: $user);
-        }
-
-        if ($action !== null && $action !== '') {
-            $validated = ActivityAction::tryFrom(value: $action);
-
-            if ($validated === null) {
-                throw new InvalidArgumentException(message: 'Unknown activity action.');
-            }
-
-            $where[]              = 'action = :action';
-            $parameters['action'] = $validated->value;
-        }
-
-        return ['where' => $where, 'parameters' => $parameters];
-    }
-
 
     /**
      * Traverse one stable activity page using a signed, filter-bound keyset position.
@@ -208,12 +126,12 @@ final readonly class Statistics
             throw new InvalidArgumentException(message: 'Missing cursor signing context.');
         }
 
-        $filters     = $this->filters(date: $date, user: $user, action: $action);
+        $filters     = new ActivityFilters(date: $date, user: $user, action: $action);
         $fingerprint = hash(algo: 'sha256', data: json_encode(value: [$date ?? '', $user === null ? '' : trim(string: $user), $action ?? ''], flags: JSON_THROW_ON_ERROR));
         $position    = $cursor === null ? null : $this->decodeCursor(cursor: $cursor, key: $key, fingerprint: $fingerprint);
         $direction   = $position['direction'] ?? 'before';
 
-        $slice   = $this->readCursorSlice(filters: $filters, position: $position, date: $date, direction: $direction);
+        $slice   = $this->reader->cursorSlice(filters: $filters, position: $position, direction: $direction);
         $rows    = $slice['rows'];
         $hasMore = $slice['hasMore'];
 
@@ -252,60 +170,6 @@ final readonly class Statistics
         $mac  = hash_hmac(algo: 'sha256', data: $body, key: $key);
 
         return $body . '.' . $mac;
-    }
-
-    /**
-     * Read one bounded keyset slice without owning cursor signing or navigation links.
-     *
-     * @param array{where: list<string>, parameters: array<string, string>} $filters Bound predicates.
-     * @param array{time: string, id: int, direction: string}|null $position Verified cursor position.
-     * @param string|null $date Optional UTC date for the existing SQLite index hint.
-     * @param string $direction before or after.
-     *
-     * @return array{rows: list<ActivityEventRow>, hasMore: bool}
-     * @throws RuntimeException If preparing the SQLite read fails.
-     * @throws PDOException If the database cannot execute the read.
-     */
-    private function readCursorSlice(array $filters, array|null $position, string|null $date, string $direction) : array
-    {
-        $where      = $filters['where'];
-        $parameters = $filters['parameters'];
-        if ($position !== null) {
-            $comparison                     = $direction === 'after' ? '>' : '<';
-            $where[]                        = '(occurred_at ' . $comparison . ' :cursor_time OR (occurred_at = :cursor_same_time AND id ' . $comparison . ' :cursor_id))';
-            $parameters['cursor_time']      = $position['time'];
-            $parameters['cursor_same_time'] = $position['time'];
-        }
-
-        $table = $date !== null && $date !== '' ? 'activity_events INDEXED BY idx_activity_day' : 'activity_events';
-        $sql   = 'SELECT id, actor_id, actor_label, action, target, occurred_at FROM ' . $table;
-        if ($where !== []) {
-            $sql .= ' WHERE ' . implode(separator: ' AND ', array: $where);
-        }
-        $sort      = $direction === 'after' ? 'ASC' : 'DESC';
-        $sql       .= ' ORDER BY occurred_at ' . $sort . ', id ' . $sort . ' LIMIT :limit';
-        $statement = $this->pdo->prepare(query: $sql);
-        if ($statement === false) {
-            throw new RuntimeException(message: 'Unable to prepare cursor activity history.');
-        }
-        foreach ($parameters as $name => $value) {
-            $statement->bindValue(param: ':' . $name, value: $value, type: PDO::PARAM_STR);
-        }
-        if ($position !== null) {
-            $statement->bindValue(param: ':cursor_id', value: $position['id'], type: PDO::PARAM_INT);
-        }
-        $statement->bindValue(param: ':limit', value: self::PAGE_SIZE + 1, type: PDO::PARAM_INT);
-        $statement->execute();
-
-        /** @var list<ActivityEventRow> $rows */
-        $rows    = $statement->fetchAll(mode: PDO::FETCH_ASSOC);
-        $hasMore = count(value: $rows) > self::PAGE_SIZE;
-        $rows    = array_slice(array: $rows, offset: 0, length: self::PAGE_SIZE);
-        if ($direction === 'after') {
-            $rows = array_reverse(array: $rows);
-        }
-
-        return ['rows' => $rows, 'hasMore' => $hasMore];
     }
 
     /**
