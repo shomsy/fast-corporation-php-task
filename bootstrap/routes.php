@@ -104,7 +104,11 @@ return static function (Router $router) use ($config): void {
     $accountPages  = new AccountPages(lifecycle: $lifecycle, identity: $current, csrf: $csrf, html: $html);
     $cowPages      = new CowOfferPages(cow: new CowOffer(activityLog: $activity), signedIn: $signedIn, csrf: $csrf, html: $html);
     $downloadPages = new DownloadPages(
-        downloads: new DownloadFile(activityLog: $activity, artifactPath: $config['root'] . '/assets/sample.exe'),
+        downloads: new DownloadFile(
+            activityLog: $activity,
+            artifactPath: $config['root'] . '/assets/sample.exe',
+            expectedSha256: '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80',
+        ),
         signedIn: $signedIn,
         csrf: $csrf,
         html: $html,

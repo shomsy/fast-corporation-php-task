@@ -22,11 +22,20 @@ final readonly class DownloadFile
      *
      * @param ActivityLog $activityLog Activity-event writer shared with the feature.
      * @param string $artifactPath Fixed server-side download artifact path, never taken from the request.
+     * @param ?string $expectedSha256 Pinned SHA-256 of the deployed binary (required by the production composition root).
+     * @param int $maxBytes Maximum allowed file bytes, protecting PHP memory.
+     * @throws \InvalidArgumentException If the trusted file policy is malformed.
      */
     public function __construct(
         private ActivityLog $activityLog,
         private string      $artifactPath,
-    ) {}
+        private ?string     $expectedSha256 = null,
+        private int         $maxBytes = 2097152,
+    ) {
+        if ($maxBytes < 1 || ($expectedSha256 !== null && preg_match(pattern: '/\\A[a-f0-9]{64}\\z/D', subject: $expectedSha256) !== 1)) {
+            throw new \InvalidArgumentException(message: 'Invalid trusted download artifact policy.');
+        }
+    }
 
     /**
      * Record the authorized display of Page B.
@@ -51,13 +60,37 @@ final readonly class DownloadFile
      */
     public function read(int $actorId, string $actorLabel): string
     {
-        if (! is_file(filename: $this->artifactPath) || ! is_readable(filename: $this->artifactPath)) {
+        if (is_link(filename: $this->artifactPath) || ! is_file(filename: $this->artifactPath)
+            || ! is_readable(filename: $this->artifactPath)) {
             throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 
-        $contents = file_get_contents(filename: $this->artifactPath);
+        clearstatcache(clear_realpath_cache: true, filename: $this->artifactPath);
+        $size = filesize(filename: $this->artifactPath);
 
-        if ($contents === false) {
+        if (! is_int(value: $size) || $size < 1 || $size > $this->maxBytes) {
+            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
+        }
+
+        $stream = fopen(filename: $this->artifactPath, mode: 'rb');
+
+        if ($stream === false) {
+            throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
+        }
+
+        try {
+            // A bounded read detects a file replaced/grown after its initial size check.
+            $contents = stream_get_contents(stream: $stream, length: $this->maxBytes + 1);
+        } finally {
+            fclose(stream: $stream);
+        }
+
+        if (! is_string(value: $contents) || strlen(string: $contents) !== $size
+            || strlen(string: $contents) > $this->maxBytes
+            || ($this->expectedSha256 !== null && ! hash_equals(
+                known_string: $this->expectedSha256,
+                user_string: hash(algo: 'sha256', data: $contents),
+            ))) {
             throw new ArtifactUnavailable(message: 'Download is temporarily unavailable.');
         }
 

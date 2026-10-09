@@ -60,7 +60,7 @@ included; production-scale performance is not claimed.
 
 The button state on Page A is intentionally transient; a fresh GET shows it again. Repeated accepted CSRF-valid clicks and downloads are counted individually, not deduplicated as purchases (ADR-0008). Recognized browser prefetch requests do not count as Page A/B views, while deliberate authorized visits and revisits do (ADR-0009). There is no inventory, payment or
 persistent purchase because the task does not require one. The downloadable `assets/sample.exe` is a harmless minimal PE
-sample, outside the public document root. The server never executes it.
+sample, outside the public document root. The server never executes it. The reviewed 1,024-byte binary is SHA-256 pinned, not executable on the Linux host, and rejected if changed, symlinked or larger than 2 MiB (see [ADR-0013](docs/architecture/ADR-0013-fixed-download-artifact.md)).
 
 ## Security and data correctness
 

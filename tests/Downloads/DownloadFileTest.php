@@ -102,6 +102,85 @@ final class DownloadFileTest extends TestCase
     }
 
     /**
+     * A changed fixed file is unavailable and never counted as a successful download.
+     *
+     * @return void No return value.
+     */
+    public function testUnexpectedArtifactHashRejectsDownloadBeforeAudit(): void
+    {
+        $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-hash-');
+        self::assertNotFalse($path);
+        try {
+            self::assertNotFalse(file_put_contents(filename: $path, data: 'unexpected bytes'));
+            $download = new DownloadFile(
+                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                artifactPath: $path,
+                expectedSha256: hash(algo: 'sha256', data: 'original bytes'),
+            );
+            $this->expectException(ArtifactUnavailable::class);
+            $download->read(actorId: 9, actorLabel: 'bob');
+        } finally {
+            unlink(filename: $path);
+            $statement = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE action = 'button-click'");
+            self::assertNotFalse($statement);
+            self::assertSame(0, (int) $statement->fetchColumn());
+        }
+    }
+
+    /**
+     * Files beyond the configured size budget fail closed without reading the whole file.
+     *
+     * @return void No return value.
+     */
+    public function testOversizedArtifactRejectsDownloadBeforeAudit(): void
+    {
+        $path = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-big-');
+        self::assertNotFalse($path);
+        try {
+            self::assertNotFalse(file_put_contents(filename: $path, data: str_repeat(string: 'z', times: 4096)));
+            $download = new DownloadFile(
+                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                artifactPath: $path,
+                maxBytes: 1024,
+            );
+            $this->expectException(ArtifactUnavailable::class);
+            $download->read(actorId: 9, actorLabel: 'bob');
+        } finally {
+            unlink(filename: $path);
+            $statement = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE action = 'button-click'");
+            self::assertNotFalse($statement);
+            self::assertSame(0, (int) $statement->fetchColumn());
+        }
+    }
+
+    /**
+     * Symlink substitution is never accepted as the fixed downloadable file.
+     *
+     * @return void No return value.
+     */
+    public function testSymlinkArtifactCannotBeDownloaded(): void
+    {
+        $real = tempnam(directory: sys_get_temp_dir(), prefix: 'fast-link-target-');
+        self::assertNotFalse($real);
+        $link = $real . '.exe';
+        try {
+            self::assertNotFalse(file_put_contents(filename: $real, data: 'target'));
+            self::assertTrue(symlink(target: $real, link: $link));
+            $download = new DownloadFile(
+                activityLog: new ActivityLog(pdo: $this->pdo, clock: new SystemClock()),
+                artifactPath: $link,
+            );
+            $this->expectException(ArtifactUnavailable::class);
+            $download->read(actorId: 9, actorLabel: 'bob');
+        } finally {
+            if (is_link(filename: $link)) {
+                unlink(filename: $link);
+            }
+            unlink(filename: $real);
+        }
+    }
+
+    /**
      * Build isolated fixtures for this test case.
      *
      * @return void No return value.
