@@ -47,15 +47,24 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
       headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetchImpl(url.href, {
-      method: verb,
-      headers,
-      credentials: 'same-origin',
-      redirect: 'error',
-      cache: 'no-store',
-      signal,
-      ...(unsafe && body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
+    let response;
+    try {
+      response = await fetchImpl(url.href, {
+        method: verb,
+        headers,
+        credentials: 'same-origin',
+        redirect: 'error',
+        cache: 'no-store',
+        signal,
+        ...(unsafe && body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+    } catch (error) {
+      // Cancellation belongs to the screen lifecycle; never present it as a network failure.
+      if (signal?.aborted || error?.name === 'AbortError') throw error;
+      throw new HttpError(0, 'Connection failed. Check your network and try again.', {
+        code: 'network_unavailable',
+      });
+    }
     if (response.status === 204) return null;
 
     let payload = null;
@@ -65,7 +74,7 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
     }
 
     if (!response.ok) {
-      if (response.status === 403 || response.status === 419) csrfToken = null;
+      if ([401, 403, 419].includes(response.status)) csrfToken = null;
       const requestId = response.headers.get('x-request-id');
       const retryValue = response.headers.get('retry-after');
       const retryAfter = retryValue && /^\d+$/.test(retryValue) ? Number(retryValue) : null;

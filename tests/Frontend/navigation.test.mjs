@@ -117,3 +117,43 @@ test('query links navigate with History API; off-origin and hashed links are not
   assert.equal(click('https://different.test/app/login'), false);
   navigator.stop();
 });
+
+
+test('unknown SPA URL and malformed destination never become client History entries', () => {
+  const { win, page, outlet } = browser();
+  const navigator = createNavigator({ win, page, outlet, render() {} });
+  assert.equal(navigator.navigate('/app/nonexistent'), false);
+  assert.equal(navigator.navigate('https://foreign.test/app/login'), false);
+  assert.equal(navigator.navigate('http://[invalid'), false);
+  assert.deepEqual(win.history.paths, []);
+
+  const event = { button: 0, defaultPrevented: false, ctrlKey: false, metaKey: false,
+    altKey: false, shiftKey: false,
+    target: { closest: () => ({ href: 'https://example.test/app/nonexistent', target: '',
+      hasAttribute: () => false }) },
+    preventDefault() { this.defaultPrevented = true; } };
+  win.fire('click', event);
+  assert.equal(event.defaultPrevented, false, 'Allow the server to return a real 404');
+  navigator.stop();
+});
+
+test('GET form with a File entry does not crash the SPA navigation handler', () => {
+  const { win, page, outlet } = browser();
+  const previous = globalThis.FormData;
+  globalThis.FormData = class {
+    constructor() { return [['user', 'alice'], ['attachment', { name: 'report.csv' }]]; }
+  };
+  try {
+    const navigator = createNavigator({ win, page, outlet, render() {} });
+    const form = { method: 'get', getAttribute(name) {
+      return { method: 'get', action: '/app/statistics' }[name]; } };
+    const event = { target: form, defaultPrevented: false,
+      preventDefault() { this.defaultPrevented = true; } };
+    assert.doesNotThrow(() => win.fire('submit', event));
+    assert.equal(win.location.pathname, '/app/statistics');
+    assert.equal(event.defaultPrevented, true);
+    navigator.stop();
+  } finally {
+    globalThis.FormData = previous;
+  }
+});

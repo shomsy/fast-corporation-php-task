@@ -69,3 +69,38 @@ test('safe structured status, Retry-After, request ID and aborted navigation are
   });
   await assert.rejects(() => client.request('/api/session', { signal: cancel.signal }), { name: 'AbortError' });
 });
+
+
+test('transport failures produce a safe typed network outcome without leaking browser internals', async () => {
+  const client = createHttpClient({
+    origin: 'https://example.test',
+    fetchImpl: async () => { throw new TypeError('Failed to fetch secret-service.internal'); },
+  });
+  await assert.rejects(client.getSession(), (error) => {
+    assert.equal(error instanceof HttpError, true);
+    assert.equal(error.status, 0);
+    assert.equal(error.code, 'network_unavailable');
+    assert.ok(!error.message.includes('secret-service.internal'));
+    return true;
+  });
+});
+
+test('a 401 expires the old CSRF and the next mutation obtains a fresh server token', async () => {
+  const calls = [];
+  let epoch = 0;
+  const client = createHttpClient({
+    origin: 'https://example.test',
+    fetchImpl: async (path, options) => {
+      calls.push([new URL(path).pathname, options.headers['X-CSRF-Token']]);
+      if (path.endsWith('/api/csrf')) return response(200, { csrfToken: (++epoch).toString(16).repeat(64) });
+      if (calls.filter(([route]) => route === '/api/accounts/login').length === 1)
+        return response(401, { error: { code: 'unauthenticated', message: 'Unauthorized' } });
+      return response(200, { user: null });
+    },
+  });
+  await assert.rejects(client.request('/api/accounts/login', { method: 'POST', body: {} }), { status: 401 });
+  await client.request('/api/accounts/login', { method: 'POST', body: {} });
+  assert.deepEqual(calls.map(([route]) => route),
+    ['/api/csrf', '/api/accounts/login', '/api/csrf', '/api/accounts/login']);
+  assert.notEqual(calls[1][1], calls[3][1]);
+});

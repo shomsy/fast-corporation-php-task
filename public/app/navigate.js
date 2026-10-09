@@ -54,8 +54,12 @@ export function createNavigator({ win, page, outlet, render = showPlaceholder })
 
   function navigate(destination, { replace = false } = {}) {
     if (stopped || typeof destination !== 'string') return false;
-    const target = new URL(destination, win.location.href);
-    if (target.origin !== win.location.origin || target.hash || !screenForPath(target.pathname)) return false;
+    let target;
+    try { target = new URL(destination, win.location.href); }
+    catch { return false; }
+    const screen = target.origin === win.location.origin ? screenForPath(target.pathname) : null;
+    // Unknown routes belong to the HTTP 404 boundary, not the SPA History API.
+    if (target.hash || screen?.status !== 200) return false;
     const next = target.pathname + target.search;
     if (next === address()) return true;
     if (replace) win.history.replaceState(null, '', next);
@@ -72,7 +76,7 @@ export function createNavigator({ win, page, outlet, render = showPlaceholder })
     const anchor = event.target?.closest?.('a[href]');
     if (!anchor || anchor.hasAttribute('download') || (anchor.target && anchor.target !== '_self')) return;
     const url = new URL(anchor.href, win.location.href);
-    if (url.origin !== win.location.origin || url.hash || !screenForPath(url.pathname)) return;
+    if (url.origin !== win.location.origin || url.hash || screenForPath(url.pathname)?.status !== 200) return;
     event.preventDefault();
     navigate(url.pathname + url.search);
   }
@@ -83,9 +87,11 @@ export function createNavigator({ win, page, outlet, render = showPlaceholder })
     if (!form || String(form.getAttribute?.('method') || form.method).toUpperCase() !== 'GET') return;
     // A form control named 'action' shadows form.action in browsers. Read the HTML attribute.
     const url = new URL(form.getAttribute?.('action') || win.location.href, win.location.href);
-    if (url.origin !== win.location.origin || !screenForPath(url.pathname)) return;
+    if (url.origin !== win.location.origin || screenForPath(url.pathname)?.status !== 200) return;
     const params = new URLSearchParams(new FormData(form));
-    for (const [key, value] of [...params]) if (!value.trim()) params.delete(key);
+    for (const [key, value] of [...params]) {
+      if (typeof value === 'string' && !value.trim()) params.delete(key);
+    }
     event.preventDefault();
     navigate(url.pathname + (params.size ? '?' + params : ''));
   }
