@@ -51,14 +51,14 @@ The default database is `var/database/app.sqlite`; `.env` and local database fil
 Statistics includes registration, login, logout, page views and button clicks. Reports count Page A views, Page B views,
 Buy a cow clicks and Download clicks, grouped by **UTC date**. Chart positions reflect true UTC calendar distance; days with no tracked events break the lines rather than falsely implying continuous activity. The table remains an accessible record of the same 30-or-fewer active daily totals (no fabricated zero-event rows). Low-count Y-axis labels are deduplicated and points have keyboard-readable values; see `tests/ActivityTracking/ReportChartTest.php`.
 
-Statistics reads 50 rows plus a one-row lookahead to show **Next** only when another page exists. There is no artificial
+Statistics default navigation uses session-signed keyset cursors for stable Next/Previous traversal across new events (ADR-0007); old explicit `?page=N` URLs remain OFFSET-based and can shift under concurrent inserts. Statistics reads 50 rows plus a one-row lookahead to show **Next** only when another page exists. There is no artificial
 1,000-page/50,000-event visibility cap; deep offset pagination still incurs increasing SQLite scan/skip cost, so a
 measured large audit workload would justify a cursor/keyset change. Reports shows at most the **30 most recent active
 UTC dates** matching the optional range (not every calendar date and not every active date in a larger range). Its limit
 bounds response size, **not** the cost of scanning/aggregating history. Representative 5,000-event query/index tests are
 included; production-scale performance is not claimed.
 
-The button state on Page A is intentionally transient; a fresh GET shows it again. There is no inventory, payment or
+The button state on Page A is intentionally transient; a fresh GET shows it again. Repeated accepted CSRF-valid clicks and downloads are counted individually, not deduplicated as purchases (ADR-0008). Recognized browser prefetch requests do not count as Page A/B views, while deliberate authorized visits and revisits do (ADR-0009). There is no inventory, payment or
 persistent purchase because the task does not require one. The downloadable `assets/sample.exe` is a harmless minimal PE
 sample, outside the public document root. The server never executes it.
 
@@ -105,7 +105,7 @@ composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, P
 The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
 starts the same PHP version with explicit database environment and mapped temporary directory.
 
-**Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). M00/M01 are verified; 18/48 canonical work packets are implemented; M02 security and M03/M04 runtime/data hardening remain in progress. Public-production readiness has not yet been demonstrated.
+**Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). M00/M01 are verified; 21/48 canonical work packets are implemented; M02 security and M03/M04 runtime/data hardening remain in progress. Public-production readiness has not yet been demonstrated.
 
 Original earlier worklist (archived input): **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 review findings).
 

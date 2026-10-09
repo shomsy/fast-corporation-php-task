@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02/M03/M04 IN PROGRESS; M05 C-14/C-15/C-17 done. 18/48 complete. Public production not yet certified.
+**Status:** M00/M01 DONE; M02/M03/M04 IN PROGRESS; M05 C-14/C-15/C-16/C-17/C-18/C-19 done. 21/48 complete. Public production not yet certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** d5e0843ecc597100b39cdf4c5342cf1ee543a2f1 (C-17); C-15 050510492ddfccced2aaa22d33b307d4d27d576c; C-14 8697e633772eb66473c582d5fd51f04d7edfd3e5.
-**Next legal action:** C-16 stable pagination under concurrent event insertions, then C-18 accepted click/replay semantics and C-19 Page A/B navigation semantics if unblocked. Other unblocked C-22/C-24/C-25 remain. Public deployment C-05 still needs actual edge/proxy evidence. Batch 2–4 tested tasks per turn.
+**Last implementation commit:** 0364b55026e0a3459764b7b918fb13166437c3f4 (C-18/C-19); C-16 e504afdc46a2e66b8b15cce027a30842e9df280f.
+**Next legal action:** C-22 HTTP request/HEAD/OPTIONS semantics and C-24 transaction failure boundaries, then C-25 deployment file privilege/backup rehearsal, subject to dependencies. C-05 edge abuse throttling still requires real proxy deployment evidence. Batch 2–4 separately verified tasks per RP turn, then proceed to backend JSON API and Vanilla JS SPA phases.
 
 ## Milestone status
 
@@ -17,7 +17,7 @@
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
 | M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10 DONE** | `effca0e`: native GC now retains up to 12h and production uses private session storage; measured native file locking. `c5b5b80`: fail-closed production boot; quality/smoke PASS. |
 | M04 | DB/audit/durability | **IN PROGRESS — C-11/C-12/C-13 DONE** | `e635944` atomic checksummed migrations; `c539e96` accepted-event audit contract; `50ef500` measured WAL concurrency and safe backup policy; quality/smoke PASS. |
-| M05 | Analytics/performance | **IN PROGRESS — C-14/C-15/C-17 DONE** | `8697e63` measured 100k-event daily SQL report and rejected speculative rollup; `0505104` selective actor index with date-plan guard; `d5e0843` accurate sparse UTC chart/accessible ticks. Quality 127/6195, HTTP smoke PASS. |
+| M05 | Analytics/performance | **IN PROGRESS — C-14/C-15/C-16/C-17/C-18/C-19 DONE** | `8697e63` SQL report measurement; `0505104` actor index; `e504afd` session-bound signed keyset traversal; `d5e0843` calendar-accurate chart; `0364b55` accepted click and view/prefetch semantics. Quality 132/6491, HTTP smoke PASS. |
 | M06 | Backend LLD & API | NOT STARTED | — |
 | M07 | SPA shell & security | NOT STARTED | — |
 | M08 | User screens | NOT STARTED | — |
@@ -25,7 +25,7 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 18 DONE / 48 TOTAL (30 OPEN)
+## Canonical packet status — 21 DONE / 48 TOTAL (27 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -42,10 +42,10 @@
 - [x] **C-13** — Measure file-backed concurrent readers/writers, SQLITE_BUSY, WAL/rollback journaling, connection lifecycle and backup. **DONE:** `50ef5001facc64be7f8891cf5b9afa9079400699`; separate-process rollback reader blocks writer (~151ms at probe timeout), WAL reader permits writer (~0.1ms); second writer still blocks, subsequent writes succeed; WAL checkpoint and online-backup restore PASS. Trusted CLI provisioning now enables and verifies WAL, no web journal mutation or unsafe automatic replay. RED default-journal regression, GREEN quality 124/6183 + HTTP smoke PASS; ADR-0004 limits conclusions and documents release backup gate.
 - [x] **C-14** — Benchmark report aggregation over growing history and choose an earned query/rollup policy. **DONE:** `8697e633772eb66473c582d5fd51f04d7edfd3e5`; 100k synthetic events/180 days, 20-query warm p95 current SQL aggregation ~21ms using idx_activity_day; lower-window variant ~16ms changes dataset. Retain 30 recent active dates, no unearned rollup. Reproducible benchmark + ADR-0005; scoped reports 20/5547 PASS.
 - [x] **C-15** — Evaluate actor/action/date filter plans and measured index write overhead. **DONE:** `050510492ddfccced2aaa22d33b307d4d27d576c`; 100k skewed actors: rare lookup ~13.7ms to ~0.019ms via idx_activity_actor_recent; mixed common/date could regress ~0.5ms to ~6.6ms so date filters use idx_activity_day explicitly (~0.48ms). 3000 inserts ~5.2ms before index vs ~6.84ms after in synthetic batch. Versioned migration 003, RED missing-index plan regression then 21/5551 scoped PASS, quality 125/6188, live HTTP smoke PASS; ADR-0006.
-- [ ] **C-16** — Define stable pagination contract. *(OPEN; no implementation evidence yet)*
+- [x] **C-16** — Stable activity pagination: **DONE** `e504afdc46a2e66b8b15cce027a30842e9df280f`; keyset `(occurred_at,id)` with signed, filter- and session-bound before/after cursors, 422 for malformed/tampered/cross-filter tokens, deterministic ties and new-event traversal. Default HTML Next/Previous use signed cursors; explicit `?page=N` remains legacy OFFSET for compatibility (not concurrency-stable). RED absent-method tests; GREEN 2 cursor/197 assertions, HTTP 1/76 assertions, full quality 130/6468 and live HTTP smoke PASS. ADR-0007.
 - [x] **C-17** — Repair sparse UTC day-axis, omitted zero-event day gaps, unique Y ticks and chart accessibility. **DONE:** `d5e0843ecc597100b39cdf4c5342cf1ee543a2f1`; chart x values now proportional to real UTC date spans, disconnected lines across omitted no-activity days, 2 distinct 0/1 ticks when max=1, per-point keyboard label, four visually differentiated series. Chart+table reuse authoritative 30-active-day dataset; no fake zero rows. RED two regressions then GREEN 22 scoped tests/5554 assertions, quality 127/6195, HTTP smoke PASS.
-- [ ] **C-18** — Specify whether raw clicks or accepted unique actions are counted. *(OPEN; no implementation evidence yet)*
-- [ ] **C-19** — Clarify Page A/B view counts: accepted authorized navigation versus actual rendering. *(OPEN; no implementation evidence yet)*
+- [x] **C-18** — Click replay/counting policy: **DONE** `0364b55026e0a3459764b7b918fb13166437c3f4`; count every accepted CSRF-valid Buy Cow or fixed-file Download POST, including double-click/two tabs/repeat after reload; no purchase/transfer semantics and no automatic POST retry. Denied actions do not produce event. Scoped repeated-click test 1/13; final full quality 132/6491, HTTP smoke PASS; ADR-0008.
+- [x] **C-19** — View count/navigation policy: **DONE** `0364b55026e0a3459764b7b918fb13166437c3f4`; actual authorized SSR visits and revisit/back-forward GET count once per accepted navigation; recognized HTTP Sec-Purpose/Purpose/X-Moz prefetch returns 204 without audit after auth, unauthorized views not recorded. Future SPA activates explicit POST view per mounted navigation; no prefetch/data GET side effect. Scoped navigation test 1/10; final full quality 132/6491, HTTP smoke PASS; ADR-0009.
 - [ ] **C-20** — Assess account disable/reset/admin recovery scope separately from interview acceptance. *(OPEN; no implementation evidence yet)*
 - [x] **C-21** — Differentiate client validation/authorization from dependency errors. **DONE:** `6cc9e1d`; existing 4xx/503/500 mappings verified, both real 500 causes remain safe generic responses with 24-hex-character X-Request-ID and matching server log reference. RED smoke before fix; GREEN after; quality 98/6038 PASS.
 - [ ] **C-22** — Define safe URI parsing, HEAD/OPTIONS/Allow handling and output rules. *(OPEN; no implementation evidence yet)*
@@ -78,6 +78,10 @@
 
 | 2026-10-09 | M03 / C-10 | `c5b5b80a8e4335f48d3c3450719d449d3b9c2b60` | RED missing DB / unsafe prod settings; GREEN 6 C-10 tests, quality 114/6141 and real HTTP smoke PASS | CLI-only provisioning, fail-closed production startup. |
 | 2026-10-09 | M04 / C-11 | `e6359440b1cf3af55975be8beb5bf6e3a821919d` | RED drift/legacy/partial batch; GREEN 7 migration tests/25 checks, quality 118/6161 and real HTTP smoke PASS | Hash checks and atomic writer-locked migration batches; legacy trust boundary documented. |
+
+| 2026-10-09 | M05 / C-16 | `e504afdc46a2e66b8b15cce027a30842e9df280f` | RED absent keyset API; GREEN 2 tests/197 assertions, actual HTTP cursor Next/return and tamper checks 1/76, full quality 130/6468, real HTTP smoke PASS | Session-signed filter-bound keyset, legacy explicit OFFSET retained. |
+| 2026-10-09 | M05 / C-18 | `0364b55026e0a3459764b7b918fb13166437c3f4` | Two-tab/repeat click/download and invalid-CSRF regression 1/13, final quality 132/6491 and HTTP smoke PASS | Each accepted request counted, no invented purchase or exactly-once semantics. |
+| 2026-10-09 | M05 / C-19 | `0364b55026e0a3459764b7b918fb13166437c3f4` | Unauthorized and speculative Page A/B fetch, two accepted revisits test 1/10, final quality 132/6491 and HTTP smoke PASS | Prefetch does not count; explicit active-screen view POST planned for SPA. |
 
 ## Current blockers
 
