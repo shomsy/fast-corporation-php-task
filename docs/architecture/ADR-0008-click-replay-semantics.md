@@ -1,0 +1,9 @@
+# ADR-0008 — Accepted Click Counting, Replays and Downloads
+
+Status: Accepted / C-18, 2026-10-09. Owners: CowOffer and Downloads; ActivityTracking records owner-authorized events.
+
+**Decision:** Count each **accepted server-side action attempt** rather than unique purchases. The interview task has no payment, stock, purchase identity or durable Buy Cow state. Repeating an authenticated CSRF-valid Buy Cow POST (double click, two tabs, rePOST after refresh or a user-initiated retry) records another `button-click/buy-cow` and returns transient `thankYou`. A fresh authorized GET reveals the initial button again. Similarly each accepted download POST reads the fixed server artifact and records another `button-click/download`. The recorded event proves that a response was prepared and its audit write succeeded, **not** that the browser fully received, saved or executed an EXE. Missing/invalid artifact, authorization or CSRF attempts do not produce accepted clicks.
+
+The UI may disable submit while pending to reduce accidental repeats, but it must not claim that the server guarantees exactly-once user actions. **Do not silently introduce a server one-use nonce, per-account click uniqueness or idempotency record** without a product requirement for a persistent purchase or a true side effect that must only occur once. An automatic SPA/network retry of mutating POST is forbidden; a user must explicitly choose to retry an uncertain result. For downloads, the normal form-based POST remains preferred over buffering the EXE as a JS Blob.
+
+Proof: `tests/Flow/HttpFlowTest.php::testRepeatedAcceptedClicksCountSeparatelyAcrossTabsAndReloads` asserts three accepted Buy Cow POSTs (including same token/reload), two accepted download POSTs and no additional event on rejected CSRF. `ADR-0003` defines the separate audit meaning. Revisit when real monetary/inventory commitments or order identity enter the business model.

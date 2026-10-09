@@ -124,9 +124,9 @@ return static function (Router $router) use ($config): void {
     $router->add(method: 'GET', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginForm(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/login', handler: static fn(Request $request): Response => $accountPages->loginSubmit(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/logout', handler: static fn(Request $request): Response => $accountPages->logoutSubmit(request: $request), access: RouteAccess::SignedIn);
-    $router->add(method: 'GET', path: '/page-a', handler: static fn(): Response => $cowPages->pageA(), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/page-a', handler: static fn(Request $request): Response => $cowPages->pageA(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/buy-cow', handler: static fn(Request $request): Response => $cowPages->buyCow(request: $request), access: RouteAccess::SignedIn);
-    $router->add(method: 'GET', path: '/page-b', handler: static fn(): Response => $downloadPages->pageB(), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/page-b', handler: static fn(Request $request): Response => $downloadPages->pageB(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/download', handler: static fn(Request $request): Response => $downloadPages->download(request: $request), access: RouteAccess::SignedIn);
     $router->add(method: 'GET', path: '/statistics', handler: static fn(Request $request): Response => $activityPages->statisticsPage(request: $request), access: RouteAccess::Admin);
     $router->add(method: 'GET', path: '/reports', handler: static fn(Request $request): Response => $activityPages->reportsPage(request: $request), access: RouteAccess::Admin);

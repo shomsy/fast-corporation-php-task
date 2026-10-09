@@ -128,4 +128,23 @@ final readonly class Request
     {
         return $this->server[$key] ?? null;
     }
+    /**
+     * Recognize speculative browser prefetches; this is never an authorization signal.
+     *
+     * @return bool Whether a standard prefetch marker is present.
+     */
+    public function isPrefetch(): bool
+    {
+        foreach (['HTTP_SEC_PURPOSE', 'HTTP_PURPOSE', 'HTTP_X_MOZ'] as $name) {
+            $header = $this->server(key: $name);
+
+            if (is_string(value: $header)
+                && preg_match(pattern: '/(?:^|[;,\\s])prefetch(?:$|[;,\\s])/i', subject: $header) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }

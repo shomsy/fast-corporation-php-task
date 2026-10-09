@@ -164,6 +164,75 @@ final class HttpFlowTest extends TestCase
     }
 
     /**
+     * Click counts represent accepted requests, not deduplicated purchases or completed downloads.
+     *
+     * @return void No return value.
+     */
+    public function testRepeatedAcceptedClicksCountSeparatelyAcrossTabsAndReloads(): void
+    {
+        $account = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'clickadmin', password: 'strong-password');
+        $this->identity->signIn(account: $account);
+        $token = $this->csrf->token();
+
+        self::assertSame(200, $this->cowPages->pageA()->status());
+        for ($attempt = 0; $attempt < 2; ++$attempt) {
+            $response = $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow', post: ['csrf_token' => $token]));
+            self::assertSame(200, $response->status());
+            self::assertStringContainsString('thankYou', $response->body());
+        }
+
+        $reloaded = $this->cowPages->pageA();
+        self::assertStringContainsString('Buy a cow', $reloaded->body());
+        self::assertSame(200, $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow', post: ['csrf_token' => $token]))->status());
+
+        self::assertSame(200, $this->downloadPages->pageB()->status());
+        for ($attempt = 0; $attempt < 2; ++$attempt) {
+            self::assertSame(200, $this->downloadPages->download(request: new Request(method: 'POST', path: '/download', post: ['csrf_token' => $token]))->status());
+        }
+
+        self::assertSame(403, $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow', post: ['csrf_token' => 'wrong']))->status());
+
+        $statement = $this->pdo->query(query: "SELECT target, COUNT(*) AS total FROM activity_events WHERE action = 'button-click' GROUP BY target ORDER BY target");
+        self::assertNotFalse($statement);
+        $counts = $statement->fetchAll(mode: PDO::FETCH_KEY_PAIR);
+        self::assertSame(['buy-cow' => 3, 'download' => 2], array_map(
+            callback: static fn(mixed $total): int => is_numeric(value: $total) ? (int) $total : -1,
+            array: $counts,
+        ));
+    }
+
+    /**
+     * Only accepted visits, not browser prefetches or anonymous attempts, are recorded.
+     *
+     * @return void No return value.
+     */
+    public function testPageNavigationEventsExcludePrefetchButIncludeReturnVisits(): void
+    {
+        $speculative = new Request(method: 'GET', path: '/page-a', server: ['HTTP_SEC_PURPOSE' => 'prefetch;prerender']);
+        self::assertSame(303, $this->cowPages->pageA(request: $speculative)->status());
+
+        $account = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'viewadmin', password: 'strong-password');
+        $this->identity->signIn(account: $account);
+
+        self::assertSame(204, $this->cowPages->pageA(request: $speculative)->status());
+        self::assertSame(204, $this->downloadPages->pageB(request: new Request(method: 'GET', path: '/page-b', server: ['HTTP_PURPOSE' => 'prefetch']))->status());
+        self::assertSame(204, $this->downloadPages->pageB(request: new Request(method: 'GET', path: '/page-b', server: ['HTTP_X_MOZ' => 'prefetch']))->status());
+
+        for ($i = 0; $i < 2; ++$i) {
+            self::assertSame(200, $this->cowPages->pageA(request: new Request(method: 'GET', path: '/page-a'))->status());
+            self::assertSame(200, $this->downloadPages->pageB(request: new Request(method: 'GET', path: '/page-b'))->status());
+        }
+
+        $counts = $this->pdo->query(query: "SELECT target, COUNT(*) AS total FROM activity_events WHERE action = 'view-page' GROUP BY target ORDER BY target");
+        self::assertNotFalse($counts);
+        $rows = $counts->fetchAll(mode: PDO::FETCH_KEY_PAIR);
+        self::assertSame(['page-a' => 2, 'page-b' => 2], array_map(
+            callback: static fn(mixed $total): int => is_numeric(value: $total) ? (int) $total : -1,
+            array: $rows,
+        ));
+    }
+
+    /**
      * Verify statistics next link only appears when another event exists through the public behavior.
      *
      * @return void No return value.
