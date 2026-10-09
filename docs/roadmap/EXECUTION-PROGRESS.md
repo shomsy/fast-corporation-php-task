@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01/M03/M04/M05/M06/M07/M08/M09/M10 DONE locally; M02/M11 IN PROGRESS. 45/48 complete. Public production not certified.
+**Status:** M00–M11 COMPLETE at local/interview acceptance, 48/48 complete. All packets DONE; recruiter functional GO for isolated demonstration, public-production NO-GO until real host gates verified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** 7a779c75816cca3a783151e999d7230543a0dc13 C-46; be7076c9e1a2d7b9d34ceef187a6afddaee0023a C-36; d702e6dad130151731a453baaf7a9f5e5f027521 C-35; 63074758ec11116129795c3edd053f3f7e7dae4a C-20.
-**Next legal action:** M11 C-47 final recruiter acceptance and public GO/NO-GO evidence; C-05 real deployed proxy 429/Retry-After remains unverified/OPEN. Then C-48 optional-scope disposition after C-47. SSR safe default, UI_ENTRYPOINT=spa is tested opt-in. Do not repeat C-20/C-35/C-36/C-46.
+**Last implementation commit:** C-05 4ee738553c21c96d37869d7372fb7ef6cd214ae4 (real Nginx abuse gate); C-47 040bdee85e9371b0eeeb2fb52db2ab9abc60d5ee (recruiter/public GO split); C-48 24df304fa7989680ce7bf8068a760e37048a0944 (optional scope).
+**Next legal action:** STOP autonomous remediation RP: all 48 canonical packets are closed with local evidence. Do not repeat no-op scheduled execution. Public launch is a SEPARATE gated deployment requiring owner permission and independently tested HTTPS, trusted ingress/real-IP and rate limits, service permissions, backup RPO/RTO, PHP-FPM capacity and retention; public remains NO-GO. Only resume on a new deployment mandate or contradictory test evidence.
 
 ## Milestone status
 
@@ -14,8 +14,8 @@
 |---|---|---|---|
 | M00 | Baseline & evidence | **DONE locally** | bb420841 baseline; C-35 d702e6d regression/CI evidence, C-36 be7076c project agents and 48-ID validator; full quality, HTTP, Chrome PASS. |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
-| M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
-| M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10/C-22/C-32 DONE** | Session and production boot gates PASS; `694093c` measured 40 real requests each on health/ready/404/login/session, retained current eager wiring, no speculative DI. |
+| M02 | Security/auth | **DONE (local acceptance)** | C-03/C-04/C-06/C-07/C-09/C-27 secure sessions/roles/CSRF/logs; C-05 4ee7385 real isolated Nginx two-upstream 429/Retry-After, anti-XFF-spoof, no POST-secret logging PASS. Public ingress not deployed. |
+| M03 | Runtime/session/config | **DONE (local acceptance)** | C-08/C-10/C-22/C-32: private session lifecycle, fail-closed production configuration and pre-migrated DB, strict HTTP protocol, measured bootstrap wiring; scoped regressions and full quality/HTTP smoke PASS. |
 | M04 | DB/audit/durability | **DONE (local acceptance)** | C-11/C-12/C-13/C-18/C-19/C-24/C-25: checksummed migrations, audit/view/click semantics, WAL, transactional failure, online backup and restore passed. Host-specific RPO/RTO remain a public release gate, not claimed by local acceptance. |
 | M05 | Analytics/performance | **DONE (local acceptance)** | C-14/C-15/C-16/C-17/C-28 complete; report query plans, actor indexes, signed keyset, UTC chart, 4-client/176-request p95/p99 baseline `84c734a`, SQLite lock and bounded PHP heap. No public PHP-FPM load SLO claimed. |
 | M06 | Backend LLD & API | **DONE locally** | C-29/C-30/C-33/C-34 JSON/auth, side effects, tooling/docs and named argument tests PASS. |
@@ -23,15 +23,15 @@
 | M08 | User screens | **DONE (real browser acceptance)** | C-40 `720b677` Accounts, C-41 `4fa0fb1` CowOffer, C-42 `cae5010` native fixed SHA PE. Browser C-45 verifies registration/login/logout, 401/403, click/download and role boundaries; exact SQLite/API acceptance and SSR fallback maintained. |
 | M09 | Admin screens/tests | **DONE (local/browser acceptance)** | C-43 `88c5d85`: owner-reused admin-only JSON stats/cursor and 30-active-UTC-day reports, safe tables and gap-aware SVG; C-45 `61a3377` browser E2E + CSP connect-src fix; CI `f2373af` adds Node/Chrome gates to PHP 8.5. Full quality 158/6737, Node 21/21, Chrome PASS, SSR HTTP PASS. |
 | M10 | Cutover | **DONE locally; reversible** | C-46 7a779c7: old GET to SPA aliases, real browser and same-DB SSR rollback PASS, APIs/POSTs unchanged; ADR-0019. |
-| M11 | Final acceptance | **IN PROGRESS — C-20/C-23/C-26 DONE** | C-20 6307475 recovery scope deferred; public C-05/C-47 and optional C-48 remain OPEN. |
+| M11 | Final acceptance | **DONE (scoped interview acceptance + honest public NO-GO)** | C-20/23/26 already done; C-47 040bdee proves recruiter flows with PHP 158/6737, Node 21/21, Chrome/HTTP, backup rollback, documented unverified public gates; C-48 24df304 defers optional scope. |
 
-## Canonical packet status — 45 DONE / 48 TOTAL (3 OPEN)
+## Canonical packet status — 48 DONE / 48 TOTAL (0 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
 - [x] **C-03** — Shared Account creation policy: 1–64 ASCII username characters matching SQLite NOCASE, 12–72-byte passwords without NUL, for registration and admin CLI. **DONE:** `7905867`; RED username/short-secret regressions, GREEN full quality and real CLI/HTTP smoke. Historical usernames/credentials can still authenticate.
 - [x] **C-04** — Unknown accounts pay dummy bcrypt cost 12; explicit cost independent of PHP defaults, legacy hashes safely upgraded using compare-and-swap. **DONE:** `7905867`; RED missing-user timing test, GREEN login/rehash tests and full quality.
-- [ ] **C-05** — Add enforceable login/registration abuse limits at deployment boundary. *(OPEN; no implementation evidence yet)*
+- [x] **C-05** — Local real Nginx ingress limiter DONE 4ee738553c21c96d37869d7372fb7ef6cd214ae4: POST login/register SSR+JSON share one direct-peer zone across two app upstreams, test proves actual 429 and Retry-After:60, forged XFF non-bypass, unrelated requests unaffected and sanitized log without password. Pinned image/CI, ADR-0021; independent ingress replicas/real public proxy unverified, deployment public NO-GO.
 - [x] **C-06** — Make authorization and CSRF an explicit fail-closed route policy. **DONE:** `87cc139`; every route has access contract (public, signed-in, admin), new routes default to protected and unguarded unsafe requests deny. Central server-owned cookie/CSRF policy plus existing adapter checks; Router 7 tests/14 assertions, full quality and HTTP smoke PASS. Origin/Fetch Metadata can be considered as later defense in depth.
 - [x] **C-07** — Session ID and CSRF token rotate on login; pre-login tokens cannot authorize authenticated POST, and logout/expiry revoke session. **DONE:** `c62a03d`; RED token test, GREEN session and HTTP smoke with role-demotion regression.
 - [x] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization. **DONE:** `effca0e37aaf0e8ce131737830ff2009bb239248`; native PHP session GC covers 12-hour absolute expiry, production requires preprovisioned mode-0700 private storage, hardened cookie settings retained. RED GC+missing-storage tests; measured same-ID ~0.42s vs different-ID ~0.10s lock acquisition; full quality 123 tests/6177 assertions and HTTP smoke PASS.
@@ -73,8 +73,8 @@
 - [x] **C-44** — Safe DOM and a11y. DONE `ab9d38fe39c375b31824f392bea79fb214d86337`: RED 3 focus failures -> GREEN 7 dedicated assertions/test cases, focusable/announced errors across four SPA screens, XSS insertion scan, AA contrast calculation, native labels, pending submit dedup, 401 redirect and stale async disposal; 21/21 frontend tests PASS; quality/SSR preserved.
 - [x] **C-45** — Real browser and CI gate. DONE `61a3377502171d8649860ffc2431f4c65f3eb30d` plus CI `f2373af53701e8227d266bd2e41ab65cf810b8ce`: pinned OSS Playwright dev-only (2 packages, no browser download) and installed Chrome; disposable SQLite/PHP login/registration/CowOffer/native 1024-byte SHA PE/admin filtered stats/report SVG tests PASS. Found true browser-only CSP fetch failure, reproduced PHPUnit RED and fixed `connect-src 'self'` without relaxing default/script; full PHP quality 158/6737, Node 21/21, real Chrome PASS, SSR smoke PASS, npm audit 0. PHP 8.5 CI browser/frontend job YAML parsed; remote CI result not yet observed.
 - [x] **C-46** — Reversible known GET owner switch, DONE 7a779c75816cca3a783151e999d7230543a0dc13. UI_ENTRYPOINT default SSR; SPA opt-in, same-DB SSR rollback, Chrome aliases and PHP 158/6737 PASS; no legacy template deletion.
-- [ ] **C-47** — Verify recruiter task fully, all production security/persistence gates and honest GO/NO-GO split. *(OPEN; no implementation evidence yet)*
-- [ ] **C-48** — Track optional features separately: password reset, account status, token/JWT, framework migration. *(OPEN; no implementation evidence yet)*
+- [x] **C-47** — Final recruiter task acceptance DONE 040bdee85e9371b0eeeb2fb52db2ab9abc60d5ee and C-05 evidence update: isolated user/admin flows, fixed binary, report chart, PHP 158/6737, Node 21/21, Chrome, real HTTP, SQLite 25-row/four-migration restore and SSR rollback PASS. Interview functional GO, public-production explicitly NO-GO. Release report documents required host-specific proofs.
+- [x] **C-48** — Optional scope disposition DONE 24df304fa7989680ce7bf8068a760e37048a0944: password reset, disable/recovery, JWT, frameworks, distributed database, admin tools deferred/rejected with cost, owner, trigger and future tests. No unauthorized features implemented.
 
 | 2026-10-09 | M03 / C-10 | `c5b5b80a8e4335f48d3c3450719d449d3b9c2b60` | RED missing DB / unsafe prod settings; GREEN 6 C-10 tests, quality 114/6141 and real HTTP smoke PASS | CLI-only provisioning, fail-closed production startup. |
 | 2026-10-09 | M04 / C-11 | `e6359440b1cf3af55975be8beb5bf6e3a821919d` | RED drift/legacy/partial batch; GREEN 7 migration tests/25 checks, quality 118/6161 and real HTTP smoke PASS | Hash checks and atomic writer-locked migration batches; legacy trust boundary documented. |
@@ -89,7 +89,7 @@
 
 ## Current blockers
 
-- C-05/C-47 public deployment NO-GO until actual proxy 429, HTTPS, service rights, RPO/RTO and PHP-FPM capacity evidence. C-48 depends on C-47. Remote CI run unverified; root-owned historical PHPStan cache quarantined.
+- Canonical local/interview work complete (48/48); **public-production NO-GO**. Nginx limiter verified in isolated Docker, not installed on public ingress. Real TLS/certificate, trusted real-IP and independent ingress replica policy, worker permissions, off-host backup RPO/RTO, PHP-FPM representative capacity and retention remain unverified; remote push-triggered CI jobs unconfirmed. Do not re-run RP as no-op.
 
 ## Phase evidence log
 
@@ -142,6 +142,10 @@
 | 2026-10-09 | M00 / C-36 | be7076c9e1a2d7b9d34ceef187a6afddaee0023a | AGENTS, 48-ID validator and CI gate PASS | Verified scope only; public production not certified. |
 | 2026-10-09 | M00 / C-35 | d702e6dad130151731a453baaf7a9f5e5f027521 | Negative regression evidence; npm audit 0, PHP/Node/Chrome/HTTP PASS | Verified scope only; public production not certified. |
 | 2026-10-09 | M11 / C-20 | 63074758ec11116129795c3edd053f3f7e7dae4a | Optional account recovery deferred with triggers in ADR-0020 | Verified scope only; public production not certified. |
+
+| 2026-10-09 | M02 / C-05 | 4ee738553c21c96d37869d7372fb7ef6cd214ae4 | Nginx digest-pinned Docker two-upstream real 429 Retry-After, spoof/no-password-log PASS | Local GO; public ingress deployment still NO-GO |
+| 2026-10-09 | M11 / C-47 | 040bdee85e9371b0eeeb2fb52db2ab9abc60d5ee | Full PHP 158/6737, JS 21/21, Chrome, real HTTP SSR/cutover, backup/restore PASS | Interview GO, public-production NO-GO |
+| 2026-10-09 | M11 / C-48 | 24df304fa7989680ce7bf8068a760e37048a0944 | Optional features explicitly scoped/deferred; no speculative code | Reopen only on product trigger |
 
 ## Decisions log
 

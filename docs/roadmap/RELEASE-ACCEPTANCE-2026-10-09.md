@@ -34,7 +34,7 @@ These checks exercise automated user flows; they are not a usability study or an
 | `python3 tests/Flow/live_smoke.py` | PASS — user/admin flows and intentional safe dependency errors |
 | `python3 tests/Flow/route_cutover.py` | PASS — SPA GET ownership and SSR rollback with the same SQLite database |
 | `python3 tests/Flow/sqlite_backup_restore.py` | PASS — SQLite WAL snapshot, restore, SQLITE_FULL injection, directory/file protection and no overwrite; 25 activity rows and four migrations restored |
-| `python3 tools/check_execution_ledger.py` | PASS — 45/48 uniquely tracked at the point of this report |
+| `python3 tools/check_execution_ledger.py` | PASS — 48/48 uniquely tracked and locally closed; public-production gates remain NO-GO |
 | `python3 tests/Flow/auth_ingress_rate_limit.py` | PASS — pinned Docker Nginx, two mock upstreams, mixed-auth POST 429, `Retry-After: 60`, spoofed XFF ignored, safe logs; target public ingress unverified |
 
 **Scope update after C-05 local probe:** ADR-0021 records the checked-in Nginx snippets and negative real-HTTP test. C-05 is locally reproducible, but those snippets have not been attached to a deployed public hostname and do not establish shared global limits across independently exposed ingress replicas.
