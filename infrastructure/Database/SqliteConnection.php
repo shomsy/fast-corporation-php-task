@@ -42,7 +42,18 @@ final class SqliteConnection
             throw new RuntimeException(message: 'Configured database path is not a file.');
         }
 
-        return self::configure(pdo: new PDO(dsn: 'sqlite:' . $path));
+        $pdo = self::configure(pdo: new PDO(dsn: 'sqlite:' . $path));
+
+        if ($createIfMissing) {
+            // Journal mode changes are provisioning decisions, never a web-request side effect.
+            $mode = $pdo->query(query: 'PRAGMA journal_mode = WAL');
+
+            if ($mode === false || strtolower(string: (string) $mode->fetchColumn()) !== 'wal') {
+                throw new RuntimeException(message: 'Unable to enable SQLite WAL journal.');
+            }
+        }
+
+        return $pdo;
     }
 
     /**

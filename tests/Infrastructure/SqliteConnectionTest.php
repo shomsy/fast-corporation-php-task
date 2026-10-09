@@ -45,6 +45,10 @@ final class SqliteConnectionTest extends TestCase
 
         try {
             $pdo = SqliteConnection::open(path: $path, createIfMissing: true);
+            $journal = $pdo->query(query: 'PRAGMA journal_mode');
+            self::assertNotFalse($journal);
+            self::assertSame('wal', $journal->fetchColumn());
+
             $statement = $pdo->query(query: "SELECT 'ok'");
             self::assertNotFalse($statement);
             self::assertSame('ok', $statement->fetchColumn());
@@ -56,8 +60,12 @@ final class SqliteConnectionTest extends TestCase
             self::assertNotFalse($statement);
             self::assertSame('ok', $statement->fetchColumn());
         } finally {
-            if (is_file(filename: $path)) {
-                unlink(filename: $path);
+            unset($journal, $statement, $reopened, $pdo);
+
+            foreach ([$path . '-wal', $path . '-shm', $path] as $file) {
+                if (is_file(filename: $file)) {
+                    unlink(filename: $file);
+                }
             }
             if (is_dir(filename: dirname(path: $path))) {
                 rmdir(directory: dirname(path: $path));
