@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02/M03/M04 IN PROGRESS; M05 C-14/C-15/C-16/C-17/C-18/C-19 done. 21/48 complete. Public production not yet certified.
+**Status:** M00/M01 DONE; M02/M03/M04 IN PROGRESS; M05 C-14/C-15/C-16/C-17/C-18/C-19 done. 24/48 complete. Public production not yet certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** 0364b55026e0a3459764b7b918fb13166437c3f4 (C-18/C-19); C-16 e504afdc46a2e66b8b15cce027a30842e9df280f.
-**Next legal action:** C-22 HTTP request/HEAD/OPTIONS semantics and C-24 transaction failure boundaries, then C-25 deployment file privilege/backup rehearsal, subject to dependencies. C-05 edge abuse throttling still requires real proxy deployment evidence. Batch 2–4 separately verified tasks per RP turn, then proceed to backend JSON API and Vanilla JS SPA phases.
+**Last implementation commit:** c872ebc35cb1849606a53548231a2fbf79961bf2 (C-25); earlier C-24 8aec184e82713f4ce7a847e12e8adbb03a7bf86b; C-22 ead0b66 (see Git).
+**Next legal action:** C-26 deployment/readiness and recovery runbook (requires C-25, now locally verified), then C-23 fixed artifact memory/integrity, C-28 representative load or C-29 backend responsibility boundaries as dependency allows. C-05 live edge rate-limit acceptance still needs actual reverse proxy. Run 2–4 separately verified tasks per RP turn before backend JSON API/Vanilla JS SPA phases.
 
 ## Milestone status
 
@@ -15,8 +15,8 @@
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
-| M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10 DONE** | `effca0e`: native GC now retains up to 12h and production uses private session storage; measured native file locking. `c5b5b80`: fail-closed production boot; quality/smoke PASS. |
-| M04 | DB/audit/durability | **IN PROGRESS — C-11/C-12/C-13 DONE** | `e635944` atomic checksummed migrations; `c539e96` accepted-event audit contract; `50ef500` measured WAL concurrency and safe backup policy; quality/smoke PASS. |
+| M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10/C-22 DONE** | Session GC/private files `effca0e`; fail-closed production boot `c5b5b80`; HTTP URI/method/HEAD/OPTIONS contract `ead0b66`; full quality and smoke PASS. |
+| M04 | DB/audit/durability | **IN PROGRESS — C-11/C-12/C-13/C-24/C-25 DONE** | Checked migrations `e635944`, audit `c539e96`, WAL `50ef500`, transaction compensation `8aec184`, and private-file online backup/restore `c872ebc`; local quality/smoke/recovery PASS; deployment target RPO/RTO remain a release gate. |
 | M05 | Analytics/performance | **IN PROGRESS — C-14/C-15/C-16/C-17/C-18/C-19 DONE** | `8697e63` SQL report measurement; `0505104` actor index; `e504afd` session-bound signed keyset traversal; `d5e0843` calendar-accurate chart; `0364b55` accepted click and view/prefetch semantics. Quality 132/6491, HTTP smoke PASS. |
 | M06 | Backend LLD & API | NOT STARTED | — |
 | M07 | SPA shell & security | NOT STARTED | — |
@@ -25,7 +25,7 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 21 DONE / 48 TOTAL (27 OPEN)
+## Canonical packet status — 24 DONE / 48 TOTAL (24 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -48,10 +48,10 @@
 - [x] **C-19** — View count/navigation policy: **DONE** `0364b55026e0a3459764b7b918fb13166437c3f4`; actual authorized SSR visits and revisit/back-forward GET count once per accepted navigation; recognized HTTP Sec-Purpose/Purpose/X-Moz prefetch returns 204 without audit after auth, unauthorized views not recorded. Future SPA activates explicit POST view per mounted navigation; no prefetch/data GET side effect. Scoped navigation test 1/10; final full quality 132/6491, HTTP smoke PASS; ADR-0009.
 - [ ] **C-20** — Assess account disable/reset/admin recovery scope separately from interview acceptance. *(OPEN; no implementation evidence yet)*
 - [x] **C-21** — Differentiate client validation/authorization from dependency errors. **DONE:** `6cc9e1d`; existing 4xx/503/500 mappings verified, both real 500 causes remain safe generic responses with 24-hex-character X-Request-ID and matching server log reference. RED smoke before fix; GREEN after; quality 98/6038 PASS.
-- [ ] **C-22** — Define safe URI parsing, HEAD/OPTIONS/Allow handling and output rules. *(OPEN; no implementation evidence yet)*
+- [x] **C-22** — Define safe URI parsing, HEAD/OPTIONS/Allow handling and output rules. **DONE:** `ead0b66`; validated malformed request target returns safe 400; HEAD suppresses body, OPTIONS and 405 expose correct Allow; router/response/entry integration covered in `tests/Runtime/HttpProtocolTest.php`, ADR-0010; full quality 142/6552, live HTTP smoke PASS.
 - [ ] **C-23** — Keep fixed server-selected artifact. *(OPEN; no implementation evidence yet)*
-- [ ] **C-24** — Define non-nesting transaction contract and preserve original failure if rollback/session compensa. *(OPEN; no implementation evidence yet)*
-- [ ] **C-25** — Enforce least privilege for DB/config/session files and rehearse durable SQLite backup/restore. *(OPEN; no implementation evidence yet)*
+- [x] **C-24** — Define non-nesting transaction contract and preserve original failure if rollback/session compensation fails. **DONE:** `8aec184`; explicit transaction failure rules, original cause preserved across rollback/session compensation; regression tests `TransactionFailureTest` and `SessionCompensationTest`, ADR-0011; full quality 142/6552 PASS.
+- [x] **C-25** — Enforce least privilege for DB/config/session files and rehearse durable SQLite backup/restore. **DONE (local acceptance):** `c872ebc35cb1849606a53548231a2fbf79961bf2`; production DB/dir, WAL/SHM, .env and session private file checks, restrictive umask; create-only CLI SQLite online WAL snapshot plus integrity verification, no-overwrite and private directory policy. Rehearsal restored 25 activity rows/4 migration entries; SQLITE_FULL fault injection rollback/integrity PASS; quality 142/6552, live smoke PASS; ADR-0012. **Public deployment remains NO-GO:** host-specific service identity, offline/remote retention and actual RPO/RTO need C-26/C-47.
 - [ ] **C-26** — Define deployment/runbook/health/readiness/schema checks and safe rollback/forward recovery. *(OPEN; no implementation evidence yet)*
 - [x] **C-27** — Allowlisted structured security logs for auth/CSRF/admin denials and failures; 24-hex request ID links response and server log; no raw exception message, SQL or credentials. DONE ee0cff65d1f3c90861a1846aa1961e660c7d9a13. RED then GREEN HTTP smoke + logger tests; quality 108/6128 PASS. Log retention/alert deployment remains C-26/C-47.
 - [ ] **C-28** — Measure latency, memory, DB lock, file download and resource utilization under target load. *(OPEN; no implementation evidence yet)*
@@ -113,6 +113,10 @@
 | 2026-10-09 | M05 / C-14 | `8697e633772eb66473c582d5fd51f04d7edfd3e5` | 100k-event index-backed report query measurement (~21ms unbounded / ~16ms last 30 calendar days), EXPLAIN idx_activity_day, scoped 20/5547 PASS | Keep last 30 active-day SQL aggregate, no rollup without evidence. |
 | 2026-10-09 | M05 / C-15 | `050510492ddfccced2aaa22d33b307d4d27d576c` | RED missing actor-first index; GREEN EXPLAIN regression + 100k selective/skewed comparison; quality 125/6188 and real HTTP smoke PASS | New actor-index migration and date-query plan guard; ~32% extra writes in isolated 3000-row sample. |
 | 2026-10-09 | M05 / C-17 | `d5e0843ecc597100b39cdf4c5342cf1ee543a2f1` | RED sparse UTC spacing and repeated Y labels; GREEN 22 scoped/5554 assertions, full quality 127/6195, real HTTP smoke PASS | Break missing-day gaps, show true calendar spacing and accessible labels; preserve 30 active-day counts. |
+
+| 2026-10-09 | M03 / C-22 | `ead0b66` | HTTP protocol malformed targets, HEAD, OPTIONS, Allow integration; final 142 PHPUnit / 6552 assertions, live smoke PASS | Preserve framework-free Router; no speculative PSR HTTP stack. |
+| 2026-10-09 | M04 / C-24 | `8aec184` | Failure injection for DB transaction/rollback and session compensation; final quality 142/6552 PASS | No accidental nested transactions; original failure retained. |
+| 2026-10-09 | M04 / C-25 | `c872ebc35cb1849606a53548231a2fbf79961bf2` | SQLite WAL backup restored 25 rows + 4 migrations, no overwrite/insecure dir rejection, local SQLITE_FULL rollback/integrity PASS; final 142/6552, HTTP smoke PASS | Private process/storage paths and operator recovery ADR; real deployment ownership/RPO/RTO still C-26/C-47 gates. |
 
 ## Decisions log
 

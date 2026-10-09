@@ -72,7 +72,7 @@ SPECIAL TEST / RELEASE RULES:
 - When all required C-IDs and final gates are verifiably complete, produce final acceptance with commit references and STOP the RP loop rather than repeating no-op runs.
 
 RESUME FROM DURABLE PROGRESS ON EVERY RP TURN:
-Always read the fresh Homer checkpoint, Git state and EXECUTION-PROGRESS.md. Choose the next unblocked packets from CURRENT evidence, not this prompt's older C-IDs or the scheduler's old M01 instruction. C-08/C-10/C-11/C-12/C-13 have been verified; consult the current ledger for the next unblocked tasks (C-22/C-24/C-25 are current next candidates, subject to the progress ledger). Complete 2–4 tested, separately committed tasks per turn. Preserve security and deployment gates.
+Always read the fresh Homer checkpoint, Git state and EXECUTION-PROGRESS.md. Choose the next unblocked packets from CURRENT evidence, not this prompt's older C-IDs or the scheduler's old M01 instruction. C-08/C-10/C-11/C-12/C-13 have been verified; consult the current ledger for the next unblocked tasks (C-26/C-23/C-28 are candidate next tasks, subject to the current progress ledger and dependencies). Complete 2–4 tested, separately committed tasks per turn. Preserve security and deployment gates.
 
 CONTINUATION MESSAGE AFTER A TRANSIENT INTERRUPTED CHAT (not a new job):
 "Continue from where you left off. If you've already loaded the mandatory rules, you don't need to load them again; just keep following them."
