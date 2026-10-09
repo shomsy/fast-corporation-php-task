@@ -1,12 +1,12 @@
 # Execution Progress Ledger — Fast Corporation 2.0
 
-**Status:** M00/M01 DONE; M02 IN PROGRESS; M03 C-10 done; M04 C-11 done. 12/48 complete. Public production not yet certified.
+**Status:** M00/M01 DONE; M02 IN PROGRESS; M03 C-08/C-10 done; M04 C-11/C-12/C-13 done. 15/48 complete. Public production not yet certified.
 
 **Canonical authority:** [48 packets](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [SPA LLD](FRONTEND-SPA-LLD.md), [full source crosswalk](REVIEW-TRACEABILITY.md). This ledger records **verified work**; do not treat an unchecked checkbox as failure or a checked one as proof without evidence. Homer Workstream is the durable continuation owner when available.
 
 **Homer workstream:** `ws_ydFN6Y8-oBpWPEXoFmcht78m` (alias `fast-corporation-v2`); this is the stable continuity identity for every future RP turn. Open it on each new conversation; never create another for this project.
-**Last implementation commit:** e6359440b1cf3af55975be8beb5bf6e3a821919d (C-11); C-10 c5b5b80a8e4335f48d3c3450719d449d3b9c2b60.
-**Next legal action:** C-08 session storage/GC/locking: measure before changing defaults. Then C-12 audit semantics and C-13 SQLite concurrency (unblocked). C-05 deployment limiting needs edge/proxy evidence. Batch 2–4 tested tasks per RP turn.
+**Last implementation commit:** 50ef5001facc64be7f8891cf5b9afa9079400699 (C-13); C-12 c539e965128573ec40002a8ebefc51171850f37e; C-08 effca0e37aaf0e8ce131737830ff2009bb239248.
+**Next legal action:** C-14 representative daily report aggregation measurements; then C-15 query/index plans and C-17 calendar/chart correctness when dependencies allow. Other unblocked packets include C-22/C-24/C-25. C-05 deployment rate limiting still needs actual edge/proxy evidence. Batch 2–4 tested tasks per turn.
 
 ## Milestone status
 
@@ -15,8 +15,8 @@
 | M00 | Baseline & evidence | **DONE — 2026-10-09** | `bb420841`: `composer quality` PASS (86 tests, 5,958 assertions; PHPStan and Deptrac 0, audit clear); `python3 tests/Flow/live_smoke.py` PASS (registration, admin, cow, download and safe failures). |
 | M01 | Confirmed correctness | **DONE — 2026-10-09** | C-01 `e209775`, C-02 `31d7484`, C-31 `c6f003d`, C-21 `6cc9e1d`; composer quality 98/98 tests, 6038 assertions; PHPStan/Deptrac/audit PASS; live HTTP smoke PASS. |
 | M02 | Security/auth | **IN PROGRESS — C-03/C-04/C-06/C-07/C-09 DONE** | C-03/C-04 `7905867`, C-06 `87cc139`, C-07 `c62a03d`; quality PASS 104 tests/6067 assertions, PHPStan/Deptrac/audit PASS; HTTP/admin CLI smoke PASS. |
-| M03 | Runtime/session/config | IN PROGRESS — C-10 DONE | `c5b5b80`: migrated SQLite required at HTTP boot; explicit CLI provisioning and secure production configuration; quality/smoke PASS. |
-| M04 | DB/audit/durability | IN PROGRESS — C-11 DONE | `e635944`: SHA-256 source checks, atomic SQLite BEGIN IMMEDIATE, legacy checksum migration; quality/smoke PASS. |
+| M03 | Runtime/session/config | **IN PROGRESS — C-08/C-10 DONE** | `effca0e`: native GC now retains up to 12h and production uses private session storage; measured native file locking. `c5b5b80`: fail-closed production boot; quality/smoke PASS. |
+| M04 | DB/audit/durability | **IN PROGRESS — C-11/C-12/C-13 DONE** | `e635944` atomic checksummed migrations; `c539e96` accepted-event audit contract; `50ef500` measured WAL concurrency and safe backup policy; quality/smoke PASS. |
 | M05 | Analytics/performance | NOT STARTED | — |
 | M06 | Backend LLD & API | NOT STARTED | — |
 | M07 | SPA shell & security | NOT STARTED | — |
@@ -25,7 +25,7 @@
 | M10 | Cutover | NOT STARTED | — |
 | M11 | Final acceptance | NOT STARTED | — |
 
-## Canonical packet status — 12 DONE / 48 TOTAL (36 OPEN)
+## Canonical packet status — 15 DONE / 48 TOTAL (33 OPEN)
 
 - [x] **C-01** — Reject malformed UTC calendar dates before DateTime parsing. **DONE:** `e209775`; strict YYYY-MM-DD lexical + calendar checks before parsing; non-string HTTP query values yield 422. RED regression reproduced first; 38 scoped tests/5700 assertions, full composer quality PASS (89 tests/6007 assertions), HTTP smoke PASS.
 - [x] **C-02** — Restore the entry output-buffer depth for both successful and exceptional template rendering. DONE in `31d7484`. Two regressions failed before the fix; Renderer scoped tests PASS (4/11), composer quality PASS (92 tests/6017 assertions; PHPStan/Deptrac/audit PASS), HTTP smoke PASS.
@@ -34,12 +34,12 @@
 - [ ] **C-05** — Add enforceable login/registration abuse limits at deployment boundary. *(OPEN; no implementation evidence yet)*
 - [x] **C-06** — Make authorization and CSRF an explicit fail-closed route policy. **DONE:** `87cc139`; every route has access contract (public, signed-in, admin), new routes default to protected and unguarded unsafe requests deny. Central server-owned cookie/CSRF policy plus existing adapter checks; Router 7 tests/14 assertions, full quality and HTTP smoke PASS. Origin/Fetch Metadata can be considered as later defense in depth.
 - [x] **C-07** — Session ID and CSRF token rotate on login; pre-login tokens cannot authorize authenticated POST, and logout/expiry revoke session. **DONE:** `c62a03d`; RED token test, GREEN session and HTTP smoke with role-demotion regression.
-- [ ] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization before changing n. *(OPEN; no implementation evidence yet)*
+- [x] **C-08** — Harden session storage/GC/cookie settings and measure session-lock serialization. **DONE:** `effca0e37aaf0e8ce131737830ff2009bb239248`; native PHP session GC covers 12-hour absolute expiry, production requires preprovisioned mode-0700 private storage, hardened cookie settings retained. RED GC+missing-storage tests; measured same-ID ~0.42s vs different-ID ~0.10s lock acquisition; full quality 123 tests/6177 assertions and HTTP smoke PASS.
 - [x] **C-09** — Unified privacy and browser security headers on every dynamic response, including 200/3xx/4xx/5xx, JSON and binary; CSP disallows inline JS; HSTS only on trusted HTTPS. DONE bd62a5a3abfb473ac45a604d40616013229809e5. RED then GREEN 9 Router tests/65 assertions, quality 106/6118 and live smoke PASS. Legacy inline CSS retained until SPA.
 - [x] **C-10** — Reject unsafe production configuration. DONE `c5b5b80a8e4335f48d3c3450719d449d3b9c2b60`: only trusted CLI migrator provisions DB; production checks HTTPS cookie, no debug, https URL and trusted TLS; existing migrated DB required for HTTP. RED missing DB / production tests, GREEN 6 C-10 tests/11 assertions, full quality 114/6141, live HTTP smoke PASS.
 - [x] **C-11** — Make migrations deterministic and drift-detectable with SQL-content checksums and safe concurrent runs. DONE `e6359440b1cf3af55975be8beb5bf6e3a821919d`: SHA-256 detects applied SQL drift, BEGIN IMMEDIATE serializes full batch and prevents partial schema writes. Legacy ledgers receive current-source hashes once; pre-upgrade edits cannot be detected. RED drift/partial/legacy regressions, GREEN 7 migrations tests/25 assertions, full quality 118/6161 and live HTTP smoke PASS.
-- [ ] **C-12** — Define accepted-event audit semantics, caller authority, retention, tamper threat model and UTC ti. *(OPEN; no implementation evidence yet)*
-- [ ] **C-13** — Measure real concurrent readers/writers, SQLITE_BUSY, WAL versus rollback journaling, connection l. *(OPEN; no implementation evidence yet)*
+- [x] **C-12** — Define accepted-event audit semantics, caller authority, retention, tamper threat model and UTC policy. **DONE:** `c539e965128573ec40002a8ebefc51171850f37e`; ADR-0003 defines exact accepted actions and server-owned actor authority, historical snapshots, UTC, disposable-demo retention and absence of DB-privileged tamper evidence. Rejected-login separation regression + existing CSRF/transaction/download tests PASS; full quality 124/6181 and HTTP smoke PASS. Public retention/deletion remain C-25/C-26/C-47.
+- [x] **C-13** — Measure file-backed concurrent readers/writers, SQLITE_BUSY, WAL/rollback journaling, connection lifecycle and backup. **DONE:** `50ef5001facc64be7f8891cf5b9afa9079400699`; separate-process rollback reader blocks writer (~151ms at probe timeout), WAL reader permits writer (~0.1ms); second writer still blocks, subsequent writes succeed; WAL checkpoint and online-backup restore PASS. Trusted CLI provisioning now enables and verifies WAL, no web journal mutation or unsafe automatic replay. RED default-journal regression, GREEN quality 124/6183 + HTTP smoke PASS; ADR-0004 limits conclusions and documents release backup gate.
 - [ ] **C-14** — Benchmark report aggregation over growing history, then choose bounded date window, query/index im. *(OPEN; no implementation evidence yet)*
 - [ ] **C-15** — Evaluate actor/action/date filter query plans and selective indexes with representative distributi. *(OPEN; no implementation evidence yet)*
 - [ ] **C-16** — Define stable pagination contract. *(OPEN; no implementation evidence yet)*
@@ -101,6 +101,10 @@
 
 | 2026-10-09 | M02/C-09 | bd62a5a3abfb473ac45a604d40616013229809e5 | RED 2 header tests; GREEN composer quality 106/6118, full live HTTP smoke | Shared browser headers; HTTPS only HSTS, transitional inline CSS. |
 | 2026-10-09 | C-27 | ee0cff65d1f3c90861a1846aa1961e660c7d9a13 | RED missing 401 ID; GREEN safe 401/403/500 real smoke, logger 2 tests, full quality 108/6128 | Structured redacted logging; retention/alerting remain deployment gates. |
+
+| 2026-10-09 | M03 / C-08 | `effca0e37aaf0e8ce131737830ff2009bb239248` | RED session GC 1440s / missing private storage; GREEN 17 scoped tests/43 assertions, quality 123/6177 and HTTP smoke PASS | Production 0700 private files + 12h GC, measured same-session serialization, no custom handler. |
+| 2026-10-09 | M04 / C-12 | `c539e965128573ec40002a8ebefc51171850f37e` | Explicit accepted-event security separation test GREEN, existing flow and activity tests; quality 124/6181, HTTP smoke PASS | ADR-0003 authoritative audit meanings and retention/tamper limitations; production gate remains. |
+| 2026-10-09 | M04 / C-13 | `50ef5001facc64be7f8891cf5b9afa9079400699` | RED SQLite DELETE journal test, GREEN 9 scoped tests/34 checks; separate-process DELETE/WAL reader-writer probe + backup/restore PASS, full quality 124/6183, HTTP smoke PASS | WAL at CLI provisioning only; preserve single-writer and busy failure semantics. |
 
 ## Decisions log
 

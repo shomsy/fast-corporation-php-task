@@ -72,7 +72,7 @@ SPECIAL TEST / RELEASE RULES:
 - When all required C-IDs and final gates are verifiably complete, produce final acceptance with commit references and STOP the RP loop rather than repeating no-op runs.
 
 RESUME FROM DURABLE PROGRESS ON EVERY RP TURN:
-Always read the fresh Homer checkpoint, Git state and EXECUTION-PROGRESS.md. Choose the next unblocked packets from CURRENT evidence, not this prompt's older C-IDs or the scheduler's old M01 instruction. C-10/C-11 have been verified; C-08 and C-12/C-13 are candidates pending dependency and runtime checks. Complete 2–4 tested, separately committed tasks per turn. Preserve security and deployment gates.
+Always read the fresh Homer checkpoint, Git state and EXECUTION-PROGRESS.md. Choose the next unblocked packets from CURRENT evidence, not this prompt's older C-IDs or the scheduler's old M01 instruction. C-08/C-10/C-11/C-12/C-13 have been verified; consult the current ledger for the next unblocked tasks (C-14/C-15/C-17 are current analytics candidates). Complete 2–4 tested, separately committed tasks per turn. Preserve security and deployment gates.
 
 CONTINUATION MESSAGE AFTER A TRANSIENT INTERRUPTED CHAT (not a new job):
 "Continue from where you left off. If you've already loaded the mandatory rules, you don't need to load them again; just keep following them."
@@ -84,5 +84,5 @@ CONTINUATION MESSAGE AFTER A TRANSIENT INTERRUPTED CHAT (not a new job):
 1. Open a new ChatGPT conversation with required H-Prompt / Recursive Prompt extension enabled and supported connectors bound.
 2. Paste the entire **RP MESSAGE** block from above (not this paragraph), or configure this document as the schedule's reusable message source if the extension supports file-backed prompts.
 3. Ensure only **one** schedule/workstream targets this repo and branch. Set desired cadence in the extension UI; this document does **not** install or activate a scheduler.
-4. Every loop run opens the existing stable Homer workstream, reads current source/progress and batches the next 2–4 unblocked C-IDs. C-01/C-02/C-21/C-31/C-06 are already done; never restart them absent contrary evidence. A new conversation resumes from Homer checkpoint and progress ledger.
+4. Every loop run opens the existing stable Homer workstream, reads current source/progress and batches the next 2–4 unblocked C-IDs. Never restart completed packet IDs without new contradictory evidence. A new conversation resumes from Homer checkpoint and progress ledger.
 5. To stop, disable the H-Prompt schedule in the extension and reconcile in-flight effects before any other runner takes over.
