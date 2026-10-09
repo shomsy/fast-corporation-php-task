@@ -136,8 +136,11 @@ return static function (Router $router) use ($config): void {
     };
 
     $router->add(method: 'GET', path: '/app', handler: static fn(): Response => $spaFile('app/index.html', 'text/html; charset=UTF-8'), access: RouteAccess::Public);
-    $router->add(method: 'GET', path: '/app/login', handler: static fn(): Response => $spaFile('app/index.html', 'text/html; charset=UTF-8'), access: RouteAccess::Public);
+    foreach (['/app/login', '/app/register', '/app/home', '/app/page-a', '/app/page-b', '/app/statistics', '/app/reports'] as $screenPath) {
+        $router->add(method: 'GET', path: $screenPath, handler: static fn(): Response => $spaFile('app/index.html', 'text/html; charset=UTF-8'), access: RouteAccess::Public);
+    }
     $router->add(method: 'GET', path: '/app/startApp.js', handler: static fn(): Response => $spaFile('app/startApp.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/navigate.js', handler: static fn(): Response => $spaFile('app/navigate.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/assets/app.css', handler: static fn(): Response => $spaFile('assets/app.css', 'text/css; charset=UTF-8'), access: RouteAccess::Public);
 
     $router->add(method: 'GET', path: '/', handler: static fn(): Response => $accountPages->home(), access: RouteAccess::SignedIn);

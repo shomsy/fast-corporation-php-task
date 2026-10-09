@@ -135,12 +135,19 @@ def main():
             assert b'/assets/app.css' in shell_body
             root_status, _, root_body = request(user, base, "/app")
             assert root_status == 200 and b'id="app-root"' in root_body
+            for route in ("/app/register", "/app/home", "/app/page-a", "/app/page-b", "/app/statistics", "/app/reports"):
+                deep_status, deep_headers, deep_body = request(user, base, route)
+                assert deep_status == 200 and "text/html" in deep_headers.get("Content-Type", "")
+                assert b'id="route-outlet"' in deep_body
             unknown_status, _, _ = request(user, base, "/app/unknown")
             assert unknown_status == 404
             script_status, script_headers, script_body = request(user, base, "/app/startApp.js")
             assert script_status == 200
             assert "javascript" in script_headers.get("Content-Type", "")
             assert b"startApp" in script_body
+            nav_status, nav_headers, nav_body = request(user, base, "/app/navigate.js")
+            assert nav_status == 200 and "javascript" in nav_headers.get("Content-Type", "")
+            assert b"createNavigator" in nav_body
             css_status, css_headers, css_body = request(user, base, "/assets/app.css")
             assert css_status == 200 and "text/css" in css_headers.get("Content-Type", "")
             assert b".app-shell" in css_body

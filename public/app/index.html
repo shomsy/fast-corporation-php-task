@@ -19,10 +19,16 @@
     <section class="app-content" aria-labelledby="shell-status-title">
       <h2 id="shell-status-title">Frontend rollout</h2>
       <p data-shell-status role="status" aria-live="polite">Starting the application shell…</p>
+      <div id="route-outlet" aria-live="polite"></div>
       <p>The original server-rendered workflow remains available until the SPA features are verified.</p>
-      <nav aria-label="Existing application">
-        <a href="/login">Sign in using the existing form</a>
-        <a href="/register">Register</a>
+      <nav aria-label="Application navigation">
+        <a href="/app/login">Sign in</a>
+        <a href="/app/register">Register</a>
+        <a href="/app/home">Home</a>
+      </nav>
+      <nav aria-label="Existing server-rendered application">
+        <a href="/login">Existing sign-in form</a>
+        <a href="/register">Existing registration form</a>
       </nav>
     </section>
   </main>

@@ -1,3 +1,5 @@
+import { createNavigator } from './navigate.js';
+
 /**
  * Start the deliberately small application shell without taking ownership of SSR features.
  *
@@ -23,6 +25,12 @@ export function startApp(page) {
   return true;
 }
 
+export function startNavigation(page, win) {
+  const outlet = page.getElementById('route-outlet');
+  return outlet === null ? null : createNavigator({ page, win, outlet });
+}
+
 if (typeof document !== 'undefined') {
   startApp(document);
+  startNavigation(document, window);
 }
