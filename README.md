@@ -49,7 +49,7 @@ The default database is `var/database/app.sqlite`; `.env` and local database fil
 | `/reports`          | Admin only         | Bounded daily graph and table (latest 30 active dates), with optional UTC date range   |
 
 Statistics includes registration, login, logout, page views and button clicks. Reports count Page A views, Page B views,
-Buy a cow clicks and Download clicks, grouped by **UTC date**.
+Buy a cow clicks and Download clicks, grouped by **UTC date**. Chart positions reflect true UTC calendar distance; days with no tracked events break the lines rather than falsely implying continuous activity. The table remains an accessible record of the same 30-or-fewer active daily totals (no fabricated zero-event rows). Low-count Y-axis labels are deduplicated and points have keyboard-readable values; see `tests/ActivityTracking/ReportChartTest.php`.
 
 Statistics reads 50 rows plus a one-row lookahead to show **Next** only when another page exists. There is no artificial
 1,000-page/50,000-event visibility cap; deep offset pagination still incurs increasing SQLite scan/skip cost, so a
