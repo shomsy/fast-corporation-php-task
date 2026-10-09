@@ -12,8 +12,10 @@ function browser() {
     location: { pathname: '/app/login', origin: 'https://example.test', href: 'https://example.test/app/login' },
     history: { paths: [], pushState(_data, _title, path) {
       this.paths.push(path);
-      win.location.pathname = path;
-      win.location.href = win.location.origin + path;
+      const url = new URL(path, win.location.origin);
+      win.location.pathname = url.pathname;
+      win.location.search = url.search;
+      win.location.href = url.href;
     } },
     addEventListener(name, callback) { listeners.set(name, callback); },
     removeEventListener(name) { listeners.delete(name); },
@@ -62,4 +64,56 @@ test('intercepts only same-origin unmodified SPA links', () => {
   assert.equal(click('https://example.test/app/register', { ctrlKey: true }), false);
   assert.equal(click('https://example.test/app/register'), true);
   navigation.stop();
+});
+
+
+test('GET filter submission stays in one document and uses the form action attribute, not the named action control', () => {
+  const { win, page, outlet } = browser();
+  const originalFormData = globalThis.FormData;
+  globalThis.FormData = class {
+    constructor() {
+      return [['date', ''], ['user', 'browser-user'], ['action', 'login']];
+    }
+  };
+  try {
+    const screens = [];
+    const navigator = createNavigator({ win, page, outlet, render(screen) { screens.push(screen.path); } });
+    const form = {
+      method: 'get',
+      action: { tagName: 'SELECT' },
+      getAttribute(name) { return { method: 'get', action: '/app/statistics' }[name]; },
+    };
+    const event = { target: form, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+    win.fire('submit', event);
+    assert.equal(event.defaultPrevented, true);
+    assert.equal(win.location.pathname, '/app/statistics');
+    assert.equal(win.location.search, '?user=browser-user&action=login');
+    assert.deepEqual(screens, ['/app/login', '/app/statistics']);
+    assert.equal(navigator.navigate('/app/statistics?user=another'), true);
+    assert.equal(win.location.search, '?user=another');
+    navigator.stop();
+  } finally {
+    globalThis.FormData = originalFormData;
+  }
+});
+
+test('query links navigate with History API; off-origin and hashed links are not intercepted', () => {
+  const { win, page, outlet } = browser();
+  const navigator = createNavigator({ win, page, outlet, render() {} });
+  const click = (href) => {
+    const e = {
+      button: 0, defaultPrevented: false, ctrlKey: false, metaKey: false,
+      altKey: false, shiftKey: false, target: { closest: () => ({
+        href, target: '', hasAttribute: () => false,
+      }) }, preventDefault() { this.defaultPrevented = true; },
+    };
+    win.fire('click', e);
+    return e.defaultPrevented;
+  };
+  assert.equal(click('https://example.test/app/reports?from=2026-10-01'), true);
+  assert.equal(win.location.pathname, '/app/reports');
+  assert.equal(win.location.search, '?from=2026-10-01');
+  assert.equal(click('https://example.test/app/reports#heading'), false);
+  assert.equal(click('https://different.test/app/login'), false);
+  navigator.stop();
 });

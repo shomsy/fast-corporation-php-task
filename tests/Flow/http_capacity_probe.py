@@ -12,8 +12,10 @@ import sys
 import tempfile
 import threading
 import time
+from urllib.request import Request
+from urllib.error import HTTPError
 
-from live_smoke import ROOT, DOCKER_PHP, client, csrf, php_command, request
+from live_smoke import ROOT, DOCKER_PHP, client, php_command, request
 
 CLIENTS = 4
 ITERATIONS = 8
@@ -25,6 +27,23 @@ def percentile(samples, percentage):
         return 0
     ordered = sorted(samples)
     return round(ordered[max(0, math.ceil(len(ordered) * percentage / 100) - 1)], 2)
+
+
+def api(opener, base, path, body=None, token=None):
+    headers = {'Accept': 'application/json'}
+    if body is not None:
+        headers['Content-Type'] = 'application/json'
+        if token is not None:
+            headers['X-CSRF-Token'] = token
+    req = Request(base + path, data=None if body is None else json.dumps(body).encode(),
+                  headers=headers)
+    try:
+        res = opener.open(req, timeout=8)
+    except HTTPError as error:
+        res = error
+    with res:
+        data = res.read()
+        return res.code, dict(res.headers), None if not data else json.loads(data)
 
 
 def main():
@@ -69,52 +88,56 @@ def main():
                     opener = client()
                     username = f"capacity-user-{index}"
                     secret = f"capacity-user-password-{index}"
-                    status, _, body = request(opener, base, "/register")
-                    assert status == 200
-                    status, _, _ = request(opener, base, "/register", {
-                        "username": username, "password": secret, "csrf_token": csrf(body)})
-                    assert status == 303
-                    status, _, body = request(opener, base, "/login")
-                    assert status == 200
-                    status, _, _ = request(opener, base, "/login", {
-                        "username": username, "password": secret, "csrf_token": csrf(body)})
-                    assert status == 303
+                    code, _, csrf_data = api(opener, base, '/api/csrf')
+                    assert code == 200
+                    token = csrf_data['csrfToken']
+                    code, _, _ = api(opener, base, '/api/accounts/register',
+                                     {'username': username, 'password': secret}, token)
+                    assert code == 201
+                    code, _, logged = api(opener, base, '/api/accounts/login',
+                                          {'username': username, 'password': secret}, token)
+                    assert code == 200
+                    token = logged['csrfToken']
                     # Exclude bcrypt/signup queueing from the steady-state request percentiles.
                     barrier.wait(timeout=25)
 
                     samples = []
                     for _ in range(ITERATIONS):
-                        for endpoint in ("/page-a", "/page-b", "/healthz", "/readyz"):
+                        for endpoint in ('/api/cow-offer/view', '/api/downloads/page/view', '/healthz', '/readyz'):
                             t = time.perf_counter_ns()
-                            code, _, response = request(opener, base, endpoint)
+                            if endpoint.startswith('/api/'):
+                                code, _, _ = api(opener, base, endpoint, {}, token)
+                                assert code == 204
+                            else:
+                                code, _, _ = request(opener, base, endpoint)
+                                assert code == 200
                             delta = (time.perf_counter_ns() - t) / 1e6
-                            assert code == 200, (endpoint, code)
                             samples.append((endpoint, delta))
-                            if endpoint == "/page-b":
-                                token = csrf(response)
+                            if endpoint == '/api/downloads/page/view':
                                 t = time.perf_counter_ns()
-                                code, headers, data = request(opener, base, "/download", {"csrf_token": token})
+                                code, headers, data = request(opener, base, '/api/downloads/sample',
+                                                              {'csrf_token': token})
                                 elapsed = (time.perf_counter_ns() - t) / 1e6
-                                assert code == 200, code
-                                assert headers.get("Content-Length") == "1024"
+                                assert code == 200
+                                assert headers.get('Content-Length') == '1024'
                                 assert hashlib.sha256(data).hexdigest() == EXPECTED_SHA
-                                samples.append(("/download", elapsed))
+                                samples.append(('/api/downloads/sample', elapsed))
                     return samples
 
                 with concurrent.futures.ThreadPoolExecutor(max_workers=CLIENTS) as pool:
                     results = list(pool.map(worker, range(CLIENTS)))
 
                 administrator = client()
-                code, _, form = request(administrator, base, "/login")
+                code, _, token_data = api(administrator, base, '/api/csrf')
                 assert code == 200
-                code, _, _ = request(administrator, base, "/login", {
-                    "username": "capacity-admin", "password": "capacity-admin-password",
-                    "csrf_token": csrf(form)})
-                assert code == 303
-                for endpoint in ("/statistics", "/reports"):
+                code, _, auth = api(administrator, base, '/api/accounts/login',
+                                    {'username': 'capacity-admin', 'password': 'capacity-admin-password'},
+                                    token_data['csrfToken'])
+                assert code == 200 and auth['user']['role'] == 'admin'
+                for endpoint in ('/api/activity/statistics', '/api/activity/reports'):
                     for _ in range(8):
                         t = time.perf_counter_ns()
-                        code, _, _ = request(administrator, base, endpoint)
+                        code, _, _ = api(administrator, base, endpoint)
                         assert code == 200
                         results.append([(endpoint, (time.perf_counter_ns() - t) / 1e6)])
 

@@ -159,3 +159,8 @@
 ## Turn continuation contract
 
 At the end of every RP batched run: update only actually completed packet checkboxes, milestone evidence, next precise intent, runtime blockers, and stable workstream ID; checkpoint in Homer. Preserve original reviews. At kickoff, inspect git state first; no documentation-only action counts as application implementation.
+
+
+## New owner-requested SPA-only consolidation (2026-10-09)
+
+After completing the canonical 48 packets, the owner required SPA to become the sole frontend rather than a reversible SSR alternative. This is a follow-up scope, not a reopening or rewriting of historical C-IDs. ADR-0022 supersedes ADR-0019's runtime presentation switch. The legacy PHP templates and SSR handlers are removed; known public GET aliases redirect to the Vanilla JS SPA while same-origin JSON APIs and native binary POST remain server-authoritative. PHPStan, Deptrac, PHPUnit, Node ESM tests, browser E2E, HTTP SPA routes, ingress limits, capacity probe and bootstrap measurements are acceptance evidence. Production still requires separate real-host release gates.

@@ -4,36 +4,57 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\Flow;
 
-use InterviewTask\Bootstrap\Http\AccountPages;
-use InterviewTask\Bootstrap\Http\ActivityPages;
-use InterviewTask\Bootstrap\Http\CowOfferPages;
-use InterviewTask\Bootstrap\Http\DownloadPages;
-use InterviewTask\Bootstrap\Http\HtmlPage;
+use InterviewTask\Bootstrap\Http\AccountApi;
+use InterviewTask\Bootstrap\Http\ActivityApi;
+use InterviewTask\Bootstrap\Http\CowOfferApi;
+use InterviewTask\Bootstrap\Http\DownloadApi;
+use InterviewTask\Bootstrap\Http\SessionApi;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
- * Regression checks for Composer autoload test, covering observable behavior and failure paths.
+ * Enforce the API-only PHP delivery surface and autoload contracts.
  *
  * @package InterviewTask\Tests\Flow
  */
 final class ComposerAutoloadTest extends TestCase
 {
     /**
-     * Verify every bootstrap http adapter resolves from composer autoload only through the public behavior.
+     * Ensure feature API adapters can be loaded directly through Composer.
      *
      * @return void No return value.
      */
-    public function testEveryBootstrapHttpAdapterResolvesFromComposerAutoloadOnly() : void
+    public function testApiAdaptersResolveThroughComposer() : void
     {
-        foreach ([AccountPages::class, ActivityPages::class, CowOfferPages::class, DownloadPages::class, HtmlPage::class] as $class) {
-            self::assertTrue(class_exists(class: $class), $class);
-            $file = (new ReflectionClass(objectOrClass: $class))->getFileName();
-            self::assertIsString($file);
+        foreach ([AccountApi::class, ActivityApi::class, CowOfferApi::class, DownloadApi::class, SessionApi::class] as $class) {
+            self::assertTrue(class_exists(class: $class));
+            $path = (new ReflectionClass(objectOrClass: $class))->getFileName();
+            self::assertIsString($path);
             self::assertSame(
-                realpath(path: dirname(path: __DIR__, levels: 2) . '/bootstrap/Http/' . basename(path: $file)),
-                $file,
+                realpath(path: dirname(path: __DIR__, levels: 2) . '/bootstrap/Http/' . basename(path: $path)),
+                $path,
             );
+        }
+    }
+
+    /**
+     * Prevent executable PHP/HTML templates from re-entering business or HTTP layers.
+     *
+     * @return void No return value.
+     */
+    public function testNoExecutablePhpTemplatesRemainInBusinessAndHttpLayers() : void
+    {
+        $root = dirname(path: __DIR__, levels: 2);
+        foreach (['src', 'bootstrap', 'infrastructure'] as $directory) {
+            $walker = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(directory: $root . '/' . $directory));
+            foreach ($walker as $entry) {
+                if (! $entry instanceof \SplFileInfo || ! $entry->isFile() || $entry->getExtension() !== 'php') {
+                    continue;
+                }
+                $contents = file_get_contents(filename: $entry->getPathname());
+                self::assertIsString($contents);
+                self::assertStringNotContainsString('?>', $contents, $entry->getPathname());
+            }
         }
     }
 }

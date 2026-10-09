@@ -14,7 +14,7 @@ test('native ES module initializes the owned shell status without HTML injection
   } };
 
   assert.equal(startApp(page), true);
-  assert.equal(status.textContent, 'Application shell loaded. Existing sign-in remains available.');
+  assert.equal(status.textContent, 'Application ready.');
 });
 
 test('shell startup is safely inert without its root', () => {

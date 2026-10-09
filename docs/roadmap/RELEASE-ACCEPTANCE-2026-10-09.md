@@ -1,3 +1,5 @@
+> Superseded presentation-mode guidance: ADR-0022 defines the current SPA-only runtime. The SSR rollback below is historical and unsupported in the new release.
+
 # C-47 — Final recruiter acceptance and public-production boundary
 
 **Observed on:** 2026-10-09. **Candidate:** `main` at `f83211106a1e56e45b4870c7a0816c23f987e546` (before this acceptance record).

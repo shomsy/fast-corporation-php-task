@@ -50,7 +50,7 @@ if (! str_starts_with(haystack: $dbPath, needle: '/')) {
 $debug        = filter_var(value: getenv(name: 'APP_DEBUG') ?: '0', filter: FILTER_VALIDATE_BOOL);
 $secureCookie = filter_var(value: getenv(name: 'SESSION_COOKIE_SECURE') ?: '0', filter: FILTER_VALIDATE_BOOL);
 $environment  = getenv(name: 'APP_ENV') ?: 'local';
-$uiEntrypoint = getenv(name: 'UI_ENTRYPOINT') ?: 'ssr';
+$uiEntrypoint = getenv(name: 'UI_ENTRYPOINT');
 $sessionPath  = getenv(name: 'SESSION_STORAGE_PATH');
 $sessionPath  = is_string(value: $sessionPath) && $sessionPath !== '' ? $sessionPath : null;
 
@@ -58,7 +58,7 @@ if (! in_array(needle: $environment, haystack: ['local', 'test', 'production'], 
     throw new RuntimeException(message: 'Unsupported application environment.');
 }
 
-if (! in_array(needle: $uiEntrypoint, haystack: ['ssr', 'spa'], strict: true)) {
+if ($uiEntrypoint !== false && $uiEntrypoint !== 'spa') {
     throw new RuntimeException(message: 'Unsupported UI entrypoint.');
 }
 
@@ -115,7 +115,6 @@ if ($environment === 'production') {
  *     debug: bool,
  *     databasePath: string,
  *     sessionCookieSecure: bool,
- *     uiEntrypoint: string,
  *     sessionStoragePath: string|null
  * }
  */
@@ -126,5 +125,4 @@ return [
     'databasePath'        => $dbPath,
     'sessionCookieSecure' => $secureCookie,
     'sessionStoragePath'  => $sessionPath,
-    'uiEntrypoint'        => $uiEntrypoint,
 ];

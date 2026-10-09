@@ -33,6 +33,14 @@ export function chartSegments(days, metric) {
   return pieces;
 }
 
+/** Unique, integer-valued axis ticks, including separate 0/1 for a single-count series. */
+export function chartTicks(days) {
+  const max = Math.max(1, ...days.flatMap((day) => metrics.map((series) => Number(day[series.key]) || 0)));
+  const steps = Math.min(4, max);
+  const values = [...new Set(Array.from({ length: steps + 1 }, (_, index) => Math.round(max * index / steps)))];
+  return values.map((value) => ({ value, y: 230 - value * 185 / max }));
+}
+
 /** Render the same authoritative daily dataset that also renders the HTML table. */
 export function drawChart(page, days) {
   const svg = svgNode(page, 'svg', {
@@ -44,6 +52,26 @@ export function drawChart(page, days) {
       'One line per tracked action. Missing UTC days break the lines. Exact totals follow in the table.'));
   svg.append(svgNode(page, 'line', { x1: 65, y1: 45, x2: 65, y2: 230, stroke: '#64748b' }),
     svgNode(page, 'line', { x1: 65, y1: 230, x2: 815, y2: 230, stroke: '#64748b' }));
+  for (const tick of chartTicks(days)) {
+    svg.append(svgNode(page, 'line', {
+      x1: 65, y1: tick.y, x2: 815, y2: tick.y, stroke: '#d9e1ee',
+    }));
+    svg.append(svgNode(page, 'text', {
+      x: 53, y: tick.y + 4, 'text-anchor': 'end', 'font-size': 12, fill: '#465971',
+    }, tick.value));
+  }
+  if (days.length) {
+    const edges = days.length === 1 ? [0] : [0, days.length - 1];
+    for (const index of edges) {
+      const date = days[index].date;
+      const x = chartSegments(days, metrics[0].key).flat()[index]?.x
+        ?? (index === 0 ? 65 : 815);
+      svg.append(svgNode(page, 'text', {
+        x: x.toFixed(2), y: 259, 'text-anchor': index === 0 ? 'start' : 'end',
+        'font-size': 12, fill: '#465971',
+      }, date));
+    }
+  }
   for (const series of metrics) {
     for (const piece of chartSegments(days, series.key)) {
       if (piece.length > 1) svg.append(svgNode(page, 'polyline', {

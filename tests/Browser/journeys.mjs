@@ -88,9 +88,20 @@ try {
   await visit(admin.page, '/statistics', 'Activity statistics');
   await admin.page.getByRole('table').waitFor();
   await admin.page.getByLabel('User').fill('browser-user');
+  await admin.page.evaluate(() => { window.__spaDocumentSentinel = 'preserved'; });
   await admin.page.getByRole('button', { name: 'Apply filters' }).click();
-  await admin.page.waitForURL((url) => url.pathname === '/app/statistics'
-    && url.searchParams.get('user') === 'browser-user');
+  await admin.page.waitForFunction(() => location.pathname === '/app/statistics'
+    && new URLSearchParams(location.search).get('user') === 'browser-user', null, { timeout: 3500 })
+    .catch(async () => { throw new Error('SPA GET filter navigation failed: URL=' + admin.page.url()
+      + '; pageErrors=' + errors.join(' | ') + '; outlet='
+      + await admin.page.locator('#route-outlet').innerText()); });
+  assert.equal(await admin.page.evaluate(() => window.__spaDocumentSentinel), 'preserved',
+    'Filter submission must not reload the SPA document');
+  await admin.page.evaluate(() => history.back());
+  await admin.page.waitForFunction(() => location.pathname === '/app/statistics' && location.search === '');
+  await admin.page.evaluate(() => history.forward());
+  await admin.page.waitForFunction(() => new URLSearchParams(location.search).get('user') === 'browser-user');
+  assert.equal(await admin.page.evaluate(() => window.__spaDocumentSentinel), 'preserved');
   await admin.page.getByRole('table').getByText('browser-user').first().waitFor();
   await admin.page.goto(origin + '/reports');
   assert.equal(new URL(admin.page.url()).pathname, '/app/reports');

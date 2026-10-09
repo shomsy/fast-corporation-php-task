@@ -93,9 +93,9 @@ http {
                         if server.poll() is not None or attempt == 69:
                             raise RuntimeError("Ingress container did not start")
                         time.sleep(.08)
-                assert response(url + "/login")[0] == 200
+                assert response(url + "/app/login")[0] == 200
                 accepted = []
-                paths = ["/api/accounts/login", "/login", "/register"]
+                paths = ["/api/accounts/login", "/api/accounts/register", "/api/accounts/login"]
                 for index, path in enumerate(paths):
                     status, headers, body = response(
                         url + path, "POST", spoof=f"198.51.100.{index + 1}")
@@ -107,8 +107,8 @@ http {
                 assert status == 429, (status, headers, body)
                 assert headers.get("Retry-After") == "60", headers
                 assert headers.get("Cache-Control") == "no-store", headers
-                assert response(url + "/page-a", "POST")[0] == 200
-                assert response(url + "/login", "GET")[0] == 200
+                assert response(url + "/api/cow-offer/buy", "POST")[0] == 200
+                assert response(url + "/app/login", "GET")[0] == 200
                 assert response(url + "/api/accounts/login",
                                 "POST", spoof="192.0.2.200")[0] == 429
             finally:

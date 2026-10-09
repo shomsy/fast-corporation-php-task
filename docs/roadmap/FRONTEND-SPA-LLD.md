@@ -1,6 +1,6 @@
 # Vanilla JavaScript SPA & JSON API — Low-Level Design
 
-**Status:** APPROVED DIRECTION / NOT IMPLEMENTED. **Decision date:** 2026-10-09.
+**Status:** IMPLEMENTED / SPA-ONLY since ADR-0022 (2026-10-09). This document preserves the original proposed migration steps and rationale; its temporary SSR fallback is no longer supported. **Decision date:** 2026-10-09.
 **Companion documents:** [Canonical plan](CANONICAL-REMEDIATION-PLAN.md), [execution program](EXECUTION-PROGRAM.md), [review crosswalk](REVIEW-TRACEABILITY.md).
 **Original task:** [TASK.md](../../TASK.md).
 

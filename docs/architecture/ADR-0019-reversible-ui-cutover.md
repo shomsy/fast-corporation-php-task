@@ -2,6 +2,8 @@
 
 **Decision:** Accepted for the local interview application, 2026-10-09. **Owner:** HTTP delivery boundary.
 
+**Superseded:** ADR-0022 removes the SSR fallback and makes SPA the only presentation. The remainder of this ADR records the historical rollout, not current runtime behavior.
+
 ## Problem
 
 The recruiter-facing URL paths need to transition from SSR document handlers to the already-verified Vanilla JS SPA without duplicating business writes or losing a working rollback. A wholesale template removal would risk unverified clients and is not justified.

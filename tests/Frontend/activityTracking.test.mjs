@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { drawChart, chartSegments } from '../../public/app/ActivityTracking/drawChart.js';
+import { drawChart, chartSegments, chartTicks } from '../../public/app/ActivityTracking/drawChart.js';
 import { showActivity } from '../../public/app/ActivityTracking/showActivity.js';
 
 function node(tag) {
@@ -53,4 +53,15 @@ test('statistics uses URL filters without HTML injection and server error denial
   });
   await new Promise(setImmediate);
   assert.ok(JSON.stringify(deniedOutlet).includes('Forbidden.'));
+});
+
+
+test('low-count Y-axis ticks are distinct integers and include zero and one', () => {
+  const days = [{ date: '2026-10-01', pageAViews: 1, pageBViews: 0, buyCowClicks: 0, downloadClicks: 0 }];
+  assert.deepEqual(chartTicks(days).map((tick) => tick.value), [0, 1]);
+  const svg = drawChart(page, days);
+  const labels = svg.children.filter((element) => element.tag === 'text').map((element) => element.textContent);
+  assert.ok(labels.includes('0'));
+  assert.ok(labels.includes('1'));
+  assert.ok(labels.includes('2026-10-01'));
 });

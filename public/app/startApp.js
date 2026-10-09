@@ -6,10 +6,8 @@ import { showPageB } from './Downloads/showPageB.js';
 import { showActivity } from './ActivityTracking/showActivity.js';
 
 /**
- * Start the deliberately small application shell without taking ownership of SSR features.
- *
- * Feature navigation and session-aware screens are added separately after tested contracts.
- * This module only owns the initial DOM readiness message.
+ * Initialize the single Vanilla JS application shell and its session-aware feature routes.
+ * PHP owns identity, business decisions and audit; this module owns client presentation only.
  *
  * @param {Document} page Native document; injectable for zero-dependency tests.
  * @returns {boolean} Whether the known shell root was available.
@@ -24,7 +22,7 @@ export function startApp(page) {
   const status = root.querySelector('[data-shell-status]');
 
   if (status !== null) {
-    status.textContent = 'Application shell loaded. Existing sign-in remains available.';
+    status.textContent = 'Application ready.';
   }
 
   return true;

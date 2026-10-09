@@ -17,7 +17,8 @@ PATHS = {
     "health": ("/healthz", 200),
     "ready": ("/readyz", 200),
     "missing": ("/nonexistent-example", 404),
-    "login_form": ("/login", 200),
+    "spa_login": ("/app/login", 200),
+    "legacy_login_alias": ("/login", 303),
     "session_json": ("/api/session", 200),
 }
 
