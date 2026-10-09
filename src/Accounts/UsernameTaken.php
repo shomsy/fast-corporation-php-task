@@ -20,7 +20,7 @@ final class UsernameTaken extends DomainException
      *
      * @param Throwable|null $previous Original SQLite UNIQUE-constraint failure, if available.
      */
-    public function __construct(?Throwable $previous = null)
+    public function __construct(Throwable|null $previous = null)
     {
         parent::__construct(message: 'Username is already taken.', previous: $previous);
     }

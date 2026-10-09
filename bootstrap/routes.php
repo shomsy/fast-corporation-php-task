@@ -78,7 +78,7 @@ return static function (Router $router) use ($config): void {
     $signedIn = new RequireSignedIn(identity: $identity);
 
     // Authorization and CSRF are enforced before all route handlers, including future ones.
-    $router->guardWith(static function (Request $request, RouteAccess $access) use ($current, $csrf): ?Response {
+    $router->guardWith(static function (Request $request, RouteAccess $access) use ($current, $csrf): Response|null {
         if ($access !== RouteAccess::Public) {
             $account = $current->current();
 

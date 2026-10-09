@@ -23,7 +23,7 @@ final readonly class Request
      * @param array<string, mixed> $query
      * @param array<string, mixed> $post
      * @param array<string, mixed> $server
-     * @param ?string $rawBody Optional injected JSON body for deterministic tests.
+     * @param string|null $rawBody Optional injected JSON body for deterministic tests.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function __construct(
@@ -32,7 +32,7 @@ final readonly class Request
         private array  $query = [],
         private array  $post = [],
         private array  $server = [],
-        private ?string $rawBody = null,
+        private string|null $rawBody = null,
     ) {
         if ($path === '' || ! str_starts_with(haystack: $path, needle: '/')) {
             throw new InvalidArgumentException(message: 'Request path must start with "/".');

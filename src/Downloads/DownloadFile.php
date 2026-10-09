@@ -22,14 +22,14 @@ final readonly class DownloadFile
      *
      * @param ActivityLog $activityLog Activity-event writer shared with the feature.
      * @param string $artifactPath Fixed server-side download artifact path, never taken from the request.
-     * @param ?string $expectedSha256 Pinned SHA-256 of the deployed binary (required by the production composition root).
+     * @param string|null $expectedSha256 Pinned SHA-256 of the deployed binary (required by the production composition root).
      * @param int $maxBytes Maximum allowed file bytes, protecting PHP memory.
      * @throws \InvalidArgumentException If the trusted file policy is malformed.
      */
     public function __construct(
         private ActivityLog $activityLog,
         private string      $artifactPath,
-        private ?string     $expectedSha256 = null,
+        private string|null     $expectedSha256 = null,
         private int         $maxBytes = 2097152,
     ) {
         if ($maxBytes < 1 || ($expectedSha256 !== null && preg_match(pattern: '/\\A[a-f0-9]{64}\\z/D', subject: $expectedSha256) !== 1)) {

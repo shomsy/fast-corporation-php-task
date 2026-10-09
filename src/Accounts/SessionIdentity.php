@@ -57,7 +57,7 @@ final readonly class SessionIdentity
     public function __construct(
         private PhpSession      $session,
         private Accounts        $accounts,
-        private ?ClockInterface $clock = null,
+        private ClockInterface|null $clock = null,
     ) {}
 
     /**
@@ -94,7 +94,7 @@ final readonly class SessionIdentity
      *
      * @return SignedInAccount|null Verified current identity, or null after expiry or removal.
      */
-    public function current(): ?SignedInAccount
+    public function current(): SignedInAccount|null
     {
         $id = $this->session->get(key: self::ACCOUNT_ID);
 

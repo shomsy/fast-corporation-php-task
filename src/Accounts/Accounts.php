@@ -153,7 +153,7 @@ final readonly class Accounts
      * @return Account|null The verified account, or null for invalid credentials.
      * @throws PDOException When credential lookup or hash upgrade persistence fails.
      */
-    public function authenticate(string $username, #[SensitiveParameter] string $password): ?Account
+    public function authenticate(string $username, #[SensitiveParameter] string $password): Account|null
     {
         if (strlen(string: $password) > 72 || str_contains(haystack: $password, needle: "\0")) {
             return null;
@@ -228,7 +228,7 @@ final readonly class Accounts
      * @param int $id Input value for id.
      * @return Account|null The stored account, or null when no such account exists.
      */
-    public function findById(int $id): ?Account
+    public function findById(int $id): Account|null
     {
         $statement = $this->pdo->prepare(
             query: 'SELECT id, username, role, created_at FROM accounts WHERE id = :id LIMIT 1',

@@ -13,9 +13,9 @@ use RuntimeException;
 /**
  * Stable, bounded and newest-first activity history.
  *
- * @phpstan-type ActivityEventRow array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}
+ * @phpstan-type ActivityEventRow array{id: int, actor_id: int, actor_label: string, action: string, target: string|null, occurred_at: string}
  * @phpstan-type ActivityPageResult array{events: list<ActivityEventRow>, hasNext: bool}
- * @phpstan-type CursorPageResult array{events: list<ActivityEventRow>, hasNext: bool, nextCursor: ?string, previousCursor: ?string}
+ * @phpstan-type CursorPageResult array{events: list<ActivityEventRow>, hasNext: bool, nextCursor: string|null, previousCursor: string|null}
  * @api
  * @package InterviewTask\ActivityTracking
  * @see DailyReports
@@ -39,14 +39,14 @@ final readonly class Statistics
     /**
      * Return one 1-based page of event rows, excluding pagination metadata.
      *
-     * @param ?string $date Exact UTC calendar date (YYYY-MM-DD); null means all dates.
-     * @param ?string $user Case-insensitive exact actor label, not a substring.
-     * @param ?string $action Canonical action value; invalid values are rejected.
+     * @param string|null $date Exact UTC calendar date (YYYY-MM-DD); null means all dates.
+     * @param string|null $user Case-insensitive exact actor label, not a substring.
+     * @param string|null $action Canonical action value; invalid values are rejected.
      * @param int $page 1-based page number.
-     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>
+     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: string|null, occurred_at: string}>
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
-    public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
+    public function events(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1): array
     {
         return $this->page(date: $date, user: $user, action: $action, page: $page)['events'];
     }
@@ -54,16 +54,16 @@ final readonly class Statistics
     /**
      * Return a 1-based page sorted by UTC timestamp then event ID descending. One extra row establishes hasNext without an approximate count.
      *
-     * @param ?string $date Exact UTC date (YYYY-MM-DD), or null for all dates.
-     * @param ?string $user Case-insensitive exact actor label, or null.
-     * @param ?string $action Canonical ActivityAction value, or null.
+     * @param string|null $date Exact UTC date (YYYY-MM-DD), or null for all dates.
+     * @param string|null $user Case-insensitive exact actor label, or null.
+     * @param string|null $action Canonical ActivityAction value, or null.
      * @param int $page 1-based page number.
      * @return ActivityPageResult
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      * @throws PDOException When the underlying SQLite operation fails.
      * @throws RuntimeException When the query cannot be prepared.
      */
-    public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
+    public function page(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1): array
     {
         if ($page < 1 || $page > intdiv(num1: PHP_INT_MAX, num2: self::PAGE_SIZE) - 1) {
             throw new InvalidArgumentException(message: 'Invalid page.');
@@ -108,12 +108,12 @@ final readonly class Statistics
     /**
      * Validate shared public statistics filters and create bound SQL predicates.
      *
-     * @param ?string $date Exact UTC date.
-     * @param ?string $user Historical username.
-     * @param ?string $action Canonical event action.
+     * @param string|null $date Exact UTC date.
+     * @param string|null $user Historical username.
+     * @param string|null $action Canonical event action.
      * @return array{where: list<string>, parameters: array<string, string>}
      */
-    private function filters(?string $date, ?string $user, ?string $action): array
+    private function filters(string|null $date, string|null $user, string|null $action): array
     {
         $where      = [];
         $parameters = [];
@@ -158,12 +158,12 @@ final readonly class Statistics
      *
      * @param string|null $cursor Opaque session-bound cursor, or null for the first page.
      * @param string $key Secret from the authenticated PHP session; never send to browser.
-     * @param ?string $date Optional validated UTC date filter.
-     * @param ?string $user Optional username filter.
-     * @param ?string $action Optional action filter.
+     * @param string|null $date Optional validated UTC date filter.
+     * @param string|null $user Optional username filter.
+     * @param string|null $action Optional action filter.
      * @return CursorPageResult
      */
-    public function cursorPage(?string $cursor = null, string $key = '', ?string $date = null, ?string $user = null, ?string $action = null): array
+    public function cursorPage(string|null $cursor = null, string $key = '', string|null $date = null, string|null $user = null, string|null $action = null): array
     {
         if ($key === '') {
             throw new InvalidArgumentException(message: 'Missing cursor signing context.');

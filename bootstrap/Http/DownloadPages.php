@@ -38,11 +38,11 @@ final readonly class DownloadPages
     /**
      * Authorize Page B, record the view and render its download form.
      *
-     * @param ?Request $request Optional request for speculative-load detection.
+     * @param Request|null $request Optional request for speculative-load detection.
      *
      * @return Response Page B form after an accepted view; 204 for prefetch, or login redirect.
      */
-    public function pageB(?Request $request = null): Response
+    public function pageB(Request|null $request = null): Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {

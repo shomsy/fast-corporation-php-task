@@ -29,3 +29,15 @@ PhpStorm also ships `~/.local/opt/phpstorm-eap/bin/format.sh`, which supports a 
 MOI has personal alignment, whitespace, line-breaking and PHPDoc decisions that are not all expressible in PHP-CS-Fixer. Running both causes perpetual reformatting. Rector is a refactoring analyzer; it is deliberately not the final visual formatter.
 
 **Source of truth:** MOI is personal and can be adjusted one setting at a time by the owner. We preserve the original values.
+
+
+## New MOI PHP syntax contract (2026-10-09)
+
+Original MOI.xml still owns whitespace, alignment, line breaks and PHPDoc layout. The two added syntax rules are independent of options in the IDE formatter:
+
+1. In PHP type declarations and PHPDoc use TYPE|null, never ?Type. This does not ban nullsafe ?->, coalescing ?? or ternary expressions.
+2. Standalone counter updates and for-loop steps use postfix $i++ or $i--, not prefix ++$i or --$i. If a prefix expression has its result consumed, preserve its semantics via a deliberate refactor rather than blind operator replacement. The static gate rejects that prefix usage.
+
+PHP Hammer 2026.1.2 inspections NullableTypeFormatInspection and UnaryOperatorFormatInspection are enabled at ERROR severity in the global Default and Fast Corporation project profiles. Reload the IDE inspection profile after external editing. Existing projects using their own profile may need to select the global default or enable the same rules in that project profile.
+
+The repository's composer moi:check uses nikic/php-parser to examine PHP and PHPDoc. composer moi:self-test ensures invalid examples fail and nullsafe and coalescing operators remain accepted. Both run in composer quality and CI on PHP 8.3, 8.4 and 8.5. CI enforcement does not automatically extend to other repositories.

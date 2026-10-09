@@ -48,7 +48,7 @@ function inspectDocContracts(array $ast, string $path): array
          * @return Node|null No AST changes; the visitor may return null.
          */
         #[Override]
-        public function enterNode(Node $node): ?Node
+        public function enterNode(Node $node): Node|null
         {
             if (!$node instanceof Stmt\ClassLike
                 && !$node instanceof Stmt\ClassMethod

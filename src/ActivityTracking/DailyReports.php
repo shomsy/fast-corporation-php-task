@@ -37,14 +37,14 @@ final readonly class DailyReports
     /**
      * Aggregate the last 30 days with qualifying events, ascending by UTC date. The optional inclusive bounds filter before the 30-row limit is applied. Dates without tracked events are not filled with synthetic zero rows.
      *
-     * @param ?string $from Inclusive YYYY-MM-DD UTC lower bound.
-     * @param ?string $to Inclusive YYYY-MM-DD UTC upper bound.
+     * @param string|null $from Inclusive YYYY-MM-DD UTC lower bound.
+     * @param string|null $to Inclusive YYYY-MM-DD UTC upper bound.
      * @return list<DailyActivityRow> The same counts feed the chart and table.
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      * @throws PDOException When the underlying SQLite operation fails.
      * @throws RuntimeException When the query cannot be prepared.
      */
-    public function dailyCounts(?string $from = null, ?string $to = null): array
+    public function dailyCounts(string|null $from = null, string|null $to = null): array
     {
         $parameters = [];
         foreach (['from' => $from, 'to' => $to] as $name => $value) {

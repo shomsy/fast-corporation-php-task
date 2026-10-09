@@ -24,7 +24,7 @@ final readonly class CurrentAccount
      *
      * @return SignedInAccount|null Current verified identity, or null when not signed in.
      */
-    public function current(): ?SignedInAccount
+    public function current(): SignedInAccount|null
     {
         return $this->identity->current();
     }

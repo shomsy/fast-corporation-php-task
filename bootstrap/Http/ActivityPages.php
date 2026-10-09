@@ -116,7 +116,7 @@ final readonly class ActivityPages
      *
      * @return Response|null Denial response, or null when the user is an administrator.
      */
-    private function requireAdministrator(): ?Response
+    private function requireAdministrator(): Response|null
     {
         try {
             $this->admin->account();
@@ -135,7 +135,7 @@ final readonly class ActivityPages
      * @param mixed $value Value to store, format, or validate, as appropriate for this operation.
      * @return string|null The non-empty string provided, otherwise null.
      */
-    private function optionalInput(mixed $value): ?string
+    private function optionalInput(mixed $value): string|null
     {
         if ($value === null || $value === '') {
             return null;
@@ -154,7 +154,7 @@ final readonly class ActivityPages
      * @param Request|null $request Raw HTTP request; validate client-supplied values before use.
      * @return Response Authorized report response or a redirect/forbidden response.
      */
-    public function reportsPage(?Request $request = null): Response
+    public function reportsPage(Request|null $request = null): Response
     {
         $denied = $this->requireAdministrator();
         if ($denied !== null) {

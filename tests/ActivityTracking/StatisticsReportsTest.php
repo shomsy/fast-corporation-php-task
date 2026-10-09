@@ -216,7 +216,7 @@ final class StatisticsReportsTest extends TestCase
             query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
         );
         self::assertNotFalse($insert);
-        for ($i = 0; $i < 105; ++$i) {
+        for ($i = 0; $i < 105; $i++) {
             $insert->execute();
         }
 
@@ -254,7 +254,7 @@ final class StatisticsReportsTest extends TestCase
             query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
         );
         self::assertNotFalse($insert);
-        for ($i = 0; $i < Statistics::PAGE_SIZE; ++$i) {
+        for ($i = 0; $i < Statistics::PAGE_SIZE; $i++) {
             self::assertTrue($insert->execute());
         }
 
@@ -305,7 +305,7 @@ final class StatisticsReportsTest extends TestCase
             query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', ?)",
         );
         self::assertNotFalse($stmt);
-        for ($i = 1; $i <= 40; ++$i) {
+        for ($i = 1; $i <= 40; $i++) {
             $date = (new DateTimeImmutable(datetime: '2026-09-01T01:00:00+00:00'))->modify(modifier: '+' . ($i - 1) . ' days');
             self::assertTrue($stmt->execute(params: [$date->format(format: 'c')]));
         }
@@ -326,7 +326,7 @@ final class StatisticsReportsTest extends TestCase
             );
             self::assertNotFalse($insert);
             $start = new DateTimeImmutable(datetime: '2026-08-01T01:00:00+00:00');
-            for ($i = 0; $i < 5000; ++$i) {
+            for ($i = 0; $i < 5000; $i++) {
                 $date = $start->modify(modifier: '+' . ($i % 60) . ' days');
                 self::assertTrue($insert->execute(params: [$date->format(format: 'c')]));
             }

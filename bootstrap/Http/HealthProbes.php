@@ -27,7 +27,7 @@ final class HealthProbes
      * @param Request $request Validated HTTP request.
      * @return Response|null Probe response, or null when the request is for a business route.
      */
-    public static function respond(Request $request): ?Response
+    public static function respond(Request $request): Response|null
     {
         if (! in_array(needle: $request->path(), haystack: ['/healthz', '/readyz'], strict: true)) {
             return null;
@@ -126,7 +126,7 @@ final class HealthProbes
                 throw new RuntimeException(message: 'Migration ledger and release disagree.');
             }
 
-            ++$seen;
+            $seen++;
         }
 
         if ($seen !== count(value: $expected)) {

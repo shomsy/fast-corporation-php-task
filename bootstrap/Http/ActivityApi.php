@@ -116,10 +116,10 @@ final readonly class ActivityApi
      *
      * @param Request $request Raw HTTP input boundary.
      * @param string $name Query parameter name.
-     * @return ?string A present nonempty string, otherwise null.
+     * @return string|null A present nonempty string, otherwise null.
      * @throws InvalidArgumentException For malformed input values.
      */
-    private function optionalQuery(Request $request, string $name): ?string
+    private function optionalQuery(Request $request, string $name): string|null
     {
         $value = $request->query(key: $name);
         if ($value === null || $value === '') {

@@ -51,7 +51,7 @@ final class CowOfferApiTest extends TestCase
                 username: 'cowuser', password: 'strong-password');
             $identity->signIn(account: $person);
             self::assertSame(204, $api->view()->status());
-            for ($i = 0; $i < 2; ++$i) {
+            for ($i = 0; $i < 2; $i++) {
                 $response = $api->buy();
                 self::assertSame(200, $response->status());
                 self::assertSame(['outcome' => 'thankYou'], json_decode(

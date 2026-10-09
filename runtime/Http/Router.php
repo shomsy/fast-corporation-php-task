@@ -26,14 +26,14 @@ final class Router
     /**
      * Central application security gate applied to all registered routes.
      *
-     * @var (Closure(Request, RouteAccess): ?Response)|null
+     * @var (Closure(Request, RouteAccess): (Response|null))|null
      */
-    private ?Closure $guard = null;
+    private Closure|null $guard = null;
 
     /**
      * Configure the single security boundary for route authorization and unsafe methods.
      *
-     * @param callable(Request, RouteAccess): ?Response $guard Denial response or null when permitted.
+     * @param callable(Request, RouteAccess): (Response|null) $guard Denial response or null when permitted.
      * @return void No return value.
      */
     public function guardWith(callable $guard): void

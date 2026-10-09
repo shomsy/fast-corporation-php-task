@@ -175,7 +175,7 @@ final class HttpFlowTest extends TestCase
         $token = $this->csrf->token();
 
         self::assertSame(200, $this->cowPages->pageA()->status());
-        for ($attempt = 0; $attempt < 2; ++$attempt) {
+        for ($attempt = 0; $attempt < 2; $attempt++) {
             $response = $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow', post: ['csrf_token' => $token]));
             self::assertSame(200, $response->status());
             self::assertStringContainsString('thankYou', $response->body());
@@ -186,7 +186,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame(200, $this->cowPages->buyCow(request: new Request(method: 'POST', path: '/buy-cow', post: ['csrf_token' => $token]))->status());
 
         self::assertSame(200, $this->downloadPages->pageB()->status());
-        for ($attempt = 0; $attempt < 2; ++$attempt) {
+        for ($attempt = 0; $attempt < 2; $attempt++) {
             self::assertSame(200, $this->downloadPages->download(request: new Request(method: 'POST', path: '/download', post: ['csrf_token' => $token]))->status());
         }
 
@@ -218,7 +218,7 @@ final class HttpFlowTest extends TestCase
         self::assertSame(204, $this->downloadPages->pageB(request: new Request(method: 'GET', path: '/page-b', server: ['HTTP_PURPOSE' => 'prefetch']))->status());
         self::assertSame(204, $this->downloadPages->pageB(request: new Request(method: 'GET', path: '/page-b', server: ['HTTP_X_MOZ' => 'prefetch']))->status());
 
-        for ($i = 0; $i < 2; ++$i) {
+        for ($i = 0; $i < 2; $i++) {
             self::assertSame(200, $this->cowPages->pageA(request: new Request(method: 'GET', path: '/page-a'))->status());
             self::assertSame(200, $this->downloadPages->pageB(request: new Request(method: 'GET', path: '/page-b'))->status());
         }
@@ -246,7 +246,7 @@ final class HttpFlowTest extends TestCase
             query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'admin', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
         );
         self::assertNotFalse($insert);
-        for ($i = 0; $i < Statistics::PAGE_SIZE; ++$i) {
+        for ($i = 0; $i < Statistics::PAGE_SIZE; $i++) {
             self::assertTrue($insert->execute());
         }
 
@@ -279,7 +279,7 @@ final class HttpFlowTest extends TestCase
             query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'admin', 'view-page', 'page-a', '2026-10-08T12:00:00+00:00')",
         );
         self::assertNotFalse($insert);
-        for ($i = 0; $i < 65; ++$i) {
+        for ($i = 0; $i < 65; $i++) {
             self::assertTrue($insert->execute());
         }
 

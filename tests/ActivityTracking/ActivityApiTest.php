@@ -54,7 +54,7 @@ final class ActivityApiTest extends TestCase
             $identity->signIn(account: $admin);
             $insert = $pdo->prepare(query: "INSERT INTO activity_events(actor_id,actor_label,action,target,occurred_at) VALUES(1,'alpha','view-page','page-a','2026-10-07T12:00:00+00:00')");
             self::assertNotFalse($insert);
-            for ($i = 0; $i < 51; ++$i) {
+            for ($i = 0; $i < 51; $i++) {
                 self::assertTrue($insert->execute());
             }
 

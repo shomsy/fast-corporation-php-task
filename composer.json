@@ -46,13 +46,17 @@
     "quality": [
       "@check:composer",
       "@check:psr4",
+      "@moi:self-test",
+      "@moi:check",
       "@security:audit",
       "@docs:check",
       "@stan",
       "@architecture",
       "@test"
     ],
-    "check:psr4": "composer dump-autoload --optimize --strict-psr --strict-ambiguous"
+    "check:psr4": "composer dump-autoload --optimize --strict-psr --strict-ambiguous",
+    "moi:self-test": "php tools/check-moi-conventions.php --self-test",
+    "moi:check": "php tools/check-moi-conventions.php"
   },
   "config": {
     "sort-packages": true,

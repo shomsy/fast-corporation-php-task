@@ -60,12 +60,12 @@ final class HttpProtocolTest extends TestCase
             method: 'GET',
             path: '/page-a',
             handler: static function () use (&$invoked): Response {
-                ++$invoked;
+                $invoked++;
                 return Response::html(body: 'tracked view');
             },
             access: RouteAccess::SignedIn,
         );
-        $router->guardWith(static fn(Request $request, RouteAccess $access): ?Response =>
+        $router->guardWith(static fn(Request $request, RouteAccess $access): Response|null =>
             $request->server(key: 'identity') === 'trusted' ? null : Response::text(body: 'Forbidden', status: 403));
 
         $denied = $router->dispatch(request: new Request(method: 'HEAD', path: '/page-a'));
@@ -88,7 +88,7 @@ final class HttpProtocolTest extends TestCase
         $router = new Router();
         $called = 0;
         $router->add(method: 'GET', path: '/view', handler: static function () use (&$called): Response {
-            ++$called;
+            $called++;
             return Response::text(body: 'ok');
         }, access: RouteAccess::Public);
         $router->add(method: 'POST', path: '/view', handler: static fn(): Response => Response::text(body: 'created'));

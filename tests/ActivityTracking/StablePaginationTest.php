@@ -103,7 +103,7 @@ final class StablePaginationTest extends TestCase
     {
         $insert = $pdo->prepare(query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', 'view-page', 'page-a', '2026-10-09T12:00:00+00:00')");
         self::assertNotFalse($insert);
-        for ($index = 0; $index < $count; ++$index) {
+        for ($index = 0; $index < $count; $index++) {
             self::assertTrue($insert->execute());
         }
     }

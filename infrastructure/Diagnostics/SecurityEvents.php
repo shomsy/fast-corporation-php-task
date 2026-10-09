@@ -23,7 +23,7 @@ final class SecurityEvents
      * @return string Unpredictable event correlation ID safe to expose in a response header.
      * @throws InvalidArgumentException When the event name is not defined.
      */
-    public static function record(string $event, ?Throwable $error = null): string
+    public static function record(string $event, Throwable|null $error = null): string
     {
         $allowed = ['auth.login_denied', 'security.csrf_denied', 'security.admin_denied', 'runtime.unhandled', 'db.contention'];
 

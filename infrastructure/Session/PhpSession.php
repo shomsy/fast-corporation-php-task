@@ -23,7 +23,7 @@ final readonly class PhpSession
     public function __construct(
         private string $name = 'fast_task',
         private bool   $secureCookie = false,
-        private ?string $savePath = null,
+        private string|null $savePath = null,
     ) {}
 
     /**

@@ -58,7 +58,7 @@ final readonly class ActivityLog
         int            $actorId,
         string         $actorLabel,
         ActivityAction $action,
-        ?string        $target,
+        string|null        $target,
     ): void {
         if ($actorId < 1) {
             throw new InvalidArgumentException(message: 'Actor ID must be positive.');

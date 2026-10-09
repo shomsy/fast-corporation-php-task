@@ -119,7 +119,7 @@ final class RouterTest extends TestCase
     public function testConfiguredRouteGuardControlsAccessBeforeHandlerRuns(): void
     {
         $router = new Router();
-        $router->guardWith(static function (Request $request, RouteAccess $access): ?Response {
+        $router->guardWith(static function (Request $request, RouteAccess $access): Response|null {
             if ($access === RouteAccess::Admin && $request->server(key: 'role') !== 'admin') {
                 return Response::text(body: 'Forbidden', status: 403);
             }

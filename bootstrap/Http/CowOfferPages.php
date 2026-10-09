@@ -37,11 +37,11 @@ final readonly class CowOfferPages
     /**
      * Authorize Page A, record the view and return its initial form.
      *
-     * @param ?Request $request Optional request for speculative-load detection.
+     * @param Request|null $request Optional request for speculative-load detection.
      *
      * @return Response Page A HTML after an accepted view; 204 for prefetch, or login redirect.
      */
-    public function pageA(?Request $request = null): Response
+    public function pageA(Request|null $request = null): Response
     {
         $account = $this->authorizedUser();
         if ($account instanceof Response) {

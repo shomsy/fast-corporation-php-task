@@ -12,7 +12,7 @@ declare(strict_types=1);
  *
  * @package InterviewTask\ActivityTracking
  */
-/** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target: ?string,occurred_at:string}>,date:string,user:string,action:string,error:string,page:int,hasNext:bool,cursorMode:bool,nextCursor:?string,previousCursor:?string} $data */
+/** @var array{events: list<array{id:int,actor_id:int,actor_label:string,action:string,target: string|null,occurred_at:string}>,date:string,user:string,action:string,error:string,page:int,hasNext:bool,cursorMode:bool,nextCursor:string|null,previousCursor:string|null} $data */
 /** @var callable(mixed $value): string $escape */
 ?>
 <!doctype html>
