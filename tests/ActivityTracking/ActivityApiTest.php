@@ -16,7 +16,6 @@ use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Time\SystemClock;
 use InterviewTask\Runtime\Http\Request;
-use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**

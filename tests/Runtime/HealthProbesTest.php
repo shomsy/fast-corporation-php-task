@@ -8,7 +8,6 @@ use InterviewTask\Bootstrap\Http\HealthProbes;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Runtime\Http\Request;
-use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**
