@@ -98,3 +98,19 @@ These are **local project UI settings**, not production code changes. The export
 
 The report enumerates all original inspection groups, but it does not claim a false zero-error status from a stale export.
 Structural code fixes and local IDE configuration are distinct outcomes.
+
+
+## 2026-10-09 live IDE MCP follow-up
+
+A live PhpStorm MCP scan inspected 224 tracked text files (all tracked files except the fixed download binary) and reported four ERROR diagnostics. Subsequent targeted fixes without runtime behavior changes:
+
+1. src/ActivityTracking/Statistics.php: expanded the events() PHPDoc row shape because PhpStorm interpreted the PHPStan-local type alias as an unrelated class. PHPStan verifies the underlying array contract.
+2. src/ActivityTracking/statistics.php: narrowly documented and suppressed PhpUndefinedVariableInspection for this PHP template. Renderer::render() supplies $data and $escape to the trusted require. Live HTML rendering is covered by PHPUnit and HTTP acceptance; keep the inspection enabled globally.
+3. infrastructure/Diagnostics/SecurityEvents.php: suppressed ForgottenDebugOutputInspection at the approved error_log() call. The allowlisted structured security logging is intentional and must not be deleted as debug code.
+4. phpunit.xml: NO production/source change. A project-local schema mapping in ignored .idea/misc.xml links the published URI to the vendor-provided vendor/phpunit/phpunit/phpunit.xsd. PhpStorm no longer reported the XML schema error.
+
+Follow-up MCP get_file_problems returned empty error arrays for all four paths, BUT the three PHP paths included timedOut=true. Therefore their empty error responses are NOT exhaustive confirmation. Rerun after PhpStorm indexing finishes. The XML response did not time out. There is no evidence of a new runtime defect.
+
+The 25 PHP-CS-Fixer file differences and 34 Rector dry-run refactoring candidates are advisory only. MOI remains the sole authoritative PHP formatter. Blind bulk application would introduce unrelated, behavior-irrelevant formatting and refactor churn. These observations are not misrepresented as regressions.
+
+Post-change gates: composer quality PASS (158 PHPUnit tests, 6,737 assertions, PHPStan/Deptrac/Composer audit/PHPDoc), npm run test:frontend PASS (21), npm run test:browser PASS, and python3 tests/Flow/live_smoke.py PASS. Public-production host gates remain unverified and NO-GO.

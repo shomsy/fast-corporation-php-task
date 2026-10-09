@@ -48,6 +48,8 @@ final class SecurityEvents
         }
 
         // The event name and error class are server-derived; no credentials, query, URI or exception message.
+        // Approved operational security log, not a forgotten debug statement.
+        /** @noinspection ForgottenDebugOutputInspection */
         error_log(message: (string) json_encode(value: $entry, flags: JSON_THROW_ON_ERROR));
 
         return $id;

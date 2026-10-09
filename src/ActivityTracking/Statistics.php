@@ -43,7 +43,7 @@ final readonly class Statistics
      * @param ?string $user Case-insensitive exact actor label, not a substring.
      * @param ?string $action Canonical action value; invalid values are rejected.
      * @param int $page 1-based page number.
-     * @return list<ActivityEventRow>
+     * @return list<array{id: int, actor_id: int, actor_label: string, action: string, target: ?string, occurred_at: string}>
      * @throws InvalidArgumentException When a submitted value or filter violates the documented precondition.
      */
     public function events(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array

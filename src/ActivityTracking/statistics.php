@@ -1,5 +1,8 @@
 <?php
 
+// $data and $escape are injected by Renderer::render() when this trusted template is required.
+/** @noinspection PhpUndefinedVariableInspection */
+
 /**
  * Administrator activity-history table and pagination view.
  *
