@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace InterviewTask\Infrastructure\Database;
 
+use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
+use LogicException;
 use PDO;
 use Throwable;
 
@@ -28,10 +30,15 @@ final readonly class Transaction
      * @template T
      * @param callable(): T $operation
      * @return T
-     * @throws Throwable When the transaction callback fails; the original failure is rethrown after rollback.
+     * @throws Throwable When the callback or commit fails; original error survives rollback errors.
+     * @throws LogicException When called inside a transaction owned by another scope.
      */
     public function run(callable $operation): mixed
     {
+        if ($this->pdo->inTransaction()) {
+            throw new LogicException(message: 'Nested transactions are not supported.');
+        }
+
         $this->pdo->beginTransaction();
 
         try {
@@ -40,8 +47,17 @@ final readonly class Transaction
 
             return $result;
         } catch (Throwable $throwable) {
-            if ($this->pdo->inTransaction()) {
+            try {
+                // We own this transaction. If a failed commit already ended it, the
+                // rollback may throw too; preserve and report the primary failure.
                 $this->pdo->rollBack();
+            } catch (Throwable $cleanupError) {
+                // Keep the root cause; log the secondary cleanup failure without SQL or secrets.
+                try {
+                    SecurityEvents::record(event: 'runtime.unhandled', error: $cleanupError);
+                } catch (Throwable) {
+                    // Diagnostic failure must not hide the original transaction failure.
+                }
             }
 
             throw $throwable;

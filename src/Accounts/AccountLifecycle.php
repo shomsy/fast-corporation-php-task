@@ -10,6 +10,7 @@ use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 use PDOException;
 use SensitiveParameter;
 use Throwable;
@@ -75,7 +76,12 @@ final readonly class AccountLifecycle
         try {
             $this->activity->recordLogin(actorId: $account->id, actorLabel: $account->username);
         } catch (Throwable $error) {
-            $this->identity->signOut();
+            try {
+                $this->identity->signOut();
+            } catch (Throwable $cleanupError) {
+                $this->reportCleanupFailure(error: $cleanupError);
+            }
+
             throw $error;
         }
 
@@ -90,15 +96,46 @@ final readonly class AccountLifecycle
      */
     public function logout(): void
     {
+        $failure = null;
+
         try {
             $account = $this->identity->current();
 
             if ($account !== null) {
                 $this->activity->recordLogout(actorId: $account->id, actorLabel: $account->username);
             }
-        } finally {
-            // Session revocation must not depend on account lookup or audit availability.
+        } catch (Throwable $error) {
+            $failure = $error;
+        }
+
+        // Always attempt revocation. Prefer the original audit/lookup error when cleanup also fails.
+        try {
             $this->identity->signOut();
+        } catch (Throwable $cleanupError) {
+            if ($failure === null) {
+                throw $cleanupError;
+            }
+
+            $this->reportCleanupFailure(error: $cleanupError);
+        }
+
+        if ($failure !== null) {
+            throw $failure;
         }
     }
+    /**
+     * Record a secondary session cleanup failure without overriding the original exception.
+     *
+     * @param Throwable $error Secondary session cleanup failure; never log its message.
+     * @return void No return value.
+     */
+    private function reportCleanupFailure(Throwable $error): void
+    {
+        try {
+            SecurityEvents::record(event: 'runtime.unhandled', error: $error);
+        } catch (Throwable) {
+            // A failed diagnostic must not mask the original application failure.
+        }
+    }
+
 }
