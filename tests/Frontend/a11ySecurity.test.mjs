@@ -76,9 +76,13 @@ test('admin denial is announced and focusable', async () => {
     client: { request: async () => { throw { status: 403 }; } }, navigate() {},
   });
   await new Promise(setImmediate);
-  const feedback = outlet.children[0].children.find((child) => child.tag === 'p');
-  assert.equal(feedback.textContent, "You do not have permission to view this information.");
-  assert.equal(feedback.focused, true);
+  const section = outlet.children[0];
+  const denied = section.children.find((child) => child.className === 'access-denied');
+  assert.equal(denied.role, 'alert');
+  assert.equal(denied.focused, true);
+  assert.equal(denied.children.find((child) => child.tag === 'span').textContent, '⛔');
+  assert.ok(denied.children.find((child) => child.tag === 'p').textContent.includes('administrator'));
+  assert.equal(section.children.some((child) => child.tag === 'form'), false);
 });
 
 test('all SPA feature files avoid executable HTML insertion', () => {

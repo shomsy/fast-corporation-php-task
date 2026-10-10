@@ -52,7 +52,10 @@ test('statistics uses URL filters without HTML injection and server error denial
     query: '', navigate() {},
   });
   await new Promise(setImmediate);
-  assert.ok(JSON.stringify(deniedOutlet).includes("You do not have permission to view this information."));
+  const denied = deniedOutlet.children[0];
+  assert.ok(JSON.stringify(denied).includes('Access denied'));
+  assert.ok(JSON.stringify(denied).includes('administrator account'));
+  assert.equal(denied.children.some((child) => child.tag === 'form'), false);
 });
 
 

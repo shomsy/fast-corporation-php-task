@@ -29,10 +29,20 @@ The implementation is not a commerce or package-delivery platform: Buy a cow is 
 | Non-admin attempting protected analytics | 403 | Explain lack of permission |
 | Invalid session/CSRF check | 403 | Ask the user to refresh and retry |
 | Bad filters / invalid report dates | 422 | Help correct filters/dates |
+| Role already upgraded / missing target | 409 / 404 | Explain that access is already granted or the account no longer exists |
+| Non-admin account management | 403 | Reject the request before the management handler runs |
 | Download artifact missing or invalid | 503 | Tell the user download is unavailable |
 | Unexpected server failure | 500 | Suppress sensitive details; capture server-side diagnostic ID |
 
 Not every backend exception is safe for direct display. Domain/infrastructure error details remain diagnostic data, while API errors provide bounded user-facing strings. Authentication endpoints never identify whether a username exists.
+
+## Roles, account management and session-aware navigation
+
+A normal user may authenticate, visit Page A and Page B, and submit the activity actions specified by the assignment. Administrators also have access to statistics, reports and the Manage users section on Home. Server-side guards enforce the same rules when requests bypass the UI.
+
+After a successful registration, the credential form is replaced by a confirmation screen and a direct sign-in link. Registration does not create an authenticated session. On login, navigation replaces guest-only links with Sign out; administrative links appear only for a current verified administrator. An unauthorized analytics page displays a dedicated Access denied view without functional filters.
+
+An administrator can list account IDs, usernames and roles in bounded pages of 50 and explicitly grant administrator access to an ordinary user. The write uses a CSRF-guarded administrator endpoint and a conditional SQLite update that accepts only a current ordinary-user role. Duplicate grants return HTTP 409, absent target IDs return 404, and invalid inputs return 422. Password hashes and session state are not included in account directory responses. This implementation does not support self-service privilege escalation, demotion, deletion or arbitrary permission editing. Accepted grants emit a bounded security diagnostic event without password or request-body data.
 
 ## Activity persistence and correctness boundaries
 
@@ -42,7 +52,7 @@ The database uses WAL mode established at provisioning time. Migration checksums
 
 ## Local commands — operational contract
 
-The self-contained `bin/fast-test` script is a **test-only convenience launcher** built around the user's local `php:8.5-cli` Docker image. It has no privileged API, no automatic production database discovery and no implicit external service calls.
+The self-contained `bin/fast-test` script is a **test-only convenience launcher** built around the `php:8.5-cli` Docker image. It has no privileged API, no automatic production database discovery and no implicit external service calls.
 
 - Fixed test database: `var/database/fast-test.sqlite`.
 - Generated administrator credentials: private `var/local-test/admin-password`, printed by `start`, excluded from Git.
@@ -72,12 +82,3 @@ PHPUnit covers domain policies, persistence/HTTP contracts and rejection paths. 
 SQLite keeps reviewer startup self-contained; a different datastore would be justified only by operational load or team constraints. Vanilla JS is sufficient for this feature count. A single process/container is intentionally not a high-availability deployment. Password length feedback prioritizes recognizable characters over cryptographic byte terminology; the underlying bcrypt safety cap is still enforced. No fake event seeding is shipped because fabricated history would make the statistics misleading.
 
 For production use, add capacity measurement, managed ingress rate controls, HTTPS, service least privilege, strong release/rollout controls and verified off-host backup/recovery with defined RPO/RTO. The local Docker launcher is not production orchestration.
-
-## Review guidance and provenance
-
-These engineering decisions were checked against the project's actual PHP/JavaScript behavior and the following guidance. Guidance is advisory; **code and executed tests are the acceptance evidence**.
-
-- Compass Engineering: *How to Keep API and Operational Documentation Current*, *How to Design Safe Startup and Shutdown*, *How to Design Form Validation Across Client and Server* (task-oriented documentation; protected, reversible tooling; backend authority over validation).
-- LLD: `check-doc-examples` and `check-input-validation` source-backed specialists (verify documentation against real commands/types and validate untrusted requests at the owning boundary).
-- Jeffallan/claude-skills: original `php-pro` and `devops-engineer` skills (type/security/test discipline; explicit operational safety and failure checks). Their Laravel/Kubernetes template recommendations are not requirements for this intentionally framework-free task.
-- *Docs for Developers: An Engineer's Field Guide to Technical Writing*, 2nd edition, Jared Bhatti, Sarah Corleissen, Jen Lambourne, David Nunez and Heidi Waterhouse: private original PDF (not included in this repository); directly reviewed physical PDF pages 105–107 (printed pages 79–81, chapter 4). The documentation checklist emphasizes clear purpose, tested steps, prerequisites, working links and peer/technical review. This is reference inspiration, not required software behavior; private book contents are not bundled in Git.

@@ -1,6 +1,7 @@
 import { createNavigator, showPlaceholder } from './navigate.js';
 import { createHttpClient } from './requestJson.js';
 import { renderAccounts } from './Accounts/showAccounts.js';
+import { showSessionNavigation } from './Accounts/showSessionNavigation.js';
 import { showPageA } from './CowOffer/showPageA.js';
 import { showPageB } from './Downloads/showPageB.js';
 import { showActivity } from './ActivityTracking/showActivity.js';
@@ -33,9 +34,13 @@ export function startNavigation(page, win) {
   if (outlet === null) return null;
   const client = createHttpClient({ origin: win.location.origin });
   let navigator;
+  const sessionNavigation = showSessionNavigation(page, {
+    client, navigate: (path) => navigator.navigate(path),
+  });
   navigator = createNavigator({ page, win, outlet, render(screen, lifecycle) {
+    sessionNavigation.refresh();
     if (['/app', '/app/home', '/app/login', '/app/register'].includes(screen.path)) {
-      renderAccounts(screen, lifecycle, { client, navigate: (path) => navigator.navigate(path) });
+      renderAccounts(screen, lifecycle, { client, navigate: (path) => navigator.navigate(path), onSessionChange: sessionNavigation.setUser });
     } else if (screen.path === '/app/page-a') {
       showPageA(lifecycle, { client, navigate: (path) => navigator.navigate(path) });
     } else if (screen.path === '/app/page-b') {
@@ -46,7 +51,13 @@ export function startNavigation(page, win) {
       showPlaceholder(screen, lifecycle);
     }
   } });
-  return navigator;
+  return {
+    navigate: navigator.navigate,
+    stop() {
+      sessionNavigation.stop();
+      navigator.stop();
+    },
+  };
 }
 
 if (typeof document !== 'undefined') {

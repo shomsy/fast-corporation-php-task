@@ -1,8 +1,10 @@
+import { showManageUsers } from './showManageUsers.js';
+
 /**
  * Accounts screen owner: forms and transient UI, never identity or audit authority.
  * Each route mount has a cancellable lifetime supplied by the navigator.
  */
-export function renderAccounts(screen, { page, outlet, signal, onDispose }, { client, navigate }) {
+export function renderAccounts(screen, { page, outlet, signal, onDispose }, { client, navigate, onSessionChange = () => {} }) {
   const section = page.createElement('section');
   const heading = page.createElement('h2');
   heading.textContent = screen.path === '/app/login' ? 'Sign in'
@@ -91,9 +93,30 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
         if (signal.aborted) return;
         if (isLogin) {
           client.setCsrfToken(result.csrfToken);
+          onSessionChange(result.user);
           navigate('/app/home');
         } else {
-          feedback.textContent = 'Account created. You can now sign in.';
+          // Registration leaves the visitor anonymous: show a completed state, not a live form.
+          const confirmation = page.createElement('div');
+          confirmation.className = 'success-panel';
+          confirmation.setAttribute('role', 'status');
+          confirmation.setAttribute('aria-live', 'polite');
+          confirmation.tabIndex = -1;
+          const icon = page.createElement('span');
+          icon.className = 'success-panel-icon';
+          icon.textContent = '✓';
+          icon.setAttribute('aria-hidden', 'true');
+          const title = page.createElement('h3');
+          title.textContent = 'Registration successful';
+          const description = page.createElement('p');
+          description.textContent = 'Your account has been created. You are not signed in automatically.';
+          const link = page.createElement('a');
+          link.href = '/app/login';
+          link.className = 'action-link';
+          link.textContent = 'Sign in to your account';
+          confirmation.append(icon, title, description, link);
+          section.replaceChildren(heading, confirmation);
+          confirmation.focus?.();
         }
       } catch (error) {
         if (!signal.aborted && error?.name !== 'AbortError') {
@@ -120,43 +143,25 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
       const session = await client.getSession({ signal });
       if (signal.aborted) return;
       if (!session?.user) {
+        onSessionChange(null);
         navigate('/app/login');
         return;
       }
       const user = session.user;
+      onSessionChange(user);
       message.textContent = '';
       const identity = page.createElement('p');
       identity.textContent = 'Signed in as ' + user.username + ' (' + (user.role === 'admin' ? 'Administrator' : 'User') + ')';
-      const logout = page.createElement('button');
-      logout.type = 'button';
-      logout.textContent = 'Sign out';
-      section.append(identity, logout);
+      section.append(identity);
+      const description = page.createElement('p');
+      description.textContent = 'Use the navigation above to explore the activity tracker.';
+      section.append(description);
       if (user.role === 'admin') {
-        const link = page.createElement('a');
-        link.href = '/app/statistics';
-        link.textContent = 'Statistics';
-        section.append(link);
+        showManageUsers({ page, section, signal }, { client });
       }
-      async function signOut() {
-        if (logout.disabled || signal.aborted) return;
-        logout.disabled = true;
-        try {
-          await client.request('/api/accounts/logout', { method: 'POST', signal });
-          if (signal.aborted) return;
-          client.clearSession();
-          navigate('/app/login');
-        } catch (error) {
-          if (!signal.aborted && error?.name !== 'AbortError') {
-            message.setAttribute('role', 'alert');
-            message.textContent = error?.message || 'We could not sign you out. Please try again.';
-            logout.disabled = false;
-          }
-        }
-      }
-      logout.addEventListener('click', signOut);
-      onDispose(() => logout.removeEventListener('click', signOut));
     } catch (error) {
       if (!signal.aborted && error?.name !== 'AbortError') {
+        message.setAttribute('role', 'alert');
         message.textContent = error?.message || 'We could not load your account. Please refresh the page.';
       }
     }

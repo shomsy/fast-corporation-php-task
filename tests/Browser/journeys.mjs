@@ -58,9 +58,12 @@ try {
   await page.getByLabel('Username').fill('browser-user');
   await page.getByLabel('Password').fill('strong-password');
   await page.getByRole('button', { name: 'Register' }).click();
-  await page.getByText('Account created.', { exact: false }).waitFor({ timeout: 7000 })
-    .catch(async () => { throw new Error('Registration UI state: ' +
-      await page.locator('#route-outlet').innerText() + ' | network: ' + network.join(' | ') + ' | page errors: ' + errors.join('; ')); });
+  await page.getByRole('heading', { name: 'Registration successful' }).waitFor({ timeout: 7000 });
+  assert.equal(await page.locator('#route-outlet form').count(), 0, 'Successful registration must remove the form');
+  await page.getByText('You are not signed in automatically.', { exact: false }).waitFor();
+  await page.getByRole('link', { name: 'Sign in to your account' }).waitFor();
+  await visit(page, '/register', 'Create account');
+  await page.getByLabel('Username').fill('browser-user');
   await page.getByLabel('Password').fill('strong-password');
   await page.getByRole('button', { name: 'Register' }).click();
   await page.getByRole('alert').getByText('That username is already in use. Please choose another.').waitFor();
@@ -72,6 +75,15 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'alert');
 
   await login(page, 'browser-user', 'strong-password');
+  const shellNav = page.locator('[data-app-nav]');
+  await shellNav.getByRole('button', { name: 'Sign out' }).waitFor();
+  assert.equal(await shellNav.locator('a[href="/app/login"]').isHidden(), true);
+  assert.equal(await shellNav.locator('a[href="/app/register"]').isHidden(), true);
+  assert.equal(await shellNav.locator('a[href="/app/statistics"]').isHidden(), true);
+  assert.equal(await shellNav.locator('a[href="/app/reports"]').isHidden(), true);
+  const usersResponse = await page.evaluate(async () =>
+    (await fetch('/api/accounts/users', { credentials: 'same-origin' })).status);
+  assert.equal(usersResponse, 403, 'A regular user cannot list administrator-managed accounts');
   await visit(page, '/page-a', 'Page A');
   const cow = page.getByRole('button', { name: 'Buy a cow' });
   await cow.click();
@@ -88,17 +100,28 @@ try {
   assert.equal(createHash('sha256').update(bytes).digest('hex'),
     '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80');
 
-  await visit(page, '/statistics', 'Activity statistics');
-  await page.getByRole('alert').getByText('You do not have permission to view this information.').waitFor();
+  for (const [path, heading] of [['/statistics', 'Activity statistics'], ['/reports', 'Daily activity reports']]) {
+    await visit(page, path, heading);
+    await page.getByRole('heading', { name: 'Access denied' }).waitFor();
+    await page.locator('.access-denied-icon').getByText('⛔').waitFor();
+    assert.equal(await page.locator('#route-outlet form').count(), 0, 'Denied view must not contain filters');
+  }
   await visit(page, '/', 'Home');
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  await shellNav.getByRole('button', { name: 'Sign out' }).click();
   await page.waitForURL(origin + '/app/login');
+  await shellNav.getByRole('link', { name: 'Sign in', exact: true }).waitFor();
+  assert.equal(await shellNav.locator('button[data-session-nav="logout"]').isHidden(), true);
   await page.goto(origin + '/statistics');
   await page.waitForURL(origin + '/app/login');
   await session.close();
 
   const admin = await context();
   await login(admin.page, 'review-admin', 'review-secret');
+  const adminNav = admin.page.locator('[data-app-nav]');
+  await adminNav.getByRole('link', { name: 'Statistics' }).waitFor();
+  await adminNav.getByRole('link', { name: 'Reports' }).waitFor();
+  assert.equal(await adminNav.locator('a[href="/app/login"]').isHidden(), true);
+  assert.equal(await adminNav.locator('a[href="/app/register"]').isHidden(), true);
   await visit(admin.page, '/statistics', 'Activity statistics');
   await admin.page.getByRole('table').waitFor();
   await admin.page.getByLabel('User').fill('browser-user');
@@ -135,6 +158,17 @@ try {
   assert.deepEqual(await reportTable.locator('thead th').allTextContents(), [
     'UTC date', 'Page A views', 'Page B views', 'Buy cow clicks', 'Download clicks',
   ]);
+  await visit(admin.page, '/', 'Home');
+  await admin.page.getByRole('heading', { name: 'Manage users' }).waitFor();
+  const managed = admin.page.locator('.user-row').filter({ hasText: 'browser-user' });
+  await managed.getByRole('button', { name: 'Make browser-user an administrator' }).click();
+  await managed.getByRole('button', { name: 'Confirm access' }).click();
+  await admin.page.getByText('browser-user now has administrator access.').waitFor();
+  await managed.getByText('Administrator').waitFor();
+  const upgraded = await context();
+  await login(upgraded.page, 'browser-user', 'strong-password');
+  await upgraded.page.locator('[data-app-nav]').getByRole('link', { name: 'Statistics' }).waitFor();
+  await upgraded.session.close();
   assert.equal(errors.length, 0, errors.join('\n'));
   await admin.session.close();
   console.log('PLAYWRIGHT BROWSER ACCEPTANCE: PASS; auth, audit flows, binary, roles, filtered statistics, report SVG');

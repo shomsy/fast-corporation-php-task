@@ -18,6 +18,8 @@ use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Access\CurrentAccount;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
+use InterviewTask\Accounts\ManageUsers\ManageUsers;
+use InterviewTask\Bootstrap\Http\ManageUsersApi;
 use InterviewTask\Accounts\Access\RequireAdmin;
 use InterviewTask\Accounts\Access\RequireSignedIn;
 use InterviewTask\Accounts\Access\SessionIdentity;
@@ -107,6 +109,7 @@ return static function (Router $router) use ($config) : void {
     $reports      = new DailyReports(reader: new ReadDailyActivity(pdo: $pdo));
     $admin        = new RequireAdmin(identity: $identity);
     $activityApi  = new ActivityApi(statistics: $statistics, reports: $reports, admin: $admin, session: $session);
+    $manageApi    = new ManageUsersApi(users: new ManageUsers(storage: new SqliteAccounts(pdo: $pdo), admin: $admin));
 
 
     // Fixed, allowlisted SPA assets: no untrusted request path is ever used as a filesystem path.
@@ -128,6 +131,8 @@ return static function (Router $router) use ($config) : void {
     $router->add(method: 'GET', path: '/app/navigate.js', handler: static fn () : Response => $spaFile('app/navigate.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/requestJson.js', handler: static fn () : Response => $spaFile('app/requestJson.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/Accounts/showAccounts.js', handler: static fn () : Response => $spaFile('app/Accounts/showAccounts.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/Accounts/showSessionNavigation.js', handler: static fn () : Response => $spaFile('app/Accounts/showSessionNavigation.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
+    $router->add(method: 'GET', path: '/app/Accounts/showManageUsers.js', handler: static fn () : Response => $spaFile('app/Accounts/showManageUsers.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/CowOffer/showPageA.js', handler: static fn () : Response => $spaFile('app/CowOffer/showPageA.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/Downloads/showPageB.js', handler: static fn () : Response => $spaFile('app/Downloads/showPageB.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
     $router->add(method: 'GET', path: '/app/ActivityTracking/showActivity.js', handler: static fn () : Response => $spaFile('app/ActivityTracking/showActivity.js', 'text/javascript; charset=UTF-8'), access: RouteAccess::Public);
@@ -177,6 +182,8 @@ return static function (Router $router) use ($config) : void {
     $router->add(method: 'POST', path: '/api/accounts/register', handler: static fn (Request $request) : Response => $accountApi->register(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/api/accounts/login', handler: static fn (Request $request) : Response => $accountApi->login(request: $request), access: RouteAccess::Public);
     $router->add(method: 'POST', path: '/api/accounts/logout', handler: static fn () : Response => $accountApi->logout(), access: RouteAccess::SignedIn);
+    $router->add(method: 'GET', path: '/api/accounts/users', handler: static fn (Request $request) : Response => $manageApi->index(request: $request), access: RouteAccess::Admin);
+    $router->add(method: 'POST', path: '/api/accounts/users/promote', handler: static fn (Request $request) : Response => $manageApi->promote(request: $request), access: RouteAccess::Admin);
     $router->add(method: 'POST', path: '/api/cow-offer/view', handler: static fn () : Response => $cowOfferApi->view(), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/api/cow-offer/buy', handler: static fn () : Response => $cowOfferApi->buy(), access: RouteAccess::SignedIn);
     $router->add(method: 'POST', path: '/api/downloads/page/view', handler: static fn () : Response => $downloadApi->view(), access: RouteAccess::SignedIn);

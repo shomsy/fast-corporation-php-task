@@ -2,7 +2,7 @@
 
 A small, runnable activity-tracking web application built for the Fast Corporation PHP interview exercise. It uses **PHP 8.3+, SQLite and browser-native JavaScript**—no Laravel, JavaScript framework, frontend build step, Redis or external service.
 
-**Reviewer shortcut:** install the prerequisites, run `composer install`, then `./bin/fast-test start`. The command prints the actual local URL and an automatically generated administrator password. Sign in as `admin` to see statistics and reports; use **Register** to create a normal user. Stop everything started by the launcher with `./bin/fast-test stop`.
+**Reviewer shortcut:** install the prerequisites, run `composer install`, then `./bin/fast-test start`. The command prints the actual local URL and an automatically generated administrator password. Sign in as `admin` to see statistics, reports and account management; use **Register** to create a normal user. Stop everything started by the launcher with `./bin/fast-test stop`.
 
 ## What the task required and what I built
 
@@ -14,8 +14,13 @@ A small, runnable activity-tracking web application built for the Fast Corporati
 | Page B — Download | Tracks page view and download, then serves a fixed `sample.exe` attachment through a native browser download | Signed-in user |
 | Statistics | Filterable history by date, exact username and action; up to 50 records per cursor page | Administrator |
 | Reports | A daily line chart and matching table for page views and button clicks | Administrator |
+| Manage users (extra) | List accounts and confirm upgrades from ordinary user to administrator | Administrator |
 
 The **Buy a cow** button is a demonstration, not an actual purchase. Its success state lasts until the page is reloaded. The downloadable file is a bundled demonstration artifact; it is never executed by the server.
+
+A successful registration replaces the registration form with a confirmation and a sign-in link. It never logs the user in automatically. The navigation reflects the current server session: guests see Sign in and Register, signed-in users see Sign out, and only administrators see Statistics and Reports. Restricted pages show an Access denied presentation without filters.
+
+**Roles:** a standard user can sign in and access Page A and Page B. An administrator additionally has Statistics, Reports and Manage users on Home. The administrator may promote a standard user to administrator only after explicit confirmation; downgrade and deletion are outside this task.
 
 All tracked times are recorded in UTC. Reports cover up to 30 days **on which tracked activity occurred**, so dates without activity may be absent.
 
@@ -82,7 +87,8 @@ After `migrate:fresh --yes`, run `./bin/fast-test start` to start serving again.
 3. Open Page B, click **Download**, and verify that the browser downloads `sample.exe`.
 4. Sign out, sign back in as `admin` using the generated credentials, and open **Statistics** and **Reports**.
 5. In Statistics, try the date/user/action filters, pagination, and **Clear filters**. In Reports, verify that the chart and table show corresponding daily totals.
-6. Optionally try an existing username, an invalid username, a short password, reversed dates and a non-admin account accessing admin screens; the interface should provide understandable errors.
+6. On administrator Home, expand Manage users, confirm Make admin for the standard user, then sign in as that user and check that Statistics and Reports are now available.
+7. Optionally try an existing username, an invalid username, a short password, reversed dates and a non-admin account accessing admin screens; the interface should provide understandable errors.
 
 The interface intentionally uses human-readable validation messages rather than password byte counts, raw exceptions, or technical CSRF/cursor messages. Passwords must contain **at least 12 visible characters**. The independent bcrypt limit is **72 bytes**; sufficiently long non-ASCII/emoji passwords can reach that bound earlier.
 

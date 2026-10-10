@@ -136,6 +136,51 @@ final readonly class SqliteAccounts
     }
 
     /**
+     * List at most a bounded number of accounts in stable insertion order.
+     *
+     * @param int $afterId Exclusive last seen identifier.
+     * @param int $limit Maximum account count (at most 51).
+     *
+     * @return list<Account> Stored public account snapshots.
+     * @throws PDOException When reading fails.
+     * @throws RuntimeException When stored data is invalid.
+     */
+    public function listAfter(int $afterId, int $limit) : array
+    {
+        if ($afterId < 0 || $limit < 1 || $limit > 51) {
+            throw new RuntimeException(message: 'Invalid account pagination bounds.');
+        }
+
+        $statement = $this->pdo->prepare(query: 'SELECT id, username, role, created_at FROM accounts WHERE id > :after ORDER BY id ASC LIMIT :limit');
+        $statement->bindValue(param: ':after', value: $afterId, type: PDO::PARAM_INT);
+        $statement->bindValue(param: ':limit', value: $limit, type: PDO::PARAM_INT);
+        $statement->execute();
+
+        $accounts = [];
+        while (($row = $statement->fetch(mode: PDO::FETCH_ASSOC)) !== false) {
+            $accounts[] = $this->accountFromRow(row: $row);
+        }
+
+        return $accounts;
+    }
+
+    /**
+     * Atomically promote only a current ordinary user; a repeated grant changes no rows.
+     *
+     * @param int $id Persisted account identifier.
+     *
+     * @return bool Whether the role was changed from user to admin.
+     * @throws PDOException When the update fails.
+     */
+    public function promoteToAdmin(int $id) : bool
+    {
+        $statement = $this->pdo->prepare(query: "UPDATE accounts SET role = 'admin' WHERE id = :id AND role = 'user'");
+        $statement->execute(params: ['id' => $id]);
+
+        return $statement->rowCount() === 1;
+    }
+
+    /**
      * Validate SQLite fields and map one row into owner-internal Account.
      *
      * @param array<array-key, mixed> $row Raw database record.

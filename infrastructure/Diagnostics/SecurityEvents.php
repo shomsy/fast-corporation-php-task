@@ -26,7 +26,7 @@ final class SecurityEvents
      */
     public static function record(string $event, Throwable|null $error = null) : string
     {
-        $allowed = ['auth.login_denied', 'security.csrf_denied', 'security.admin_denied', 'runtime.unhandled', 'db.contention'];
+        $allowed = ['auth.login_denied', 'security.csrf_denied', 'security.admin_denied', 'security.admin_granted', 'runtime.unhandled', 'db.contention'];
 
         if (! in_array(needle: $event, haystack: $allowed, strict: true)) {
             throw new InvalidArgumentException(message: 'Unrecognized security event category.');

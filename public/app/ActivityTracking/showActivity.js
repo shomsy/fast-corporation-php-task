@@ -123,7 +123,6 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
 
   const fields = isStatistics ? [['date', 'Date (UTC)'], ['user', 'User'], ['action', 'Action']]
     : [['from', 'From (UTC)'], ['to', 'To (UTC)']];
-  section.append(filters(page, screen.path, params, fields));
 
   async function load() {
     try {
@@ -131,6 +130,7 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
       if (signal.aborted) return;
       const rows = isStatistics ? result?.events : result?.days;
       if (!Array.isArray(rows)) throw new Error('We could not display this activity. Please try again.');
+      section.append(filters(page, screen.path, params, fields));
       status.textContent = rows.length ? '' : isStatistics
         ? 'No activity matches these filters.' : 'No activity to report yet.';
       if (isStatistics) {
@@ -160,9 +160,27 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
         navigate('/app/login');
         return;
       }
+      if (error?.status === 403) {
+        const denied = page.createElement('div');
+        denied.className = 'access-denied';
+        denied.setAttribute('role', 'alert');
+        denied.tabIndex = -1;
+        const icon = page.createElement('span');
+        icon.className = 'access-denied-icon';
+        icon.textContent = '⛔';
+        icon.setAttribute('aria-hidden', 'true');
+        const title = page.createElement('h3');
+        title.textContent = 'Access denied';
+        const explanation = page.createElement('p');
+        explanation.textContent = 'You do not have permission to view this page. Sign in with an administrator account to access it.';
+        denied.append(icon, title, explanation, link(page, '/app/home', 'Back to Home'));
+        section.replaceChildren(heading, denied);
+        denied.focus?.();
+        return;
+      }
+      section.append(filters(page, screen.path, params, fields));
       status.setAttribute('role', 'alert');
-      status.textContent = error?.status === 403 ? 'You do not have permission to view this information.' :
-        error?.message || 'We could not load the activity. Please try again.';
+      status.textContent = error?.message || 'We could not load the activity. Please try again.';
       status.focus?.();
     }
   }

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use InterviewTask\Accounts\Access\AccessDenied;
 use InterviewTask\Accounts\AccountLifecycle;
+use InterviewTask\Accounts\ManageUsers\ManageUsers;
 use InterviewTask\Accounts\Access\CurrentAccount;
 use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Register\RegistrationRejected;
@@ -23,6 +24,7 @@ use InterviewTask\Accounts\UsernameTaken;
 return [
     'public' => [
         AccountLifecycle::class,
+        ManageUsers::class,
         CurrentAccount::class,
         AccessDenied::class,
         InvalidCredentials::class,
