@@ -16,3 +16,5 @@ No container, generic compensation framework, additional datastore or deployment
 - Accounts `Access/` and `Credentials/` groups (ADR-0028): namespaces make existing responsibility families easier
   to navigate without adding objects, state or runtime indirection. Class references change together; module exports,
   named parameters and HTTP/session behavior remain enforced by the existing boundary and behavior tests.
+- ActivityTracking `Query/` group (ADR-0029): keeps private filter/date/cursor mechanics together while its public
+  behaviors, shared action vocabulary and SQLite `Persistence/` remain easy to find. Adds no runtime type or layer.

@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\ActivityTracking;
+namespace InterviewTask\ActivityTracking\Query;
 
 use InvalidArgumentException;
+use InterviewTask\ActivityTracking\ActivityAction;
 
 /**
  * Validated owner-level statistics predicates independent of SQL query construction.
  *
- * @package InterviewTask\ActivityTracking
+ * @package InterviewTask\ActivityTracking\Query
  */
 final readonly class ActivityFilters
 {

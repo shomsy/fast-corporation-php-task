@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace InterviewTask\ActivityTracking;
 
+use InterviewTask\ActivityTracking\Query\ActivityCursor;
+use InterviewTask\ActivityTracking\Query\ActivityFilters;
 use InterviewTask\ActivityTracking\Persistence\ReadActivityHistory;
 use InvalidArgumentException;
 use JsonException;

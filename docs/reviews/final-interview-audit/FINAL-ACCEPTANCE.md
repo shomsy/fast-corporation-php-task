@@ -56,3 +56,13 @@ This section is completed only after actual commands finish. Scoped regressions 
 - The local binary sample is deliberately inert. It satisfies a download demonstration without asking anyone to execute real software.
 - The scoring deducts points for ambiguity and unproven production operations. It gives no extra credit for package count, number of classes, LOC, mandatory patterns or speculative infrastructure.
 - A local browser/API test is not deployed production readiness. Public use still requires an accountable data purpose/retention/erasure rule, real TLS and ingress topology, least-privilege service account, off-host recovery objective and representative PHP-FPM capacity evidence.
+
+## Follow-up source navigation refactor — 2026-10-10
+
+The later ActivityTracking-only namespace move is a separate source revision from the acceptance matrix above. `ActivityCursor`, `ActivityFilters` and `UtcDate` now live under `src/ActivityTracking/Query/`; the owner's six exported FQNs and module manifest are unchanged. CowOffer and Downloads remain flat because their existing one-to-three class layouts already express the behavior/storage split without a wrapper folder.
+
+| Gate | Result |
+|---|---|
+| Scoped PSR-4 and behavior/architecture regression | PASS — strict optimized autoload plus 54 PHPUnit tests / 6,191 assertions across ActivityTracking and Architecture. |
+| Source/path inventory | PASS — 272 individually listed original/current/moved/removed paths. |
+| Full post-move release gates | PASS — Composer quality: 182 tests / 6,912 assertions, PHPStan clean, Deptrac 0 violations/skipped/uncovered/warnings/errors; frontend 31/31; live HTTP/SPA and route cutover; Playwright browser acceptance; SQLite WAL restore; ingress abuse gate; zero-write session failure probe. |

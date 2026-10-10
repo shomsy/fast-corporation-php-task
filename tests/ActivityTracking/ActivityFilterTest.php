@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\ActivityTracking;
 
 use InterviewTask\ActivityTracking\ActivityAction;
-use InterviewTask\ActivityTracking\ActivityFilters;
-use InterviewTask\ActivityTracking\UtcDate;
+use InterviewTask\ActivityTracking\Query\ActivityFilters;
+use InterviewTask\ActivityTracking\Query\UtcDate;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

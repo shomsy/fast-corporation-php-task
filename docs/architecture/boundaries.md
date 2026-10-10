@@ -16,3 +16,7 @@ username/password policy and the concrete bcrypt mechanism. Registration and log
 `Accounts.php` coordinates account policy with owner-private `Persistence/SqliteAccounts`. These are internal groups
 inside the same Accounts owner, with no new domain, contract layer or schema. `AccountLifecycle` remains the exported
 authentication mutation boundary; only declared access projections/guards cross the module boundary.
+
+## ActivityTracking internal navigation
+
+`ActivityTracking/Query` groups the private filter, UTC-date and signed-cursor types used to read and navigate history. Public owner behaviors and the shared action/target vocabulary remain at the owner root; SQLite realizations remain in `Persistence/`. This is navigation within the same owner, not a new public API or architectural layer. The small `CowOffer` and `Downloads` owners stay flat where another directory would only wrap one or two closely related types.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\ActivityTracking;
+namespace InterviewTask\ActivityTracking\Query;
 
 use InvalidArgumentException;
 use JsonException;
@@ -13,7 +13,7 @@ use RuntimeException;
  *
  * The public statistics API owns navigation; this object owns only its opaque cursor contract.
  *
- * @package InterviewTask\ActivityTracking
+ * @package InterviewTask\ActivityTracking\Query
  */
 final readonly class ActivityCursor
 {

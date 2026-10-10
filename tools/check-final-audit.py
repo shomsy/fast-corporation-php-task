@@ -18,6 +18,9 @@ MOVED = {
     "src/Accounts/BcryptPasswords.php",
     "src/Accounts/PasswordRejected.php",
     "src/Accounts/UsernameRejected.php",
+    "src/ActivityTracking/ActivityCursor.php",
+    "src/ActivityTracking/ActivityFilters.php",
+    "src/ActivityTracking/UtcDate.php",
 }
 REMOVED = {
     "src/CowOffer/.gitkeep",

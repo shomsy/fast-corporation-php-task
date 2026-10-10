@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\ActivityTracking;
+namespace InterviewTask\ActivityTracking\Query;
 
 use DateTimeImmutable;
 
 /**
  * Canonical real UTC calendar date: YYYY-MM-DD, never a locale-dependent date string.
  *
- * @package InterviewTask\ActivityTracking
+ * @package InterviewTask\ActivityTracking\Query
  */
 final readonly class UtcDate
 {

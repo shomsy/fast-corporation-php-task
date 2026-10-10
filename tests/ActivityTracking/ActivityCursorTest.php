@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\ActivityTracking;
 
-use InterviewTask\ActivityTracking\ActivityCursor;
-use InterviewTask\ActivityTracking\ActivityFilters;
+use InterviewTask\ActivityTracking\Query\ActivityCursor;
+use InterviewTask\ActivityTracking\Query\ActivityFilters;
 use InvalidArgumentException;
 use JsonException;
 use PHPUnit\Framework\TestCase;

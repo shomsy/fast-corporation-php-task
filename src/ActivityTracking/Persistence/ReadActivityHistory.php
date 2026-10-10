@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace InterviewTask\ActivityTracking\Persistence;
 
-use InterviewTask\ActivityTracking\ActivityFilters;
+use InterviewTask\ActivityTracking\Query\ActivityFilters;
 use InterviewTask\ActivityTracking\Statistics;
 use PDO;
 use PDOException;

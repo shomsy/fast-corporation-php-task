@@ -6,6 +6,7 @@ namespace InterviewTask\ActivityTracking;
 
 use InvalidArgumentException;
 use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
+use InterviewTask\ActivityTracking\Query\UtcDate;
 use PDOException;
 use RuntimeException;
 

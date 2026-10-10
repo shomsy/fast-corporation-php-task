@@ -63,8 +63,9 @@ final class OwnerTechnologyBoundaryTest extends TestCase
                          'InterviewTask\ActivityTracking\Persistence\RecordActivity',
                          'InterviewTask\ActivityTracking\Persistence\ReadDailyActivity',
                          'InterviewTask\ActivityTracking\Persistence\ReadActivityHistory',
-                         'InterviewTask\ActivityTracking\ActivityFilters',
-                         'InterviewTask\ActivityTracking\UtcDate',
+                         'InterviewTask\ActivityTracking\Query\ActivityCursor',
+                         'InterviewTask\ActivityTracking\Query\ActivityFilters',
+                         'InterviewTask\ActivityTracking\Query\UtcDate',
                      ],
                      'Downloads'        => ['InterviewTask\Downloads\Storage\ReadArtifact'],
                  ] as $owner => $realizations) {
