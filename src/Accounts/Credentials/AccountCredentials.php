@@ -42,9 +42,10 @@ final readonly class AccountCredentials
             throw new PasswordRejected(message: 'Password contains an unsupported character. Please choose a different password.');
         }
 
-        // Match what people perceive as characters, including accented letters and emoji.
+        // Count visible Unicode base characters without PCRE2-version-dependent \X grouping.
+        // Combining marks and invisible/control characters must not satisfy the minimum.
         // The independent byte ceiling still prevents silent bcrypt truncation.
-        $characters = preg_match_all(pattern: '/\\X/u', subject: $password);
+        $characters = preg_match_all(pattern: '/[^\p{M}\p{C}]/u', subject: $password);
         if ($characters === false) {
             throw new PasswordRejected(message: 'Password contains an unsupported character. Please choose a different password.');
         }

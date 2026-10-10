@@ -56,7 +56,7 @@ final class AccountCredentialPolicyTest extends TestCase
     }
 
     /**
-     * Unicode glyphs count as visible characters, not UTF-8 bytes.
+     * Count visible Unicode base characters, not UTF-8 bytes, across PCRE2 versions.
      * The separate bcrypt ceiling still rejects inputs over 72 bytes.
      *
      * @return void No return value.
@@ -79,6 +79,38 @@ final class AccountCredentialPolicyTest extends TestCase
             self::fail('Long Unicode passwords must not be silently truncated by bcrypt.');
         } catch (PasswordRejected $exception) {
             self::assertSame('Your password is too long. Try a shorter one, especially if it contains emoji.', $exception->getMessage());
+        }
+    }
+
+    /**
+     * Combining marks, invisible formatting and invalid UTF-8 cannot bypass the password minimum.
+     *
+     * @return void No return value.
+     */
+    public function testUnicodeModifiersDoNotInflateMinimumLength() : void
+    {
+        $policy = new AccountCredentials();
+
+        foreach ([
+            str_repeat(string: "e\u{0301}", times: 11),
+            str_repeat(string: "\u{200D}🔒", times: 11),
+            str_repeat(string: "\u{0301}", times: 12),
+        ] as $password) {
+            try {
+                $policy->validatePassword(password: $password);
+                self::fail('Invisible or combining Unicode characters must not meet the minimum.');
+            } catch (PasswordRejected $exception) {
+                self::assertSame('Use at least 12 characters for your password.', $exception->getMessage());
+            }
+        }
+
+        $policy->validatePassword(password: str_repeat(string: "e\u{0301}", times: 12));
+
+        try {
+            $policy->validatePassword(password: str_repeat(string: 'x', times: 12) . "\xFF");
+            self::fail('Invalid UTF-8 must be rejected.');
+        } catch (PasswordRejected $exception) {
+            self::assertSame('Password contains an unsupported character. Please choose a different password.', $exception->getMessage());
         }
     }
 
