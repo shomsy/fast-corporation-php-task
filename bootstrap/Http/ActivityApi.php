@@ -57,7 +57,7 @@ final readonly class ActivityApi
         try {
             $this->admin->account();
         } catch (AccessDenied) {
-            return self::error(code: 'forbidden', message: 'Forbidden.', status: 403);
+            return self::error(code: 'forbidden', message: 'You do not have permission to view this information.', status: 403);
         }
 
         try {
@@ -82,7 +82,7 @@ final readonly class ActivityApi
 
             return Response::json(payload: $result);
         } catch (InvalidArgumentException) {
-            return self::error(code: 'invalid_filters', message: 'Invalid statistics filters or cursor.', status: 422);
+            return self::error(code: 'invalid_filters', message: 'We could not load those results. Check your filters or clear them and try again.', status: 422);
         }
     }
 
@@ -102,7 +102,7 @@ final readonly class ActivityApi
         try {
             $this->admin->account();
         } catch (AccessDenied) {
-            return self::error(code: 'forbidden', message: 'Forbidden.', status: 403);
+            return self::error(code: 'forbidden', message: 'You do not have permission to view this information.', status: 403);
         }
 
         try {
@@ -111,7 +111,7 @@ final readonly class ActivityApi
                 to  : $this->optionalQuery(request: $request, name: 'to'),
             );
         } catch (InvalidArgumentException) {
-            return self::error(code: 'invalid_dates', message: 'Invalid UTC date range.', status: 422);
+            return self::error(code: 'invalid_dates', message: 'Enter valid dates (YYYY-MM-DD). The start date must not be after the end date.', status: 422);
         }
 
         $days = [];

@@ -96,7 +96,7 @@ final class ActivityApiTest extends TestCase
                                                                    query : ['user' => $user]));
                 self::assertSame(422, $malformed->status());
                 self::assertSame(
-                    ['error' => ['code' => 'invalid_filters', 'message' => 'Invalid statistics filters or cursor.']],
+                    ['error' => ['code' => 'invalid_filters', 'message' => 'We could not load those results. Check your filters or clear them and try again.']],
                     json_decode(json: $malformed->body(), associative: true, flags: JSON_THROW_ON_ERROR),
                 );
             }

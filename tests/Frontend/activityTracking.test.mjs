@@ -48,11 +48,11 @@ test('statistics uses URL filters without HTML injection and server error denial
   showActivity({ path: '/app/reports' }, {
     page, outlet: deniedOutlet, signal: new AbortController().signal, onDispose() {},
   }, {
-    client: { request: async () => { throw { status: 403, message: 'Forbidden.' }; } },
+    client: { request: async () => { throw { status: 403, message: "You do not have permission to view this information." }; } },
     query: '', navigate() {},
   });
   await new Promise(setImmediate);
-  assert.ok(JSON.stringify(deniedOutlet).includes('Forbidden.'));
+  assert.ok(JSON.stringify(deniedOutlet).includes("You do not have permission to view this information."));
 });
 
 

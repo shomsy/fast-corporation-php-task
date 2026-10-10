@@ -39,3 +39,6 @@ __pycache__/
 /tools/check_execution_ledger.py
 /tools/check-final-audit.py
 /.aiforopenide/
+
+# Private local manual-test process state, logs and generated credentials
+/var/local-test/

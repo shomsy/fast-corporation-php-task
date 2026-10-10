@@ -47,14 +47,14 @@ final readonly class RouteGuard
 
             if ($identity === null) {
                 return str_starts_with(haystack: $request->path(), needle: '/api/')
-                    ? Response::json(payload: ['error' => ['code' => 'unauthenticated', 'message' => 'Sign in required.']], status: 401)
+                    ? Response::json(payload: ['error' => ['code' => 'unauthenticated', 'message' => 'Please sign in to continue.']], status: 401)
                     : Response::redirect(location: '/login');
             }
 
             if ($access === RouteAccess::Admin && ! $identity->isAdmin()) {
                 $denied = str_starts_with(haystack: $request->path(), needle: '/api/')
-                    ? Response::json(payload: ['error' => ['code' => 'forbidden', 'message' => 'Forbidden.']], status: 403)
-                    : Response::text(body: 'Forbidden', status: 403);
+                    ? Response::json(payload: ['error' => ['code' => 'forbidden', 'message' => 'You do not have permission to access this page.']], status: 403)
+                    : Response::text(body: 'You do not have permission to access this page.', status: 403);
 
                 return $denied->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.admin_denied'));
             }
@@ -63,8 +63,8 @@ final readonly class RouteGuard
         if (! in_array(needle: $request->method(), haystack: ['GET', 'HEAD', 'OPTIONS'], strict: true)
             && ! $this->csrf->matches(submitted: $request->csrfToken())) {
             $denied = str_starts_with(haystack: $request->path(), needle: '/api/')
-                ? Response::json(payload: ['error' => ['code' => 'csrf_denied', 'message' => 'Session verification failed.']], status: 403)
-                : Response::text(body: 'Forbidden', status: 403);
+                ? Response::json(payload: ['error' => ['code' => 'csrf_denied', 'message' => 'Your session could not be verified. Refresh the page and try again.']], status: 403)
+                : Response::text(body: 'Your session could not be verified. Refresh the page and try again.', status: 403);
 
             return $denied->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'security.csrf_denied'));
         }

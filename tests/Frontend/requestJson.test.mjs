@@ -116,7 +116,7 @@ test('null and array error bodies never cause secondary TypeError during HTTP er
       assert.equal(error instanceof HttpError, true);
       assert.equal(error.status, 422);
       assert.equal(error.code, 'request_failed');
-      assert.equal(error.message, 'Request denied.');
+      assert.equal(error.message, 'We could not complete that request. Check your details and try again.');
       return true;
     });
   }

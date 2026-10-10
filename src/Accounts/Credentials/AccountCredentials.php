@@ -24,7 +24,7 @@ final readonly class AccountCredentials
     public function validateUsername(string $username) : void
     {
         if (preg_match(pattern: '/\A[A-Za-z0-9][A-Za-z0-9._-]{0,63}\z/', subject: $username) !== 1) {
-            throw new UsernameRejected(message: 'Username must be 1-64 ASCII letters, digits, dots, underscores or hyphens, starting with a letter or digit.');
+            throw new UsernameRejected(message: 'Use 1–64 characters for your username. Start with an English letter or number; you can also use dots, underscores, and hyphens.');
         }
     }
 
@@ -39,15 +39,22 @@ final readonly class AccountCredentials
     public function validatePassword(#[SensitiveParameter] string $password) : void
     {
         if (str_contains(haystack: $password, needle: "\0")) {
-            throw new PasswordRejected(message: 'Password must not contain NUL bytes.');
+            throw new PasswordRejected(message: 'Password contains an unsupported character. Please choose a different password.');
         }
 
-        if (strlen(string: $password) < 12) {
-            throw new PasswordRejected(message: 'Password must contain at least 12 bytes.');
+        // Match what people perceive as characters, including accented letters and emoji.
+        // The independent byte ceiling still prevents silent bcrypt truncation.
+        $characters = preg_match_all(pattern: '/\\X/u', subject: $password);
+        if ($characters === false) {
+            throw new PasswordRejected(message: 'Password contains an unsupported character. Please choose a different password.');
+        }
+
+        if ($characters < 12) {
+            throw new PasswordRejected(message: 'Use at least 12 characters for your password.');
         }
 
         if (strlen(string: $password) > 72) {
-            throw new PasswordRejected(message: 'Password must not exceed 72 bytes.');
+            throw new PasswordRejected(message: 'Your password is too long. Try a shorter one, especially if it contains emoji.');
         }
     }
 

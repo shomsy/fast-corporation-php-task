@@ -18,7 +18,7 @@ use PHPUnit\Framework\TestCase;
 final class AccountCredentialPolicyTest extends TestCase
 {
     /**
-     * Verify policy counts bytes, rejects silent bcrypt truncation and disallows NUL.
+     * Verify visible-character minimum, byte ceiling, and forbidden byte policy.
      *
      * @return void No return value.
      */
@@ -45,14 +45,41 @@ final class AccountCredentialPolicyTest extends TestCase
     }
 
     /**
-     * Credentials shorter than the configured byte minimum are rejected.
+     * Passwords shorter than the configured visible-character minimum are rejected.
      *
      * @return void No return value.
      */
-    public function testPasswordBelowByteMinimumIsRejected() : void
+    public function testPasswordBelowCharacterMinimumIsRejected() : void
     {
         $this->expectException(PasswordRejected::class);
         (new AccountCredentials())->validatePassword(password: str_repeat(string: 'x', times: 11));
+    }
+
+    /**
+     * Unicode glyphs count as visible characters, not UTF-8 bytes.
+     * The separate bcrypt ceiling still rejects inputs over 72 bytes.
+     *
+     * @return void No return value.
+     */
+    public function testUnicodePasswordLengthMatchesUserFacingFeedback() : void
+    {
+        $policy = new AccountCredentials();
+        $policy->validatePassword(password: str_repeat(string: 'é', times: 12));
+        $policy->validatePassword(password: str_repeat(string: '🔒', times: 12));
+
+        try {
+            $policy->validatePassword(password: str_repeat(string: '🔒', times: 11));
+            self::fail('11 visible characters must be rejected.');
+        } catch (PasswordRejected $exception) {
+            self::assertSame('Use at least 12 characters for your password.', $exception->getMessage());
+        }
+
+        try {
+            $policy->validatePassword(password: str_repeat(string: '🔒', times: 20));
+            self::fail('Long Unicode passwords must not be silently truncated by bcrypt.');
+        } catch (PasswordRejected $exception) {
+            self::assertSame('Your password is too long. Try a shorter one, especially if it contains emoji.', $exception->getMessage());
+        }
     }
 
     /**

@@ -49,7 +49,7 @@ export function drawChart(page, days) {
   });
   svg.append(svgNode(page, 'title', { id: 'daily-chart-title' }, 'Daily activity totals (UTC)'),
     svgNode(page, 'desc', { id: 'daily-chart-desc' },
-      'One line per tracked action. Missing UTC days break the lines. Exact totals follow in the table.'));
+      'Each line shows an activity type. Days without activity appear as gaps. The table shows the exact totals.'));
   metrics.forEach((series, index) => {
     const x = 65 + index * 190;
     svg.append(svgNode(page, 'line', {

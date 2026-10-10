@@ -66,14 +66,14 @@ final class PasswordPolicyTest extends AccountsTestCase
             (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: $password);
             self::fail('Registration must reject NUL bytes before bcrypt receives the password.');
         } catch (RegistrationRejected $exception) {
-            self::assertStringContainsString('NUL', $exception->getMessage());
+            self::assertStringContainsString('unsupported character', $exception->getMessage());
         }
 
         try {
             (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: $password);
             self::fail('Admin creation must apply the same password policy.');
         } catch (PasswordRejected $exception) {
-            self::assertStringContainsString('NUL', $exception->getMessage());
+            self::assertStringContainsString('unsupported character', $exception->getMessage());
         }
 
         self::assertNull($this->accounts->authenticate(username: 'alice', password: $password));
@@ -120,14 +120,14 @@ final class PasswordPolicyTest extends AccountsTestCase
                 $register->register(username: $username, password: 'valid-password');
                 self::fail('Invalid regular username was accepted.');
             } catch (RegistrationRejected $exception) {
-                self::assertStringContainsString('Username', $exception->getMessage());
+                self::assertStringContainsString('username', $exception->getMessage());
             }
 
             try {
                 $createAdmin->create(username: $username, password: 'valid-password');
                 self::fail('Invalid admin username was accepted.');
             } catch (UsernameRejected $exception) {
-                self::assertStringContainsString('Username', $exception->getMessage());
+                self::assertStringContainsString('username', $exception->getMessage());
             }
         }
 

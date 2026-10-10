@@ -36,7 +36,7 @@ export function showPageB({ page, outlet, signal }, { client, navigate }) {
       button.textContent = 'Download';
       form.append(field, button);
       section.append(form);
-      feedback.textContent = 'Ready to download the sample executable.';
+      feedback.textContent = 'Your file is ready. Select Download to save it.';
     } catch (error) {
       if (signal.aborted || error?.name === 'AbortError') return;
       if (error?.status === 401) {
@@ -44,7 +44,7 @@ export function showPageB({ page, outlet, signal }, { client, navigate }) {
         return;
       }
       feedback.setAttribute('role', 'alert');
-      feedback.textContent = error?.message || 'Download is temporarily unavailable.';
+      feedback.textContent = error?.message || 'The download is not available right now. Please try again later.';
       feedback.focus?.();
     }
   }

@@ -87,3 +87,21 @@ test('login accepts historical usernames beyond registration length without trun
   const registerForm = registration.outlet.children[0].children.find((child) => child.tag === 'form');
   assert.equal(registerForm.children.find((child) => child.name === 'username').maxLength, 64);
 });
+
+test('registration displays a plain-language password rule and alerts on rejected submission', async () => {
+  const s = setup('/app/register', {
+    request: async () => {
+      throw { status: 422, code: 'registration_rejected',
+        message: 'Use at least 12 characters for your password.' };
+    },
+  });
+  const form = s.outlet.children[0].children.find((child) => child.tag === 'form');
+  const input = form.children.find((child) => child.name === 'password');
+  const hint = form.children.find((child) => child.id === 'account-password-hint');
+  assert.equal(input['aria-describedby'], 'account-password-hint');
+  assert.equal(hint.textContent, 'Use at least 12 characters for your password.');
+  await form.dispatch('submit');
+  const feedback = form.children.find((child) => child.role === 'alert');
+  assert.equal(feedback.textContent, 'Use at least 12 characters for your password.');
+  assert.equal(feedback.focused, true);
+});

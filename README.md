@@ -1,77 +1,135 @@
-# Fast Corporation — PHP Developer Technical Task
+# Fast Corporation — PHP developer technical task
 
-A small web application that tracks user activity, built with **native PHP, SQLite and Vanilla JavaScript**. It includes authentication, two interactive pages, activity statistics and daily reports. No PHP framework, frontend framework, external service or JavaScript build process is required.
+A small, runnable activity-tracking web application built for the Fast Corporation PHP interview exercise. It uses **PHP 8.3+, SQLite and browser-native JavaScript**—no Laravel, JavaScript framework, frontend build step, Redis or external service.
 
-## Requirements
+**Reviewer shortcut:** install the prerequisites, run `composer install`, then `./bin/fast-test start`. The command prints the actual local URL and an automatically generated administrator password. Sign in as `admin` to see statistics and reports; use **Register** to create a normal user. Stop everything started by the launcher with `./bin/fast-test stop`.
 
-- PHP 8.3 or newer with `pdo_sqlite`, `sqlite3` and `session` extensions
-- Composer 2
-- SQLite writable private database directory
-- Optional for frontend/browser tests: Node.js 24, npm, Chrome and Python 3
+## What the task required and what I built
 
-## Quick start
+| Requested feature | Implementation | Who can use it |
+| --- | --- | --- |
+| Registration | Username/password validation, bcrypt password hashing; a successful registration is recorded as an activity event | Visitor |
+| Login / logout | Server-side sessions, CSRF protection, accepted authentication events | Visitor / signed-in user |
+| Page A — Buy a cow | Tracks the page view and the accepted click; replaces the button with **`thankYou`** | Signed-in user |
+| Page B — Download | Tracks page view and download, then serves a fixed `sample.exe` attachment through a native browser download | Signed-in user |
+| Statistics | Filterable history by date, exact username and action; up to 50 records per cursor page | Administrator |
+| Reports | A daily line chart and matching table for page views and button clicks | Administrator |
+
+The **Buy a cow** button is a demonstration, not an actual purchase. Its success state lasts until the page is reloaded. The downloadable file is a bundled demonstration artifact; it is never executed by the server.
+
+All tracked times are recorded in UTC. Reports cover up to 30 days **on which tracked activity occurred**, so dates without activity may be absent.
+
+## Quick start: isolated local review (recommended)
+
+Prerequisites:
+
+- **Docker**, with permission to run containers, and the `php:8.5-cli` image (run `docker pull php:8.5-cli` if needed).
+- **Composer 2** and installed PHP dependencies (`vendor/`). PHP 8.3+ with `pdo_sqlite`, `sqlite3` and `session` is required for native PHP operation.
+- `bash`, `python3`, `curl`, `flock` and `realpath` for the local launcher.
 
 ```bash
 git clone https://github.com/shomsy/fast-corporation-php-task.git
 cd fast-corporation-php-task
 composer install
+./bin/fast-test start
+```
+
+The launcher automatically:
+
+1. Creates/updates the **separate test database** `var/database/fast-test.sqlite` through the project's real migrations.
+2. Creates an `admin` account with a generated password (or verifies the existing one).
+3. Starts the local PHP server inside Docker, bound **only to 127.0.0.1**, using the first free port in **8081–8090**.
+4. Checks `/readyz` and prints the **actual** URL and administrator credentials.
+
+Open the printed `http://127.0.0.1:<port>/app` address. Do not assume a fixed port. The launcher never changes your `.env`, `app.sqlite`, `manual-test.sqlite` or unrelated Docker containers. Its generated credentials live in a private, Git-ignored `var/local-test/` directory.
+
+### Start, stop, inspect
+
+Run these **from the project root**:
+
+```bash
+./bin/fast-test start       # Start (or report an already-running instance)
+./bin/fast-test status      # Display URL and readiness result
+./bin/fast-test open        # Open the browser
+./bin/fast-test logs        # Show recent PHP server logs
+./bin/fast-test stop        # Stop only this test server; keep accounts and events
+./bin/fast-test restart     # Restart the server; keep accounts and events
+./bin/fast-test help        # Show available commands
+```
+
+**Normal stopping does not delete the database.** A later `start` uses the same accounts and activity history. `restart` is not a database reset.
+
+### Migrations and test database management
+
+These commands intentionally mimic the *developer experience* of Laravel's migration tooling, **without adding Laravel**. They operate on **`fast-test.sqlite` only**.
+
+| Command | Effect | Data preserved? |
+| --- | --- | --- |
+| `./bin/fast-test migrate` | Apply missing SQL migrations; the test server must first be stopped | Yes |
+| `./bin/fast-test db:status` | Print applied migrations and account/event counts; read-only | Yes |
+| `./bin/fast-test db:seed` | Create/verify the single local `admin` account, without fake business data; server must be stopped | Yes |
+| `./bin/fast-test migrate:fresh --yes` | **Stop the test server, DELETE test accounts/events, re-create its schema and admin account** | **No** |
+| `./bin/fast-test reset --yes` | **Stop the test server and DELETE the isolated test database and generated admin password** | **No** |
+
+After `migrate:fresh --yes`, run `./bin/fast-test start` to start serving again. After `reset --yes`, `start` performs the initial migrations and admin provisioning again. The `--yes` flag is required for destructive actions; the test file path and container ownership are checked before deletion.
+
+**No production-data reset, drop-all-tables or arbitrary database-target option is exposed.** Destructive operations are deliberately limited to the isolated test database.
+
+### Manual acceptance path
+
+1. Open `/app/register`. Register a normal user, then sign in. The user should see Home, Page A and Page B.
+2. Open Page A, click **Buy a cow**, and verify that the button disappears and `thankYou` appears.
+3. Open Page B, click **Download**, and verify that the browser downloads `sample.exe`.
+4. Sign out, sign back in as `admin` using the generated credentials, and open **Statistics** and **Reports**.
+5. In Statistics, try the date/user/action filters, pagination, and **Clear filters**. In Reports, verify that the chart and table show corresponding daily totals.
+6. Optionally try an existing username, an invalid username, a short password, reversed dates and a non-admin account accessing admin screens; the interface should provide understandable errors.
+
+The interface intentionally uses human-readable validation messages rather than password byte counts, raw exceptions, or technical CSRF/cursor messages. Passwords must contain **at least 12 visible characters**. The independent bcrypt limit is **72 bytes**; sufficiently long non-ASCII/emoji passwords can reach that bound earlier.
+
+## Run without the Docker helper
+
+A conventional local PHP setup is supported too:
+
+```bash
+composer install
 cp .env.example .env
+chmod 600 .env
 php bin/migrate.php
 php bin/create-admin.php admin
 php -S 127.0.0.1:8080 -t public public/index.php
 ```
 
-Open http://127.0.0.1:8080. Register a normal account or sign in using the administrator account created by the CLI. Administrator creation prompts for a password; automated setups may pass `--password-stdin` instead of exposing a password as a command-line argument.
+Visit `http://127.0.0.1:8080/app`. In this mode, `DB_PATH` from `.env` (default `var/database/app.sqlite`) is used. Stop the foreground server with **Ctrl+C**. **Do not run the `fast-test` reset commands as a substitute for production migrations**; they manage a distinct database.
 
-The default database is `var/database/app.sqlite`. You can configure `DB_PATH` in `.env`. Serve **only `public/`** as the web document root.
+Administrator creation asks for a password interactively; use `--password-stdin` for noninteractive setup. The web server document root must always be `public/`.
 
-## Functional requirements
+## Implementation decisions worth reviewing
 
-| Feature | Access | Behavior |
-| --- | --- | --- |
-| Registration | Public | Register a new user |
-| Login / Logout | Public / authenticated | Establish or revoke a secure session |
-| Page A — `/app/page-a` | Authenticated | **Buy a cow** button changes to `thankYou` after a successful click |
-| Page B — `/app/page-b` | Authenticated | **Download** starts a real file download |
-| Statistics — `/app/statistics` | Administrator | Activity events filterable by UTC date, user and action |
-| Reports — `/app/reports` | Administrator | Daily chart and table for Page A views, Page B views, Buy a cow clicks and Download clicks |
+- **Small modular monolith:** business capabilities are `Accounts`, `ActivityTracking`, `CowOffer` and `Downloads`. HTTP transport is in `bootstrap/Http`; SQLite, session and diagnostic adapters are in `infrastructure/`.
+- **Authoritative backend:** PHP validates credentials, permissions, session state, activity events, reporting queries and downloads. Browser JavaScript owns presentation and transient screen state, not security decisions.
+- **Consistent events:** accepted registration and its audit event are part of the same SQLite transaction. Other authenticated actions record accepted events with UTC timestamps.
+- **Security:** bcrypt hashes; private SQLite/session files; same-origin session cookies and CSRF checks; server-enforced admin access; PDO prepared statements; output via DOM text APIs; verified fixed download artifact.
+- **Bounded queries:** activity history uses signed cursor pagination; reports and graphs share the same authoritative stored daily counts.
+- **Accessible UI:** labels, status/alert announcements, keyboard focus handling and clearly worded loading/empty/error states.
 
-Statistics includes registration, login, logout, page-view and button-click events. Navigation uses **session-signed keyset cursors**, showing up to 50 events per page. The API rejects legacy offset/page-number navigation.
-
-Reports display up to the latest 30 active UTC dates; the chart and table share the same persisted event source. Buy a cow changes the current page state but does not create a purchase or charge. Reloading Page A restores the button. The bundled `assets/sample.exe` is a fixed harmless PE sample for demonstrating browser downloads; it is not executed by the server.
-
-## Architecture
-
-A small **modular monolith**, organized by business capability:
+Source layout:
 
 ```text
-src/
-  Accounts/
-  ActivityTracking/
-  CowOffer/
-  Downloads/
-bootstrap/         # Composition and HTTP adapters
-runtime/           # HTTP request/response and routing
-infrastructure/    # SQLite, sessions, time and diagnostics
-public/app/        # Vanilla JavaScript SPA
-tests/             # Unit, integration, browser and flow tests
+src/Accounts/           registration, authentication, roles
+src/ActivityTracking/   events, filtering, statistics, reports
+src/CowOffer/           Page A behavior
+src/Downloads/          Page B artifact and audit
+bootstrap/Http/         JSON endpoints and authorization
+runtime/Http/           request, response, routing
+infrastructure/         SQLite, sessions, diagnostics
+public/app/             native JavaScript SPA
+tests/                  PHP, frontend, browser and flow tests
+bin/fast-test           isolated Docker-based local review commands
 ```
 
-Each module owns its invariants and technical persistence/query implementations. The PHP API serves JSON; the frontend uses native ES modules, browser History API and same-origin requests.
+## Automated checks
 
-## Security
-
-- Passwords are bcrypt-hashed, with bounded byte-length validation.
-- Sessions and CSRF context rotate on successful login; logout revokes authentication.
-- Idle and absolute session expiration and administrator authorization are enforced server-side.
-- Database queries use PDO prepared statements and SQLite constraints.
-- Registration and its accepted activity event are written in one transaction.
-- Frontend user-provided values are rendered safely through DOM text APIs.
-- Downloads use a fixed private artifact with size and digest checks.
-
-For internet-facing deployment, configure HTTPS and `SESSION_COOKIE_SECURE=1`, restrict filesystem privileges, enforce ingress abuse controls and validate off-host backup/recovery. Passing local checks is **not** proof of public-production readiness.
-
-## Validation
+Install optional Node.js/npm/Playwright browser dependencies before running frontend/browser tests.
 
 ```bash
 composer quality
@@ -84,6 +142,10 @@ python3 tests/Flow/sqlite_backup_restore.py
 python3 tests/Flow/auth_ingress_rate_limit.py
 ```
 
-`composer quality` runs Composer validation, dependency audit, coding-convention checks, PHPDoc checks, PHPStan, Deptrac and PHPUnit. Browser and flow tests require their corresponding local runtime dependencies.
+`composer quality` includes Composer/package validation, security audit, PHP conventions/PHPDoc, PHPStan, Deptrac architecture checks and PHPUnit. Some integration probes need the appropriate local runtime setup. Passing these checks demonstrates local acceptance; it does not certify public-internet production readiness.
 
-See [TASK.md](TASK.md) for the supplied assignment and explicit implementation assumptions.
+## Scope and additional documentation
+
+The original task and chosen assumptions are in [TASK.md](TASK.md). Engineering details, failure semantics, data isolation, migration command contracts and test/review notes are in [TECHNICAL-NOTES.md](TECHNICAL-NOTES.md).
+
+An internet-facing deployment would additionally need correctly configured HTTPS, least-privilege service execution, ingress abuse/rate controls, and verified external backup/restore operations. These production responsibilities are **not** claimed as complete by the interview exercise.

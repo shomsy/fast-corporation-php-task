@@ -52,11 +52,11 @@ final readonly class AccountApi
 
             return Response::json(payload: ['registered' => true], status: 201);
         } catch (UsernameTaken) {
-            return self::error(code: 'username_taken', message: 'Username is already taken.', status: 409);
+            return self::error(code: 'username_taken', message: 'That username is already in use. Please choose another.', status: 409);
         } catch (RegistrationRejected $error) {
             return self::error(code: 'registration_rejected', message: $error->getMessage(), status: 422);
         } catch (InvalidArgumentException) {
-            return self::error(code: 'invalid_request', message: 'Invalid registration request.', status: 422);
+            return self::error(code: 'invalid_request', message: 'Please enter a valid username and password, then try again.', status: 422);
         }
     }
 
@@ -76,10 +76,10 @@ final readonly class AccountApi
             $fields  = $this->credentials(request: $request);
             $account = $this->lifecycle->login(username: $fields['username'], password: $fields['password']);
         } catch (InvalidCredentials) {
-            return self::error(code: 'invalid_login', message: 'Invalid username or password.', status: 401)
+            return self::error(code: 'invalid_login', message: 'Incorrect username or password. Please try again.', status: 401)
                 ->withHeader(name: 'X-Request-ID', value: SecurityEvents::record(event: 'auth.login_denied'));
         } catch (InvalidArgumentException) {
-            return self::error(code: 'invalid_request', message: 'Invalid login request.', status: 422);
+            return self::error(code: 'invalid_request', message: 'Please enter your username and password, then try again.', status: 422);
         }
 
         return Response::json(payload: [

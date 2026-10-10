@@ -39,7 +39,7 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
       if (csrfToken === null) {
         const data = await request('/api/csrf', { signal });
         if (!data || typeof data.csrfToken !== 'string' || !/^[a-f0-9]{64}$/.test(data.csrfToken)) {
-          throw new HttpError(500, 'Unable to establish a secure session.');
+          throw new HttpError(500, 'We could not start your session. Refresh the page and try again.');
         }
         csrfToken = data.csrfToken;
       }
@@ -61,7 +61,9 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
     } catch (error) {
       // Cancellation belongs to the screen lifecycle; never present it as a network failure.
       if (signal?.aborted || error?.name === 'AbortError') throw error;
-      throw new HttpError(0, 'Connection failed. Check your network and try again.', {
+      throw new HttpError(0, unsafe
+        ? 'Connection lost. This action may have completed. Check your activity before trying again.'
+        : 'Could not connect. Check your connection and try again.', {
         code: 'network_unavailable',
       });
     }
@@ -80,15 +82,17 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
       const retryAfter = retryValue && /^\d+$/.test(retryValue) ? Number(retryValue) : null;
       const serverError = payload !== null && typeof payload === 'object' && !Array.isArray(payload)
         ? payload.error : null;
-      const safeMessage = response.status >= 500 ? 'The server could not complete this request.'
-        : typeof serverError?.message === 'string' ? serverError.message : 'Request denied.';
+      const safeMessage = response.status >= 500
+        ? (unsafe ? 'We could not confirm that action. Check your activity before trying again.'
+          : 'Something went wrong. Please try again later.')
+        : typeof serverError?.message === 'string' ? serverError.message : 'We could not complete that request. Check your details and try again.';
       throw new HttpError(response.status, safeMessage, {
         code: typeof serverError?.code === 'string' ? serverError.code : 'request_failed',
         requestId, retryAfter,
       });
     }
     if (payload === null || typeof payload !== 'object') {
-      throw new HttpError(502, 'Unexpected response from the server.');
+      throw new HttpError(502, 'We could not complete that request. Please try again.');
     }
     return payload;
   }
@@ -99,14 +103,14 @@ export function createHttpClient({ fetchImpl = fetch, origin } = {}) {
     async getCsrf(options = {}) {
       const data = await request('/api/csrf', options);
       if (typeof data?.csrfToken !== 'string' || !/^[a-f0-9]{64}$/.test(data.csrfToken)) {
-        throw new HttpError(502, 'Invalid CSRF response.');
+        throw new HttpError(502, 'We could not verify your session. Refresh the page and try again.');
       }
       csrfToken = data.csrfToken;
       return csrfToken;
     },
     setCsrfToken(token) {
       if (typeof token !== 'string' || !/^[a-f0-9]{64}$/.test(token)) {
-        throw new TypeError('Invalid session CSRF token.');
+        throw new TypeError('We could not verify your session. Please sign in again.');
       }
       csrfToken = token;
     },

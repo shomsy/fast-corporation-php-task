@@ -1,6 +1,17 @@
 import { drawChart } from './drawChart.js';
 
-const actions = ['registration', 'login', 'logout', 'view-page', 'button-click'];
+const actions = [
+  ['registration', 'Registration'],
+  ['login', 'Sign in'],
+  ['logout', 'Sign out'],
+  ['view-page', 'Page view'],
+  ['button-click', 'Button click'],
+];
+const actionLabels = Object.fromEntries(actions);
+const targetLabels = {
+  'page-a': 'Page A', 'page-b': 'Page B',
+  'buy-cow': 'Buy a cow', download: 'Download',
+};
 
 function link(page, href, text) {
   const node = page.createElement('a');
@@ -19,17 +30,17 @@ function filters(page, path, params, names) {
     const control = page.createElement(name === 'action' ? 'select' : 'input');
     control.name = name;
     if (name === 'action') {
-      for (const value of ['', ...actions]) {
+      for (const [value, display] of [['', 'All actions'], ...actions]) {
         const option = page.createElement('option');
         option.value = value;
-        option.textContent = value || 'All actions';
+        option.textContent = display;
         if (params.get(name) === value) option.selected = true;
         control.append(option);
       }
     } else {
       control.value = params.get(name) || '';
       control.maxLength = name === 'date' || name === 'from' || name === 'to' ? 10 : 128;
-      control.placeholder = name === 'user' ? 'Exact username' : 'YYYY-MM-DD';
+      control.placeholder = name === 'user' ? 'Username (exact match)' : 'YYYY-MM-DD';
     }
     label.append(control);
     form.append(label);
@@ -59,7 +70,11 @@ function table(page, rows, columns) {
     const tr = page.createElement('tr');
     for (const [key] of columns) {
       const td = page.createElement('td');
-      td.textContent = record[key] === null || record[key] === undefined ? '—' : String(record[key]);
+      const value = record[key];
+      td.textContent = value === null || value === undefined ? '—'
+        : key === 'action' ? (actionLabels[value] || String(value))
+        : key === 'target' ? (targetLabels[value] || String(value))
+        : String(value);
       tr.append(td);
     }
     body.append(tr);
@@ -115,9 +130,9 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
       const result = await client.request(endpointFor(screen, params), { signal });
       if (signal.aborted) return;
       const rows = isStatistics ? result?.events : result?.days;
-      if (!Array.isArray(rows)) throw new Error('Unexpected report response.');
+      if (!Array.isArray(rows)) throw new Error('We could not display this activity. Please try again.');
       status.textContent = rows.length ? '' : isStatistics
-        ? 'No matching activity events.' : 'No reportable activity yet.';
+        ? 'No activity matches these filters.' : 'No activity to report yet.';
       if (isStatistics) {
         section.append(table(page, rows, [
           ['occurred_at', 'UTC time'], ['actor_label', 'User'],
@@ -132,7 +147,7 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
         section.append(nav);
       } else if (rows.length) {
         const note = page.createElement('p');
-        note.textContent = 'UTC active days only; missing dates are gaps, not joined lines. Exact values are in the table.';
+        note.textContent = 'Only dates with activity appear in the chart. Days without activity are shown as gaps. See the table for exact totals.';
         section.append(note, drawChart(page, rows), table(page, rows, [
           ['date', 'UTC date'], ['pageAViews', 'Page A views'],
           ['pageBViews', 'Page B views'], ['buyCowClicks', 'Buy cow clicks'],
@@ -146,8 +161,8 @@ export function showActivity(screen, { page, outlet, signal }, { client, query =
         return;
       }
       status.setAttribute('role', 'alert');
-      status.textContent = error?.status === 403 ? 'Forbidden.' :
-        error?.message || 'Unable to load activity.';
+      status.textContent = error?.status === 403 ? 'You do not have permission to view this information.' :
+        error?.message || 'We could not load the activity. Please try again.';
       status.focus?.();
     }
   }

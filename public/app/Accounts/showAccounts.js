@@ -33,6 +33,13 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
     username.required = true;
     username.maxLength = isLogin ? 4096 : 64;
 
+    const usernameHint = !isLogin ? page.createElement('p') : null;
+    if (usernameHint) {
+      usernameHint.id = 'account-username-hint';
+      usernameHint.textContent = 'Use English letters, numbers, dots, underscores or hyphens (1–64 characters).';
+      username.setAttribute('aria-describedby', usernameHint.id);
+    }
+
     const passwordLabel = page.createElement('label');
     passwordLabel.textContent = 'Password';
     passwordLabel.htmlFor = 'account-password';
@@ -42,6 +49,12 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
     password.type = 'password';
     password.autocomplete = isLogin ? 'current-password' : 'new-password';
     password.required = true;
+    const hint = !isLogin ? page.createElement('p') : null;
+    if (hint) {
+      hint.id = 'account-password-hint';
+      hint.textContent = 'Use at least 12 characters for your password.';
+      password.setAttribute('aria-describedby', hint.id);
+    }
 
     const submitButton = page.createElement('button');
     submitButton.type = 'submit';
@@ -50,7 +63,11 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
     feedback.setAttribute('role', 'alert');
     feedback.setAttribute('aria-live', 'assertive');
     feedback.tabIndex = -1;
-    form.append(usernameLabel, username, passwordLabel, password, submitButton, feedback);
+    form.append(usernameLabel, username);
+    if (usernameHint) form.append(usernameHint);
+    form.append(passwordLabel, password);
+    if (hint) form.append(hint);
+    form.append(submitButton, feedback);
     section.append(form);
     username.focus?.();
 
@@ -76,12 +93,12 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
           client.setCsrfToken(result.csrfToken);
           navigate('/app/home');
         } else {
-          feedback.textContent = 'Registration complete. Sign in with your account.';
+          feedback.textContent = 'Account created. You can now sign in.';
         }
       } catch (error) {
         if (!signal.aborted && error?.name !== 'AbortError') {
           feedback.setAttribute('role', 'alert');
-          feedback.textContent = error?.message || 'Unable to complete the request.';
+          feedback.textContent = error?.message || 'We could not finish that request. Please try again.';
           feedback.focus?.();
         }
       } finally {
@@ -109,7 +126,7 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
       const user = session.user;
       message.textContent = '';
       const identity = page.createElement('p');
-      identity.textContent = 'Signed in as ' + user.username + ' (' + user.role + ')';
+      identity.textContent = 'Signed in as ' + user.username + ' (' + (user.role === 'admin' ? 'Administrator' : 'User') + ')';
       const logout = page.createElement('button');
       logout.type = 'button';
       logout.textContent = 'Sign out';
@@ -130,7 +147,8 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
           navigate('/app/login');
         } catch (error) {
           if (!signal.aborted && error?.name !== 'AbortError') {
-            message.textContent = error?.message || 'Unable to sign out.';
+            message.setAttribute('role', 'alert');
+            message.textContent = error?.message || 'We could not sign you out. Please try again.';
             logout.disabled = false;
           }
         }
@@ -139,7 +157,7 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
       onDispose(() => logout.removeEventListener('click', signOut));
     } catch (error) {
       if (!signal.aborted && error?.name !== 'AbortError') {
-        message.textContent = error?.message || 'Could not load your session.';
+        message.textContent = error?.message || 'We could not load your account. Please refresh the page.';
       }
     }
   }

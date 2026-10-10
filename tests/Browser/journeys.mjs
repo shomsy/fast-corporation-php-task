@@ -44,17 +44,31 @@ async function login(page, username, password) {
 try {
   const { session, page } = await context();
   await visit(page, '/register', 'Create account');
+  // Actual browser validation: UTF-8 byte length must not bypass 12 visible characters.
+  await page.getByLabel('Username').fill('browser-user');
+  await page.getByLabel('Password').fill('🔒'.repeat(11));
+  await page.getByRole('button', { name: 'Register' }).click();
+  await page.getByRole('alert').getByText('Use at least 12 characters for your password.').waitFor();
+
+  await page.getByLabel('Username').fill('bad name');
+  await page.getByLabel('Password').fill('strong-password');
+  await page.getByRole('button', { name: 'Register' }).click();
+  await page.getByRole('alert').getByText('Use 1–64 characters for your username.', { exact: false }).waitFor();
+
   await page.getByLabel('Username').fill('browser-user');
   await page.getByLabel('Password').fill('strong-password');
   await page.getByRole('button', { name: 'Register' }).click();
-  await page.getByText('Registration complete.', { exact: false }).waitFor({ timeout: 7000 })
+  await page.getByText('Account created.', { exact: false }).waitFor({ timeout: 7000 })
     .catch(async () => { throw new Error('Registration UI state: ' +
       await page.locator('#route-outlet').innerText() + ' | network: ' + network.join(' | ') + ' | page errors: ' + errors.join('; ')); });
+  await page.getByLabel('Password').fill('strong-password');
+  await page.getByRole('button', { name: 'Register' }).click();
+  await page.getByRole('alert').getByText('That username is already in use. Please choose another.').waitFor();
   await visit(page, '/login', 'Sign in');
   await page.getByLabel('Username').fill('browser-user');
   await page.getByLabel('Password').fill('bad-password');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByRole('alert').getByText('Invalid username or password.').waitFor();
+  await page.getByRole('alert').getByText('Incorrect username or password. Please try again.').waitFor();
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'alert');
 
   await login(page, 'browser-user', 'strong-password');
@@ -75,7 +89,7 @@ try {
     '31a97b0f71277adbac9bfde08c935c3e97b0bfa61d59c807c0a900660080cb80');
 
   await visit(page, '/statistics', 'Activity statistics');
-  await page.getByRole('alert').getByText('Forbidden.').waitFor();
+  await page.getByRole('alert').getByText('You do not have permission to view this information.').waitFor();
   await visit(page, '/', 'Home');
   await page.getByRole('button', { name: 'Sign out' }).click();
   await page.waitForURL(origin + '/app/login');
@@ -103,6 +117,10 @@ try {
   await admin.page.waitForFunction(() => new URLSearchParams(location.search).get('user') === 'browser-user');
   assert.equal(await admin.page.evaluate(() => window.__spaDocumentSentinel), 'preserved');
   await admin.page.getByRole('table').getByText('browser-user').first().waitFor();
+  await admin.page.goto(origin + '/app/statistics?action=unknown-action');
+  await admin.page.getByRole('alert').getByText('We could not load those results. Check your filters or clear them and try again.').waitFor();
+  await admin.page.goto(origin + '/app/reports?from=2026-10-02&to=2026-10-01');
+  await admin.page.getByRole('alert').getByText('Enter valid dates (YYYY-MM-DD). The start date must not be after the end date.').waitFor();
   await admin.page.goto(origin + '/reports');
   assert.equal(new URL(admin.page.url()).pathname, '/app/reports');
   await admin.page.getByRole('heading', { name: 'Daily activity reports' }).waitFor();

@@ -82,7 +82,7 @@ final class DownloadApiTest extends TestCase
     {
         $response = $this->api(artifact: '/absent/not-a-real-file.exe')->download();
         self::assertSame(503, $response->status());
-        self::assertSame('Download is temporarily unavailable.', $response->body());
+        self::assertSame('The download is not available right now. Please try again later.', $response->body());
         $rows = $this->pdo->query(query: "SELECT COUNT(*) FROM activity_events WHERE target = 'download'");
         self::assertNotFalse($rows);
         self::assertSame(0, (int) $rows->fetchColumn());

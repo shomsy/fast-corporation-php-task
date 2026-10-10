@@ -30,14 +30,14 @@ export function showPageA({ page, outlet, signal, onDispose }, { client, navigat
         try {
           const result = await client.request('/api/cow-offer/buy', { method: 'POST', signal });
           if (signal.aborted) return;
-          if (result?.outcome !== 'thankYou') throw new Error('Unexpected response.');
+          if (result?.outcome !== 'thankYou') throw new Error('We could not confirm that action. Please try again.');
           button.hidden = true;
           feedback.textContent = 'thankYou';
           feedback.focus?.();
         } catch (error) {
           if (!signal.aborted && error?.name !== 'AbortError') {
             feedback.setAttribute('role', 'alert');
-            feedback.textContent = error?.message || 'Unable to record the action.';
+            feedback.textContent = error?.message || 'We could not complete that action. Please try again.';
             feedback.focus?.();
             button.disabled = false;
           }
@@ -51,7 +51,8 @@ export function showPageA({ page, outlet, signal, onDispose }, { client, navigat
         navigate('/app/login');
         return;
       }
-      feedback.textContent = error?.message || 'Unable to show Page A.';
+      feedback.setAttribute('role', 'alert');
+      feedback.textContent = error?.message || 'We could not load Page A. Please try again.';
     }
   }
   void mount();

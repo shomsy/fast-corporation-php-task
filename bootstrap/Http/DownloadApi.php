@@ -66,7 +66,7 @@ final readonly class DownloadApi
                 'X-Content-Type-Options' => 'nosniff',
             ]);
         } catch (ArtifactUnavailable) {
-            return Response::text(body: 'Download is temporarily unavailable.', status: 503);
+            return Response::text(body: 'The download is not available right now. Please try again later.', status: 503);
         }
     }
 }

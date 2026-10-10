@@ -47,7 +47,7 @@ final readonly class Register
         $username = trim(string: $username);
 
         if ($username === '' || $password === '') {
-            throw new RegistrationRejected(message: 'Username and password are required.');
+            throw new RegistrationRejected(message: 'Enter a username and password to create your account.');
         }
 
         try {

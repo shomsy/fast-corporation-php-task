@@ -1,0 +1,231 @@
+#!/usr/bin/env bash
+# Local-only Docker-backed test launcher. Never mutates the user's .env.
+set -Eeuo pipefail
+umask 077
+
+ROOT="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/.." && pwd -P)"
+STATE="$ROOT/var/local-test"
+DB="$ROOT/var/database/fast-test.sqlite"
+PASS="$STATE/admin-password"
+PORTFILE="$STATE/server.port"
+LOG="$STATE/server.log"
+IMAGE="php:8.5-cli"
+CONTAINER="fast-corporation-test-$(id -u)"
+PORT=""
+
+die() { printf 'Error: %s\n' "$*" >&2; exit 1; }
+usage() { echo 'Usage: fast-test {start|stop|restart|status|open|logs|migrate|db:status|db:seed|migrate:fresh --yes|reset --yes}'; }
+owned() {
+    docker container inspect "$CONTAINER" >/dev/null 2>&1 || return 1
+    [[ "$(docker inspect -f '{{ index .Config.Labels "fastcorp.test.root" }}' "$CONTAINER")" == "$ROOT" ]]
+}
+exists() { docker container inspect "$CONTAINER" >/dev/null 2>&1; }
+running() {
+    owned && [[ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER")" == true ]]
+}
+container_port() { docker inspect -f '{{ index .Config.Labels "fastcorp.test.port" }}' "$CONTAINER"; }
+ready() {
+    curl -fsS --connect-timeout 1 --max-time 2 "http://127.0.0.1:$PORT/readyz" 2>/dev/null | grep -Fxq 'ready'
+}
+php_test() {
+    PORT="${PORT:-8081}"
+    docker run --rm -i --pull never \
+        --user "$(id -u):$(id -g)" -e HOME=/tmp \
+        -e APP_ENV=test -e APP_DEBUG=0 -e "APP_URL=http://127.0.0.1:$PORT" \
+        -e "DB_PATH=$DB" -e SESSION_COOKIE_SECURE=0 -e UI_ENTRYPOINT=spa \
+        -v "$ROOT:$ROOT" -w "$ROOT" "$IMAGE" php "$@"
+}
+prereqs() {
+    for cmd in docker curl python3 flock realpath; do
+        command -v "$cmd" >/dev/null 2>&1 || die "Missing executable: $cmd"
+    done
+    docker image inspect "$IMAGE" >/dev/null 2>&1 || die "Docker image missing: docker pull $IMAGE"
+    [[ -f "$ROOT/vendor/autoload.php" ]] || die 'Run composer install to create vendor/ first.'
+    [[ ! -L "$DB" && ! -L "$STATE" ]] || die 'Refusing symlinked test database or state directory.'
+}
+free_port() {
+    python3 -c 'import socket,sys
+s=socket.socket()
+try: s.bind(("127.0.0.1",int(sys.argv[1])))
+except OSError: sys.exit(1)
+finally: s.close()' "$1"
+}
+choose_port() {
+    local port
+    if [[ -r "$PORTFILE" ]]; then
+        port="$(cat "$PORTFILE")"
+        if [[ "$port" =~ ^(808[1-9]|8090)$ ]] && free_port "$port"; then PORT="$port"; return; fi
+    fi
+    for port in {8081..8090}; do
+        if free_port "$port"; then PORT="$port"; return; fi
+    done
+    die 'Ports 8081–8090 occupied; nothing else was stopped.'
+}
+has_admin() {
+    php_test -r '
+      $pdo=new PDO("sqlite:".$argv[1],null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+      $stmt=$pdo->prepare("SELECT 1 FROM accounts WHERE username=? AND role=? LIMIT 1");
+      $stmt->execute(["admin","admin"]);
+      exit($stmt->fetchColumn()===false ? 1 : 0);
+    ' "$DB"
+}
+password_matches() {
+    [[ -s "$PASS" ]] || return 1
+    php_test -r '
+      $pdo=new PDO("sqlite:".$argv[1]);
+      $stmt=$pdo->prepare("SELECT password_hash FROM accounts WHERE username=? AND role=? LIMIT 1");
+      $stmt->execute(["admin","admin"]); $hash=$stmt->fetchColumn();
+      exit(is_string($hash)&&password_verify(stream_get_contents(STDIN),$hash) ? 0 : 1);
+    ' "$DB" < "$PASS"
+}
+ensure_admin() {
+    if has_admin; then
+        password_matches || die "Admin password mismatch. Run 'fast-test reset --yes' to explicitly discard only the isolated test data."
+        return
+    fi
+    if [[ ! -s "$PASS" ]]; then php_test -r 'echo bin2hex(random_bytes(18));' > "$PASS"; chmod 600 "$PASS"; fi
+    php_test "$ROOT/bin/create-admin.php" admin --password-stdin < "$PASS" || die 'Admin creation failed.'
+}
+connection() {
+    printf '\nApp: http://127.0.0.1:%s/app\nAdmin username: admin\nAdmin password: ' "$PORT"
+    cat "$PASS"
+    printf '\n'
+}
+start() {
+    prereqs
+    if exists && ! owned; then die 'Docker container name collision; will not touch unrelated container.'; fi
+    if running; then
+        PORT="$(container_port)"
+        ready || die "App is not ready; inspect 'fast-test logs'."
+        echo 'Already running.'
+        connection
+        return
+    fi
+    exists && die 'Stopped named container exists; investigate before starting.'
+    choose_port
+    echo 'Preparing isolated database...'
+    php_test "$ROOT/bin/migrate.php" || die 'Migration failed.'
+    ensure_admin
+    printf '%s\n' "$PORT" > "$PORTFILE"
+    docker run -d --rm --pull never \
+        --name "$CONTAINER" \
+        --label "fastcorp.test.root=$ROOT" --label "fastcorp.test.port=$PORT" \
+        --user "$(id -u):$(id -g)" -e HOME=/tmp \
+        -e APP_ENV=test -e APP_DEBUG=0 -e "APP_URL=http://127.0.0.1:$PORT" \
+        -e "DB_PATH=$DB" -e SESSION_COOKIE_SECURE=0 -e UI_ENTRYPOINT=spa \
+        -p "127.0.0.1:$PORT:$PORT" -v "$ROOT:$ROOT" -w "$ROOT" \
+        "$IMAGE" php -S "0.0.0.0:$PORT" -t "$ROOT/public" "$ROOT/public/index.php" >/dev/null \
+        || die 'Docker web server failed to start.'
+    for ((i=0;i<50;i++)); do
+        if running && ready; then echo 'Readiness: OK'; connection; return; fi
+        running || break
+        sleep 0.2
+    done
+    docker logs --tail 40 "$CONTAINER" >&2 || true
+    if owned; then docker stop "$CONTAINER" >/dev/null || true; fi
+    die 'Server failed readiness.'
+}
+stop() {
+    if ! exists; then echo 'Already stopped. No other services were touched.'; return; fi
+    owned || die 'Refusing to stop a foreign container.'
+    docker logs "$CONTAINER" > "$LOG" 2>&1 || true
+    docker stop "$CONTAINER" >/dev/null || die 'Unable to stop test server.'
+    echo 'Stopped. Test accounts/events preserved.'
+}
+status() {
+    if ! exists; then echo 'Stopped.'; return; fi
+    owned || die 'A foreign container has the test name.'
+    running || die 'Test container exists but is stopped.'
+    PORT="$(container_port)"
+    printf 'Running: http://127.0.0.1:%s/app\n' "$PORT"
+    if ready; then echo 'Readiness: OK'; else die 'Readiness failed.'; fi
+}
+open_app() {
+    running || die 'Run fast-test start first.'
+    PORT="$(container_port)"
+    xdg-open "http://127.0.0.1:$PORT/app"
+}
+logs() {
+    if owned; then docker logs --tail 60 "$CONTAINER"
+    elif [[ -f "$LOG" ]]; then tail -n 60 "$LOG"
+    else echo 'No logs yet.'; fi
+}
+guard_test_database() {
+    [[ "$DB" == "$ROOT/var/database/fast-test.sqlite" ]] || die 'Refusing to alter a non-test database.'
+    [[ ! -L "$DB" && ! -L "$STATE" ]] || die 'Refusing symlinked test database or state directory.'
+    if exists && ! owned; then die 'Refusing to touch a foreign container.'; fi
+}
+require_stopped() {
+    guard_test_database
+    running && die "Stop the test server first: fast-test stop"
+}
+migrate_test() {
+    prereqs
+    require_stopped
+    echo 'Applying pending migrations to fast-test.sqlite only...'
+    php_test "$ROOT/bin/migrate.php" || die 'Migration failed.'
+}
+db_status() {
+    prereqs
+    guard_test_database
+    [[ -f "$DB" ]] || die 'Test database is missing. Run fast-test migrate.'
+    php_test -r '
+      $db = new PDO("sqlite:" . $argv[1], null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+      $db->exec("PRAGMA query_only = ON");
+      foreach (["schema_migrations" => "Applied migrations", "accounts" => "Accounts", "activity_events" => "Activity events"] as $table => $title) {
+          $count = $db->query("SELECT COUNT(*) FROM " . $table)->fetchColumn();
+          echo $title . ": " . $count . PHP_EOL;
+      }
+      $rows = $db->query("SELECT migration FROM schema_migrations ORDER BY migration")->fetchAll(PDO::FETCH_COLUMN);
+      foreach ($rows as $migration) echo "  - " . $migration . PHP_EOL;
+    ' "$DB" || die 'Unable to inspect test database. Check migrations.'
+}
+db_seed() {
+    prereqs
+    require_stopped
+    [[ -f "$DB" ]] || die 'Test database is missing. Run fast-test migrate first.'
+    ensure_admin
+    echo 'Local test administrator is ready. No sample accounts or events were added.'
+}
+migrate_fresh() {
+    [[ "${2:-}" == '--yes' && $# == 2 ]] || die 'This deletes ALL test accounts and events. Confirm with: fast-test migrate:fresh --yes'
+    prereqs
+    guard_test_database
+    stop
+    guard_test_database
+    rm -f -- "$DB" "$DB-wal" "$DB-shm" "$PASS" "$PORTFILE"
+    echo 'Removed only fast-test.sqlite and its test administrator credentials.'
+    migrate_test
+    db_seed
+    echo 'Fresh test database ready. Start it with: fast-test start'
+}
+reset() {
+    [[ "${2:-}" == --yes && $# == 2 ]] || die 'Use fast-test reset --yes to confirm deletion of isolated data.'
+    guard_test_database
+    stop
+    guard_test_database
+    rm -f -- "$DB" "$DB-wal" "$DB-shm" "$PASS" "$PORTFILE"
+    echo 'Deleted only fast-test.sqlite and its admin password.'
+}
+main() {
+    mkdir -p "$STATE"
+    chmod 700 "$STATE"
+    exec 9>"$STATE/.lock"
+    flock -x 9
+    case "${1:-}" in
+        start) start ;;
+        stop) stop ;;
+        restart) stop; start ;;
+        status) status ;;
+        open) open_app ;;
+        logs) logs ;;
+        migrate) [[ $# == 1 ]] || die 'Usage: fast-test migrate'; migrate_test ;;
+        db:status) [[ $# == 1 ]] || die 'Usage: fast-test db:status'; db_status ;;
+        db:seed) [[ $# == 1 ]] || die 'Usage: fast-test db:seed'; db_seed ;;
+        migrate:fresh) migrate_fresh "$@" ;;
+        reset) reset "$@" ;;
+        help|-h|--help) usage ;;
+        *) usage; exit 2 ;;
+    esac
+}
+main "$@"

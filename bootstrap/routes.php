@@ -158,7 +158,7 @@ return static function (Router $router) use ($config) : void {
                 foreach ($filterKeys as $key) {
                     $value = $request->query(key: $key);
                     if ($value !== null && ! is_string(value: $value)) {
-                        return Response::text(body: 'Invalid query parameter.', status: 422);
+                        return Response::text(body: 'This link has invalid filters. Clear the filters and try again.', status: 422);
                     }
                     if (is_string(value: $value)) {
                         $filters[$key] = $value;

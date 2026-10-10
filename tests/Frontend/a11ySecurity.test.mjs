@@ -77,7 +77,7 @@ test('admin denial is announced and focusable', async () => {
   });
   await new Promise(setImmediate);
   const feedback = outlet.children[0].children.find((child) => child.tag === 'p');
-  assert.equal(feedback.textContent, 'Forbidden.');
+  assert.equal(feedback.textContent, "You do not have permission to view this information.");
   assert.equal(feedback.focused, true);
 });
 
