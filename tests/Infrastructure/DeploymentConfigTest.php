@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\Infrastructure;
 
+use InterviewTask\Infrastructure\Database\Migrator;
 use PHPUnit\Framework\TestCase;
+use PDO;
 use RuntimeException;
 
 /**
@@ -263,6 +265,56 @@ final class DeploymentConfigTest extends TestCase
             );
         } finally {
             rmdir(directory: $path);
+        }
+    }
+
+    /**
+     * Runtime must reject a database missing the latest owner migration.
+     *
+     * @return void No return value.
+     */
+    public function testRuntimeDoesNotServePartiallyMigratedDatabase() : void
+    {
+        $path = tempnam(directory: sys_get_temp_dir(), prefix: 'partial-migrations-');
+        self::assertNotFalse($path);
+        unlink(filename: $path);
+
+        $activityMigrations = sys_get_temp_dir() . '/partial-activity-migrations-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $activityMigrations, permissions: 0700));
+        $root = dirname(path: __DIR__, levels: 2);
+
+        try {
+            foreach (['001_create_activity_events.sql', '002_activity_query_indexes.sql', '003_actor_recent_index.sql'] as $migration) {
+                self::assertTrue(copy(
+                    from: $root . '/src/ActivityTracking/migrations/' . $migration,
+                    to  : $activityMigrations . '/' . $migration,
+                ));
+            }
+
+            (new Migrator(pdo: new PDO(dsn: 'sqlite:' . $path), migrationDirectories: [
+                'Accounts'         => $root . '/src/Accounts/migrations',
+                'ActivityTracking' => $activityMigrations,
+            ]))->migrate();
+
+            $rejected = false;
+            $this->withEnvironment(
+                overrides: ['APP_ENV' => 'test', 'DB_PATH' => $path],
+                action   : static function () use (&$rejected) : void {
+                    try {
+                        require dirname(path: __DIR__, levels: 2) . '/bootstrap/app.php';
+                    } catch (RuntimeException $error) {
+                        $rejected = str_contains(haystack: $error->getMessage(), needle: 'migrations');
+                    }
+                },
+            );
+
+            self::assertTrue($rejected, 'Runtime must reject a schema that lacks the latest required migration.');
+        } finally {
+            unlink(filename: $path);
+            foreach (glob(pattern: $activityMigrations . '/*') ?: [] as $migration) {
+                unlink(filename: $migration);
+            }
+            rmdir(directory: $activityMigrations);
         }
     }
 

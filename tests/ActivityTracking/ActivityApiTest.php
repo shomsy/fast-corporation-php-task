@@ -81,6 +81,9 @@ final class ActivityApiTest extends TestCase
             self::assertCount(1, $page['events']);
             self::assertNull($page['nextCursor']);
 
+            $numbered = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics', query: ['page' => '2']));
+            self::assertSame(422, $numbered->status(), 'Retired OFFSET pagination is rejected; callers must use the signed cursor contract.');
+
             $invalid = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
                                                              query : ['date' => '2026-02-30']));
             self::assertSame(422, $invalid->status());

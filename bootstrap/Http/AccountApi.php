@@ -18,7 +18,7 @@ use Random\RandomException;
 use Throwable;
 
 /**
- * JSON Accounts transport, sharing the SSR owner's authoritative lifecycle.
+ * JSON Accounts transport, sharing the authoritative AccountLifecycle.
  *
  * @package InterviewTask\Bootstrap\Http
  */

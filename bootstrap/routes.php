@@ -65,8 +65,10 @@ return static function (Router $router) use ($config) : void {
 
     $migrated = $pdo->query(query: 'SELECT COUNT(*) FROM schema_migrations');
 
-    if ($migrated === false || (int) $migrated->fetchColumn() < 3) {
-        throw new RuntimeException(message: 'Database migrations have not been applied.');
+    // Refuse to serve against a partially upgraded release schema. The migration
+    // owner currently ships one Accounts and four ActivityTracking migrations.
+    if ($migrated === false || (int) $migrated->fetchColumn() !== 5) {
+        throw new RuntimeException(message: 'Database migrations are incomplete or do not match this release.');
     }
     $accounts        = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
     $session         = new PhpSession(secureCookie: $config['sessionCookieSecure'], savePath: $config['sessionStoragePath']);

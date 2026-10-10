@@ -74,9 +74,7 @@ least privilege and off-host backup RPO/RTO gates pass.
 Statistics includes registration, login, logout, page views and button clicks. Reports count Page A views, Page B views,
 Buy a cow clicks and Download clicks, grouped by **UTC date**. Chart positions reflect true UTC calendar distance; days with no tracked events break the lines rather than falsely implying continuous activity. The table remains an accessible record of the same 30-or-fewer active daily totals (no fabricated zero-event rows). Low-count Y-axis labels are deduplicated and points have keyboard-readable values; see `tests/Frontend/activityTracking.test.mjs`.
 
-Statistics default navigation uses session-signed keyset cursors for stable Next/Previous traversal across new events (ADR-0007); old explicit `?page=N` URLs remain OFFSET-based and can shift under concurrent inserts. Statistics reads 50 rows plus a one-row lookahead to show **Next** only when another page exists. There is no artificial
-1,000-page/50,000-event visibility cap; deep offset pagination still incurs increasing SQLite scan/skip cost, so a
-measured large audit workload would justify a cursor/keyset change. Reports shows at most the **30 most recent active
+Statistics navigation uses session-signed keyset cursors for stable Next/Previous traversal across new events (ADR-0007). The API rejects legacy `?page=N` pagination parameters; all supported navigation uses the signed cursor contract. Statistics reads 50 rows plus a one-row lookahead to show **Next** only when another page exists. Reports shows at most the **30 most recent active
 UTC dates** matching the optional range (not every calendar date and not every active date in a larger range). Its limit
 bounds response size, **not** the cost of scanning/aggregating history. Representative 5,000-event query/index tests are
 included; production-scale performance is not claimed.
