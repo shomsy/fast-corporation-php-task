@@ -10,6 +10,8 @@ use InterviewTask\Accounts\BcryptPasswords;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CurrentAccount;
 use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use InterviewTask\Bootstrap\Http\SessionApi;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
@@ -40,7 +42,7 @@ final class SessionApiTest extends TestCase
         $session  = new PhpSession();
         $csrf     = new Csrf(session: $session);
         $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
-        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: new SystemClock());
+        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: new SystemClock(), cleanupFailures: new CleanupFailures(report: static function (Throwable $error) : void {}));
         $api      = new SessionApi(identity: new CurrentAccount(identity: $identity), csrf: $csrf);
 
         try {

@@ -20,7 +20,7 @@ final readonly class ActivityFilters
      * @param string|null $user   Case-insensitive exact actor label, trimmed.
      * @param string|null $action Canonical action value.
      *
-     * @throws InvalidArgumentException On invalid date or unknown action.
+     * @throws InvalidArgumentException On invalid date, malformed UTF-8 actor label or unknown action.
      */
     public function __construct(
         string|null $date,
@@ -38,8 +38,12 @@ final readonly class ActivityFilters
             throw new InvalidArgumentException(message: 'Unknown activity action.');
         }
 
+        $trimmed = $user === null ? '' : trim(string: $user);
+        if (preg_match(pattern: '//u', subject: $trimmed) !== 1) {
+            throw new InvalidArgumentException(message: 'Invalid user filter. Expected UTF-8 text.');
+        }
+
         $this->date     = $parsedDate;
-        $trimmed        = $user === null ? '' : trim(string: $user);
         $this->username = $trimmed === '' ? null : $trimmed;
         $this->action   = $parsedAction;
     }

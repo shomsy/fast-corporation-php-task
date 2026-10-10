@@ -14,6 +14,8 @@ use InterviewTask\ActivityTracking\TrackedPage;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use InvalidArgumentException;
 use Override;
 use PDO;
@@ -136,7 +138,7 @@ final class ActivityLogTest extends TestCase
     public function testParticipatesInSameLocalTransactionAndRollsBack() : void
     {
         try {
-            (new Transaction(pdo: $this->pdo))->run(operation: function () : void {
+            (new Transaction(pdo: $this->pdo, cleanupFailures: new CleanupFailures(report: static function (Throwable $error) : void {})))->run(operation: function () : void {
                 $this->log->recordRegistration(actorId: 5, actorLabel: 'alice');
                 $this->pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (5, 'alice', 'view-page', 'buy-cow', '2026-10-08T10:15:00+00:00')");
             });

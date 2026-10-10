@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace InterviewTask\Infrastructure\Database;
 
-use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
 use LogicException;
 use PDO;
 use Throwable;
@@ -20,9 +20,10 @@ final readonly class Transaction
     /**
      * Use a PDO connection whose transaction lifetime this object controls.
      *
-     * @param PDO $pdo SQLite PDO connection with configured driver settings.
+     * @param PDO             $pdo             SQLite PDO connection with configured driver settings.
+     * @param CleanupFailures $cleanupFailures Best-effort reporting of secondary rollback failures.
      */
-    public function __construct(private PDO $pdo) {}
+    public function __construct(private PDO $pdo, private CleanupFailures $cleanupFailures) {}
 
     /**
      * Commit the result of an operation or roll back and rethrow its original failure.
@@ -53,12 +54,7 @@ final readonly class Transaction
                 // rollback may throw too; preserve and report the primary failure.
                 $this->pdo->rollBack();
             } catch (Throwable $cleanupError) {
-                // Keep the root cause; log the secondary cleanup failure without SQL or secrets.
-                try {
-                    SecurityEvents::record(event: 'runtime.unhandled', error: $cleanupError);
-                } catch (Throwable) {
-                    // Diagnostic failure must not hide the original transaction failure.
-                }
+                $this->cleanupFailures->record(error: $cleanupError);
             }
 
             throw $throwable;

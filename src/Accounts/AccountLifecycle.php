@@ -10,7 +10,8 @@ use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\Infrastructure\Database\Transaction;
-use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use LogicException;
 use PDOException;
 use SensitiveParameter;
 use Throwable;
@@ -28,11 +29,12 @@ final readonly class AccountLifecycle
     /**
      * Wire the account behaviors, identity boundary, audit writer, and transaction.
      *
-     * @param Register        $register    Account registration behavior.
-     * @param Login           $login       Account sign-in behavior.
-     * @param SessionIdentity $identity    Server-side authenticated identity access boundary.
-     * @param ActivityLog     $activity    Authoritative activity-event writer.
-     * @param Transaction     $transaction Transaction boundary for coordinated account and event writes.
+     * @param Register        $register        Account registration behavior.
+     * @param Login           $login           Account sign-in behavior.
+     * @param SessionIdentity $identity        Server-side authenticated identity access boundary.
+     * @param ActivityLog     $activity        Authoritative activity-event writer.
+     * @param Transaction     $transaction     Transaction boundary for coordinated account and event writes.
+     * @param CleanupFailures $cleanupFailures Best-effort reporting of secondary session cleanup failures.
      */
     public function __construct(
         private Register        $register,
@@ -40,6 +42,7 @@ final readonly class AccountLifecycle
         private SessionIdentity $identity,
         private ActivityLog     $activity,
         private Transaction     $transaction,
+        private CleanupFailures $cleanupFailures,
     ) {}
 
     /**
@@ -52,7 +55,10 @@ final readonly class AccountLifecycle
      * @return void No return value.
      * @throws RegistrationRejected When registration input or password policy is rejected.
      * @throws UsernameTaken When the persisted username already exists.
-     * @throws PDOException When account creation or audit persistence fails; the transaction rolls back.
+     * @throws PDOException When account creation or audit persistence fails; rollback is attempted.
+     * @throws LogicException When an existing transaction prevents lifecycle ownership.
+     * @throws Throwable When an operational dependency fails; rollback is attempted and the original failure takes
+     *                   precedence.
      */
     public function register(string $username, #[SensitiveParameter] string $password) : void
     {
@@ -71,7 +77,9 @@ final readonly class AccountLifecycle
      *
      * @return SignedInAccount The verified account identity exposed to the caller.
      * @throws InvalidCredentials When the submitted credentials cannot authenticate an account.
-     * @throws PDOException When login activity persistence fails; the new session is revoked.
+     * @throws PDOException When login activity persistence fails; session revocation is attempted.
+     * @throws Throwable When credential lookup or session establishment fails, or auditing fails and revocation is
+     *                   attempted.
      */
     public function login(string $username, #[SensitiveParameter] string $password) : SignedInAccount
     {
@@ -83,7 +91,7 @@ final readonly class AccountLifecycle
             try {
                 $this->identity->signOut();
             } catch (Throwable $cleanupError) {
-                $this->reportCleanupFailure(error: $cleanupError);
+                $this->cleanupFailures->record(error: $cleanupError);
             }
 
             throw $error;
@@ -97,8 +105,10 @@ final readonly class AccountLifecycle
      * to the HTTP error boundary.
      *
      * @return void No return value.
-     * @throws PDOException When account reloading or logout activity persistence fails; session revocation still
-     *                      occurs.
+     * @throws PDOException When account reloading or logout activity persistence fails; session revocation is still
+     *                      attempted.
+     * @throws Throwable When session revocation or another operational dependency fails; the original failure takes
+     *                   precedence.
      */
     public function logout() : void
     {
@@ -122,27 +132,11 @@ final readonly class AccountLifecycle
                 throw $cleanupError;
             }
 
-            $this->reportCleanupFailure(error: $cleanupError);
+            $this->cleanupFailures->record(error: $cleanupError);
         }
 
         if ($failure !== null) {
             throw $failure;
-        }
-    }
-
-    /**
-     * Record a secondary session cleanup failure without overriding the original exception.
-     *
-     * @param Throwable $error Secondary session cleanup failure; never log its message.
-     *
-     * @return void No return value.
-     */
-    private function reportCleanupFailure(Throwable $error) : void
-    {
-        try {
-            SecurityEvents::record(event: 'runtime.unhandled', error: $error);
-        } catch (Throwable) {
-            // A failed diagnostic must not mask the original application failure.
         }
     }
 

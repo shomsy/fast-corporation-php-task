@@ -101,7 +101,14 @@ timestamp. The accepted-event contract, caller authority, retention and tamper l
 `button-click/buy-cow` means accepted authorized interaction; `button-click/download` means a server-side file was
 available/read and a response was prepared, not proof the client finished transfer. Account registration and its event
 are committed in one local database transaction; `AccountLifecycle::register()` returns no private account object.
-Logout invalidates the session even if activity recording fails. The only exported account mutation entry point is
+Login explicitly persists and reopens its rotated session **before** recording accepted activity. A failed write,
+including a native warning despite a successful PHP close return value, prevents login acceptance. The identity owner
+reads its required time before mutation and attempts revocation on failed session establishment. Logout attempts
+revocation even if account lookup or activity recording fails. Session cleanup and transaction rollback retain the
+original failure; the injected `CleanupFailures` diagnostic sink observes secondary errors without masking it.
+Native session warnings are translated to fixed messages so storage paths and bearer session IDs cannot reach logs
+through these operations. SQLite and session storage remain separate resources; persistent cleanup is best effort
+when storage itself fails. See [ADR-0027](docs/architecture/ADR-0027-observed-session-establishment.md). The only exported account mutation entry point is
 `AccountLifecycle`; `CurrentAccount` is a read-only authentication view and owner-internal registration/login/session
 mechanisms are not module exports. The redundant internal Logout pass-through class was removed. An unavailable fixed
 download artifact returns 503, but a failure to write its required activity event propagates to the generic 500 HTTP

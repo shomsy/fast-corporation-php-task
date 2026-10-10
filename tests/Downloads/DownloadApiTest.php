@@ -11,6 +11,8 @@ use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Bootstrap\Http\DownloadApi;
@@ -136,7 +138,7 @@ final class DownloadApiTest extends TestCase
         $this->session  = new PhpSession(name: 'download_api_test', secureCookie: false);
         $clock          = new SystemClock();
         $accounts       = new Accounts(storage: new SqliteAccounts(pdo: $this->pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
-        $this->identity = new SessionIdentity(session: $this->session, accounts: $accounts, clock: $clock);
+        $this->identity = new SessionIdentity(session: $this->session, accounts: $accounts, clock: $clock, cleanupFailures: new CleanupFailures(report: static function (Throwable $error) : void {}));
         $account        = (new Register(accounts: $accounts, clock: $clock))->register(username: 'downloaduser', password: 'strong-password');
         $this->identity->signIn(account: $account);
     }

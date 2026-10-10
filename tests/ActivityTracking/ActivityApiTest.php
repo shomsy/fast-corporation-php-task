@@ -11,6 +11,8 @@ use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\RequireAdmin;
 use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Persistence\ReadDailyActivity;
 use InterviewTask\ActivityTracking\Statistics;
@@ -45,7 +47,7 @@ final class ActivityApiTest extends TestCase
         $session  = new PhpSession();
         $clock    = new SystemClock();
         $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
-        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
+        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock, cleanupFailures: new CleanupFailures(report: static function (Throwable $error) : void {}));
         $api      = new ActivityApi(
             statistics: new Statistics(reader: new ReadActivityHistory(pdo: $pdo)),
             reports   : new DailyReports(reader: new ReadDailyActivity(pdo: $pdo)),
@@ -85,6 +87,22 @@ final class ActivityApiTest extends TestCase
             $crossFilter = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
                                                                  query : ['date' => '2026-10-08', 'action' => 'view-page', 'cursor' => $first['nextCursor']]));
             self::assertSame(422, $crossFilter->status());
+
+            foreach (["\xFF", "alice\xC3\x28"] as $user) {
+                $malformed = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
+                                                                   query : ['user' => $user]));
+                self::assertSame(422, $malformed->status());
+                self::assertSame(
+                    ['error' => ['code' => 'invalid_filters', 'message' => 'Invalid statistics filters or cursor.']],
+                    json_decode(json: $malformed->body(), associative: true, flags: JSON_THROW_ON_ERROR),
+                );
+            }
+            $historical = $api->statistics(request: new Request(method: 'GET', path: '/api/activity/statistics',
+                                                                query : ['user' => '  Željko 東京  ']));
+            self::assertSame(200, $historical->status());
+            $historicalPage = json_decode(json: $historical->body(), associative: true, flags: JSON_THROW_ON_ERROR);
+            self::assertIsArray($historicalPage);
+            self::assertSame([], $historicalPage['events']);
 
             $report = $api->reports(request: new Request(method: 'GET', path: '/api/activity/reports',
                                                          query : ['from' => '2026-10-07', 'to' => '2026-10-07']));

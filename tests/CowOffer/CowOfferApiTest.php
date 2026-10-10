@@ -11,6 +11,8 @@ use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\RequireSignedIn;
 use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Bootstrap\Http\CowOfferApi;
@@ -44,7 +46,7 @@ final class CowOfferApiTest extends TestCase
         $session  = new PhpSession();
         $clock    = new SystemClock();
         $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
-        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
+        $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock, cleanupFailures: new CleanupFailures(report: static function (Throwable $error) : void {}));
         $api      = new CowOfferApi(
             cow     : new CowOffer(activityLog: new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: $clock)),
             signedIn: new RequireSignedIn(identity: $identity),

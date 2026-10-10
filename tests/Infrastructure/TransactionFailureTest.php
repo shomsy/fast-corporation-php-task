@@ -6,6 +6,7 @@ namespace InterviewTask\Tests\Infrastructure;
 
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
 use LogicException;
 use Override;
 use PDO;
@@ -21,6 +22,13 @@ use Throwable;
 final class TransactionFailureTest extends TestCase
 {
     /**
+     * Secondary failures captured at the explicit diagnostic seam.
+     *
+     * @var list<Throwable>
+     */
+    private array $cleanupErrors = [];
+
+    /**
      * Reject nested transactions without invoking the inner operation or destroying the caller's transaction.
      *
      * @return void No return value.
@@ -33,7 +41,7 @@ final class TransactionFailureTest extends TestCase
 
         try {
             try {
-                (new Transaction(pdo: $pdo))->run(operation: static function () use (&$invoked) : void {
+                (new Transaction(pdo: $pdo, cleanupFailures: $this->cleanupFailures()))->run(operation: static function () use (&$invoked) : void {
                     $invoked = true;
                 });
                 self::fail('Nested transaction must be explicitly rejected.');
@@ -69,7 +77,7 @@ final class TransactionFailureTest extends TestCase
 
         $original = new RuntimeException(message: 'primary business failure');
         try {
-            (new Transaction(pdo: $pdo))->run(operation: static function () use ($pdo, $original) : void {
+            (new Transaction(pdo: $pdo, cleanupFailures: $this->cleanupFailures()))->run(operation: static function () use ($pdo, $original) : void {
                 if ($pdo->inTransaction()) {
                     throw $original;
                 }
@@ -77,6 +85,8 @@ final class TransactionFailureTest extends TestCase
             self::fail('Expected the original exception to survive.');
         } catch (Throwable $error) {
             self::assertSame($original, $error);
+            self::assertCount(1, $this->cleanupErrors);
+            self::assertSame('secondary rollback failure', $this->cleanupErrors[0]->getMessage());
         }
     }
 
@@ -125,10 +135,26 @@ final class TransactionFailureTest extends TestCase
         };
 
         try {
-            (new Transaction(pdo: $pdo))->run(operation: static fn () : int => 1);
+            (new Transaction(pdo: $pdo, cleanupFailures: $this->cleanupFailures()))->run(operation: static fn () : int => 1);
             self::fail('Expected commit failure.');
         } catch (Throwable $error) {
             self::assertSame($original, $error);
+            self::assertCount(1, $this->cleanupErrors);
+            self::assertSame('secondary rollback failure', $this->cleanupErrors[0]->getMessage());
         }
     }
+
+    /**
+     * Observe cleanup failure even when diagnostics also fail.
+     *
+     * @return CleanupFailures Best-effort test reporter.
+     */
+    private function cleanupFailures() : CleanupFailures
+    {
+        return new CleanupFailures(report: function (Throwable $error) : void {
+            $this->cleanupErrors[] = $error;
+            throw new RuntimeException(message: 'Diagnostic destination unavailable.');
+        });
+    }
+
 }

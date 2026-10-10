@@ -6,7 +6,12 @@ namespace InterviewTask\Accounts;
 
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Session\Csrf;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use PDOException;
 use Psr\Clock\ClockInterface;
+use Random\RandomException;
+use RuntimeException;
+use Throwable;
 
 /**
  * Authoritative server-session identity lifecycle, with idle and absolute expiry. Store only the account ID and
@@ -50,32 +55,48 @@ final readonly class SessionIdentity
     /**
      * Configure the session adapter, authoritative account reader, and required clock.
      *
-     * @param PhpSession     $session  Trusted server-side PHP session adapter.
-     * @param Accounts       $accounts Authoritative Accounts owner persistence API.
-     * @param ClockInterface $clock    Mandatory time source for authentication expiration.
+     * @param PhpSession      $session         Trusted server-side PHP session adapter.
+     * @param Accounts        $accounts        Authoritative Accounts owner persistence API.
+     * @param ClockInterface  $clock           Mandatory time source for authentication expiration.
+     * @param CleanupFailures $cleanupFailures Best-effort reporting when failed establishment also fails revocation.
      */
     public function __construct(
-        private PhpSession     $session,
-        private Accounts       $accounts,
-        private ClockInterface $clock,
+        private PhpSession      $session,
+        private Accounts        $accounts,
+        private ClockInterface  $clock,
+        private CleanupFailures $cleanupFailures,
     ) {}
 
     /**
-     * Rotate the session identifier before publishing an authenticated identity.
+     * Rotate and persist the authenticated session before the caller can accept the login.
      *
      * @param Account $account Immutable account from authoritative storage.
      *
      * @return SignedInAccount The new immutable signed-in account identity.
+     * @throws RuntimeException When native session startup, rotation, persistence or reopening fails.
+     * @throws RandomException When the new CSRF token cannot be generated.
+     * @throws Throwable When the clock fails before mutation, or a session mechanism fails and revocation is attempted.
      */
     public function signIn(Account $account) : SignedInAccount
     {
-        $this->session->regenerate();
-        // A pre-login anonymous form must not authorize a privileged session.
-        (new Csrf(session: $this->session))->rotate();
-        $this->session->put(key: self::ACCOUNT_ID, value: $account->id);
         $now = $this->now();
-        $this->session->put(key: self::ISSUED_AT, value: $now);
-        $this->session->put(key: self::LAST_SEEN_AT, value: $now);
+        try {
+            $this->session->regenerate();
+            // A pre-login anonymous form must not authorize a privileged session.
+            (new Csrf(session: $this->session))->rotate();
+            $this->session->put(key: self::ACCOUNT_ID, value: $account->id);
+            $this->session->put(key: self::ISSUED_AT, value: $now);
+            $this->session->put(key: self::LAST_SEEN_AT, value: $now);
+            $this->session->persist();
+        } catch (Throwable $error) {
+            try {
+                $this->signOut();
+            } catch (Throwable $cleanupError) {
+                $this->cleanupFailures->record(error: $cleanupError);
+            }
+
+            throw $error;
+        }
 
         return new SignedInAccount(id: $account->id, username: $account->username, role: $account->role->value);
     }
@@ -95,6 +116,9 @@ final readonly class SessionIdentity
      * discarded; missing accounts are deauthenticated.
      *
      * @return SignedInAccount|null Verified current identity, or null after expiry or removal.
+     * @throws PDOException When authoritative account lookup fails.
+     * @throws RuntimeException When session access, cleanup or stored account decoding fails.
+     * @throws Throwable When the configured clock or another operational dependency fails.
      */
     public function current() : SignedInAccount|null
     {
@@ -135,6 +159,7 @@ final readonly class SessionIdentity
      * Destroy server-side authentication state, including its CSRF token.
      *
      * @return void No return value.
+     * @throws RuntimeException When native session reopening or destruction fails; in-memory identity is cleared.
      */
     public function signOut() : void
     {

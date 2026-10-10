@@ -13,6 +13,8 @@ use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Infrastructure\Database\Migrator;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Session\PhpSession;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use Override;
 use PDO;
 use PHPUnit\Framework\TestCase;
@@ -42,6 +44,12 @@ abstract class AccountsTestCase extends TestCase
      * @var FixedClock
      */
     protected FixedClock $clock;
+    /**
+     * Explicit best-effort diagnostic sink for fixtures without injected cleanup failures.
+     *
+     * @var CleanupFailures
+     */
+    protected CleanupFailures $cleanupFailures;
 
     /**
      * Build isolated fixtures for this test case.
@@ -61,7 +69,8 @@ abstract class AccountsTestCase extends TestCase
         session_id(id: '');
         ini_set(option: 'session.use_cookies', value: '0');
 
-        $this->pdo = SqliteConnection::memory();
+        $this->cleanupFailures = new CleanupFailures(report: static function (Throwable $error) : void {});
+        $this->pdo             = SqliteConnection::memory();
 
         (new Migrator(pdo: $this->pdo, migrationDirectories: [
             'Accounts' => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',

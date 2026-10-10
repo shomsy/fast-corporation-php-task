@@ -36,6 +36,8 @@ use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Time\SystemClock;
@@ -66,24 +68,28 @@ return static function (Router $router) use ($config) : void {
     if ($migrated === false || (int) $migrated->fetchColumn() < 3) {
         throw new RuntimeException(message: 'Database migrations have not been applied.');
     }
-    $accounts = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
-    $session  = new PhpSession(secureCookie: $config['sessionCookieSecure'], savePath: $config['sessionStoragePath']);
-    $clock    = new SystemClock();
-    $identity = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock);
-    $current  = new CurrentAccount(identity: $identity);
-    $csrf     = new Csrf(session: $session);
-    $activity = new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: $clock);
-    $signedIn = new RequireSignedIn(identity: $identity);
+    $accounts        = new Accounts(storage: new SqliteAccounts(pdo: $pdo), credentials: new AccountCredentials(), bcrypt: new BcryptPasswords());
+    $session         = new PhpSession(secureCookie: $config['sessionCookieSecure'], savePath: $config['sessionStoragePath']);
+    $clock           = new SystemClock();
+    $cleanupFailures = new CleanupFailures(report: static function (Throwable $error) : void {
+        SecurityEvents::record(event: 'runtime.unhandled', error: $error);
+    });
+    $identity        = new SessionIdentity(session: $session, accounts: $accounts, clock: $clock, cleanupFailures: $cleanupFailures);
+    $current         = new CurrentAccount(identity: $identity);
+    $csrf            = new Csrf(session: $session);
+    $activity        = new ActivityLog(writer: new RecordActivity(pdo: $pdo), clock: $clock);
+    $signedIn        = new RequireSignedIn(identity: $identity);
 
     // One explicit transport policy owns both access and CSRF before any handler runs.
     $router->guardWith(new RouteGuard(account: $current, csrf: $csrf));
 
     $lifecycle    = new AccountLifecycle(
-        register   : new Register(accounts: $accounts, clock: $clock),
-        login      : new Login(accounts: $accounts, identity: $identity),
-        identity   : $identity,
-        activity   : $activity,
-        transaction: new Transaction(pdo: $pdo),
+        register       : new Register(accounts: $accounts, clock: $clock),
+        login          : new Login(accounts: $accounts, identity: $identity),
+        identity       : $identity,
+        activity       : $activity,
+        transaction    : new Transaction(pdo: $pdo, cleanupFailures: $cleanupFailures),
+        cleanupFailures: $cleanupFailures,
     );
     $sessionApi   = new SessionApi(identity: $current, csrf: $csrf);
     $accountApi   = new AccountApi(lifecycle: $lifecycle, csrf: $csrf);

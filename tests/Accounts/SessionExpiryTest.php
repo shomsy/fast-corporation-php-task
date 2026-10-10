@@ -42,7 +42,7 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertSame('1', ini_get(option: 'session.use_strict_mode'));
 
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
-        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $identity->signIn(account: $account);
         self::assertNotNull($identity->current());
 
@@ -63,7 +63,7 @@ final class SessionExpiryTest extends AccountsTestCase
         self::assertNotSame('', $anonymousId);
 
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
-        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $identity->signIn(account: $account);
 
         self::assertNotSame($anonymousId, session_id());
@@ -160,7 +160,7 @@ final class SessionExpiryTest extends AccountsTestCase
     public function testIdleTimeoutRevokesPreviouslyValidAuthentication() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
-        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $identity->signIn(account: $account);
 
         $_SESSION['last_activity_at'] = $this->clock->now()->getTimestamp() - 1800;
@@ -177,7 +177,7 @@ final class SessionExpiryTest extends AccountsTestCase
     public function testAbsoluteTimeoutRevokesSessionEvenWhenRecentlyActive() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
-        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $identity->signIn(account: $account);
         $_SESSION['authenticated_at'] = $this->clock->now()->getTimestamp() - 43200;
         $_SESSION['last_activity_at'] = $this->clock->now()->getTimestamp() - 1;
@@ -193,7 +193,7 @@ final class SessionExpiryTest extends AccountsTestCase
     public function testUnknownSessionMetadataDoesNotAuthenticate() : void
     {
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'valid-password');
-        $identity = new SessionIdentity(session: new PhpSession(name: 'expired_session_test', secureCookie: false), accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: new PhpSession(name: 'expired_session_test', secureCookie: false), accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $identity->signIn(account: $account);
         unset($_SESSION['authenticated_at']);
 
@@ -214,7 +214,7 @@ final class SessionExpiryTest extends AccountsTestCase
 
         $account  = (new Register(accounts: $this->accounts, clock: $this->clock))
             ->register(username: 'alice', password: 'valid-password');
-        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $identity->signIn(account: $account);
 
         self::assertNotSame($oldSessionId, session_id());

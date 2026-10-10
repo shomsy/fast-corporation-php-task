@@ -6,4 +6,9 @@ Accepted mechanisms for the current pilot:
 - Deptrac for objective dependency-boundary checks across the accepted four-owner graph.
 - Table-ownership check for Accounts and ActivityTracking authoritative data.
 
-No additional consequential mechanism has been accepted.
+- Explicit session persistence before accepted login (ADR-0027): one extra native write/close/reopen at authentication;
+  retains file sessions and their normal request locking. Remove only if a replacement proves equivalent acceptance.
+- `CleanupFailures` (ADR-0027): one immutable object and an injected diagnostic closure shared by session establishment,
+  account lifecycle and transactions; callers retain their cleanup policy. Revisit if these error policies diverge.
+
+No container, generic compensation framework, additional datastore or deployment boundary is introduced.

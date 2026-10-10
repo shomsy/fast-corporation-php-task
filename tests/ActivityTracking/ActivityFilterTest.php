@@ -46,6 +46,26 @@ final class ActivityFilterTest extends TestCase
         self::assertNull($empty->date);
         self::assertNull($empty->username);
         self::assertNull($empty->action);
+
+        $historical = new ActivityFilters(date: null, user: '  Željko 東京  ', action: null);
+        self::assertSame('Željko 東京', $historical->username);
+    }
+
+    /**
+     * Malformed actor filters must fail validation before cursor serialization or SQL.
+     *
+     * @return void No return value.
+     */
+    public function testMalformedUtf8UserFailsBeforeCursorSerialization() : void
+    {
+        foreach (["\xFF", "alice\xC3\x28"] as $user) {
+            try {
+                new ActivityFilters(date: null, user: $user, action: null);
+                self::fail('Malformed UTF-8 must not become a valid user filter.');
+            } catch (InvalidArgumentException $exception) {
+                self::assertSame('Invalid user filter. Expected UTF-8 text.', $exception->getMessage());
+            }
+        }
     }
 
     /**

@@ -16,6 +16,18 @@ The same X-Request-ID is returned with denied login, CSRF, admin and unexpected
 HTTP 500 responses. This identifier is a search key, not a bearer credential
 or delegated authorization. Never trust client-provided IDs as evidence.
 
+## Native session failures
+
+`PhpSession` catches warnings only while starting, rotating, persisting or destroying a session. These warnings can
+contain a session filename and bearer ID. They become fixed-message `RuntimeException`s before native logging;
+the previous error handler is restored on every exit, and raw warning arguments are marked sensitive. Exceptions
+thrown by a storage callback retain their original identity. The outer diagnostic records only the exception class.
+`CleanupFailures` handles secondary operational errors through an explicitly selected sink; diagnostic failure
+cannot replace the original account/session/transaction failure.
+
+This is not a global PHP warning filter. Unexpected runtime/shutdown failures outside these bounded operations
+remain an operator concern; no claim of durable log delivery or cross-resource atomicity is made.
+
 ## Deployment requirements (not yet proven)
 
 - Route PHP error logs outside public/ to an access-controlled sink, readable

@@ -26,7 +26,7 @@ final class AuthorizationTest extends AccountsTestCase
      */
     public function testSignedInGuardRejectsAnonymousAndReturnsAuthenticatedAccount() : void
     {
-        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $guard    = new RequireSignedIn(identity: $identity);
 
         try {
@@ -50,7 +50,7 @@ final class AuthorizationTest extends AccountsTestCase
     public function testAdminGuardRejectsUserAndAcceptsAdmin() : void
     {
         $session  = $this->session();
-        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $guard    = new RequireAdmin(identity: $identity);
 
         $user = (new Register(accounts: $this->accounts, clock: $this->clock))->register(username: 'alice', password: 'strong-password');
@@ -78,7 +78,7 @@ final class AuthorizationTest extends AccountsTestCase
      */
     public function testRevokedAdminRoleImmediatelyFailsAuthorizationWithExistingSession() : void
     {
-        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
+        $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock, cleanupFailures: $this->cleanupFailures);
         $guard    = new RequireAdmin(identity: $identity);
         $admin    = (new CreateAdmin(accounts: $this->accounts, clock: $this->clock))->create(username: 'admin', password: 'strong-password');
         $identity->signIn(account: $admin);

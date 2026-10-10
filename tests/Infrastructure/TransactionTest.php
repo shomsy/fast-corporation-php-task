@@ -6,6 +6,8 @@ namespace InterviewTask\Tests\Infrastructure;
 
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Database\Transaction;
+use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
+use Throwable;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 
@@ -26,7 +28,7 @@ final class TransactionTest extends TestCase
         $pdo = SqliteConnection::memory();
         $pdo->exec(statement: 'CREATE TABLE example (value TEXT NOT NULL)');
 
-        $transaction = new Transaction(pdo: $pdo);
+        $transaction = new Transaction(pdo: $pdo, cleanupFailures: new CleanupFailures(report: static function (Throwable $error) : void {}));
 
         try {
             $transaction->run(operation: static function () use ($pdo) : void {
