@@ -127,14 +127,10 @@ final readonly class Statistics
             throw new InvalidArgumentException(message: 'Missing cursor signing context.');
         }
 
-        $filters          = new ActivityFilters(date: $date, user: $user, action: $action);
-        $fingerprintInput = json_encode(value: [$date ?? '', $user === null ? '' : trim(string: $user), $action ?? ''], flags: JSON_THROW_ON_ERROR);
-        if (! is_string(value: $fingerprintInput)) {
-            throw new RuntimeException(message: 'Unable to encode activity cursor filters.');
-        }
-        $fingerprint = hash(algo: 'sha256', data: $fingerprintInput);
-        $position    = $cursor === null ? null : $this->decodeCursor(cursor: $cursor, key: $key, fingerprint: $fingerprint);
-        $direction   = $position['direction'] ?? 'before';
+        $filters   = new ActivityFilters(date: $date, user: $user, action: $action);
+        $codec     = new ActivityCursor(key: $key, filters: $filters);
+        $position  = $cursor === null ? null : $codec->decode(cursor: $cursor);
+        $direction = $position['direction'] ?? 'before';
 
         $slice   = $this->reader->cursorSlice(filters: $filters, position: $position, direction: $direction);
         $rows    = $slice['rows'];
@@ -152,74 +148,10 @@ final readonly class Statistics
         return [
             'events'         => $rows,
             'hasNext'        => $hasNext,
-            'nextCursor'     => $hasNext ? $this->encodeCursor(time: $last['occurred_at'], id: $last['id'], direction: 'before', fingerprint: $fingerprint, key: $key) : null,
-            'previousCursor' => $hasPrevious ? $this->encodeCursor(time: $first['occurred_at'], id: $first['id'], direction: 'after', fingerprint: $fingerprint, key: $key) : null,
+            'nextCursor'     => $hasNext ? $codec->encode(time: $last['occurred_at'], id: $last['id'], direction: 'before') : null,
+            'previousCursor' => $hasPrevious ? $codec->encode(time: $first['occurred_at'], id: $first['id'], direction: 'after') : null,
         ];
     }
 
-    /**
-     * Encode an opaque, MAC-protected navigation position.
-     *
-     * @param string $time        Exact stored UTC timestamp.
-     * @param int    $id          Event ID.
-     * @param string $direction   before or after.
-     * @param string $fingerprint Bound user/date/action filters.
-     * @param string $key         Server-side session secret.
-     *
-     * @return string URL-safe cursor.
-     * @throws RuntimeException If cursor JSON unexpectedly is not a string.
-     * @throws JsonException When JSON serialization fails.
-     */
-    private function encodeCursor(string $time, int $id, string $direction, string $fingerprint, string $key) : string
-    {
-        $json = json_encode(value: ['v' => 1, 't' => $time, 'id' => $id, 'd' => $direction, 'f' => $fingerprint], flags: JSON_THROW_ON_ERROR);
-        if (! is_string(value: $json)) {
-            throw new RuntimeException(message: 'Unable to encode activity cursor.');
-        }
-        $body = rtrim(string: strtr(base64_encode(string: $json), '+/', '-_'), characters: '=');
-        $mac  = hash_hmac(algo: 'sha256', data: $body, key: $key);
-
-        return $body . '.' . $mac;
-    }
-
-    /**
-     * Decode only well-formed cursors authenticated by the current PHP session.
-     *
-     * @param string $cursor      Untrusted URL parameter.
-     * @param string $key         Server-side secret.
-     * @param string $fingerprint Filter-bound SHA-256.
-     *
-     * @return array{time: string, id: int, direction: string}
-     * @throws InvalidArgumentException When token encoding, signature or decoded payload is invalid.
-     */
-    private function decodeCursor(string $cursor, string $key, string $fingerprint) : array
-    {
-        if (strlen(string: $cursor) > 768 || preg_match(pattern: '/\A[A-Za-z0-9_-]+\.[a-f0-9]{64}\z/', subject: $cursor) !== 1) {
-            throw new InvalidArgumentException(message: 'Invalid activity cursor.');
-        }
-        [$body, $mac] = explode(separator: '.', string: $cursor, limit: 2);
-        if (! hash_equals(known_string: hash_hmac(algo: 'sha256', data: $body, key: $key), user_string: $mac)) {
-            throw new InvalidArgumentException(message: 'Invalid activity cursor.');
-        }
-        $decoded = base64_decode(string: strtr($body, '-_', '+/'), strict: true);
-        if ($decoded === false) {
-            throw new InvalidArgumentException(message: 'Invalid activity cursor.');
-        }
-        try {
-            $value = json_decode(json: $decoded, associative: true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException $exception) {
-            throw new InvalidArgumentException(message: 'Invalid activity cursor.', previous: $exception);
-        }
-        if (! is_array(value: $value) || count(value: $value) !== 5
-            || ($value['v'] ?? null) !== 1 || ($value['f'] ?? null) !== $fingerprint
-            || ! is_string(value: $value['t'] ?? null)
-            || ! is_int(value: $value['id'] ?? null) || $value['id'] < 1
-            || ! in_array(needle: $value['d'] ?? null, haystack: ['before', 'after'], strict: true)
-            || preg_match(pattern: '/\\A[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\+00:00\\z/', subject: $value['t']) !== 1) {
-            throw new InvalidArgumentException(message: 'Invalid activity cursor.');
-        }
-
-        return ['time' => $value['t'], 'id' => $value['id'], 'direction' => $value['d']];
-    }
 
 }
