@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\Accounts;
+namespace InterviewTask\Accounts\Access;
+
+use InterviewTask\Accounts\Role;
+use ValueError;
 
 /**
  * Minimal authenticated identity exposed by the Accounts owner to other modules.
  *
  * @api
- * @package InterviewTask\Accounts
+ * @package InterviewTask\Accounts\Access
  */
 final readonly class SignedInAccount
 {
@@ -19,7 +22,7 @@ final readonly class SignedInAccount
      * @param string $username Authenticated account username.
      * @param string $role     Canonical persisted role code, user or admin.
      *
-     * @throws \ValueError When a role value is unknown.
+     * @throws ValueError When a role value is unknown.
      */
     public function __construct(
         public int    $id,

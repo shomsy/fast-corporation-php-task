@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\Accounts;
 
-use InterviewTask\Accounts\AccountCredentials;
-use InterviewTask\Accounts\BcryptPasswords;
-use InterviewTask\Accounts\PasswordRejected;
-use InterviewTask\Accounts\UsernameRejected;
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\PasswordRejected;
+use InterviewTask\Accounts\Credentials\UsernameRejected;
 use PHPUnit\Framework\TestCase;
 
 /**

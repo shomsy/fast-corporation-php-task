@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\Accounts;
+namespace InterviewTask\Accounts\Credentials;
 
 use RuntimeException;
 
 /**
  * Rejected password that violates the Accounts credential policy.
  *
- * @package InterviewTask\Accounts
+ * @package InterviewTask\Accounts\Credentials
  */
 final class PasswordRejected extends RuntimeException {}

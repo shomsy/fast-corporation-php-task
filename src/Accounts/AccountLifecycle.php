@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace InterviewTask\Accounts;
 
+use InterviewTask\Accounts\Access\SessionIdentity;
+use InterviewTask\Accounts\Access\SignedInAccount;
+
 use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;

@@ -12,3 +12,7 @@ Accepted mechanisms for the current pilot:
   account lifecycle and transactions; callers retain their cleanup policy. Revisit if these error policies diverge.
 
 No container, generic compensation framework, additional datastore or deployment boundary is introduced.
+
+- Accounts `Access/` and `Credentials/` groups (ADR-0028): namespaces make existing responsibility families easier
+  to navigate without adding objects, state or runtime indirection. Class references change together; module exports,
+  named parameters and HTTP/session behavior remain enforced by the existing boundary and behavior tests.

@@ -24,3 +24,11 @@ Flows are explanatory/testability views, not required Flow classes.
 | Downloads        | Page B and artifact delivery behavior                           | view Page B, download artifact                 | entry points only                     |
 
 These are semantic views, not directory layers.
+
+## Accounts responsibility groups
+
+`Access/SessionIdentity` owns session establishment and revocation; `Access/CurrentAccount` and the access guards
+project or require authoritative identity. `Credentials/AccountCredentials` holds one username/password rule set,
+while `Credentials/BcryptPasswords` realizes its hash mechanism. `Register` and `Login` call these owner-internal
+behaviors; `AccountLifecycle` coordinates accepted activity. The groups describe existing knowledge and do not add
+mandatory execution stages, public interfaces or separate owners.

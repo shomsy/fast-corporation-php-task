@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\ActivityTracking;
 
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\AccountCredentials;
-use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
-use InterviewTask\Accounts\RequireAdmin;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\RequireAdmin;
+use InterviewTask\Accounts\Access\SessionIdentity;
 use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
 use Throwable;
 use InterviewTask\ActivityTracking\DailyReports;

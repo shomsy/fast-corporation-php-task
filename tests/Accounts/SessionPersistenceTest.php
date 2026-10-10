@@ -7,7 +7,7 @@ namespace InterviewTask\Tests\Accounts;
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Infrastructure\Database\Migrator;

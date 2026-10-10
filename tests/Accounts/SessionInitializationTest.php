@@ -7,7 +7,7 @@ namespace InterviewTask\Tests\Accounts;
 use DateTimeImmutable;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\SessionIdentity;
 use InterviewTask\Infrastructure\Session\Csrf;
 use Override;
 use Psr\Clock\ClockInterface;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Accounts;
 
 use InterviewTask\Accounts\Role;
-use InterviewTask\Accounts\SignedInAccount;
+use InterviewTask\Accounts\Access\SignedInAccount;
 use PHPUnit\Framework\TestCase;
 use ValueError;
 

@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace InterviewTask\Accounts;
 
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\PasswordRejected;
+use InterviewTask\Accounts\Credentials\UsernameRejected;
+
 use DateTimeImmutable;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use SensitiveParameter;
+use Throwable;
 
 /**
  * Owner API for credential policy, account creation and authentication; never knows SQL or PDO.
@@ -39,6 +45,7 @@ final readonly class Accounts
      * @throws PasswordRejected If password violates policy.
      * @throws UsernameRejected If username violates policy.
      * @throws UsernameTaken If SQLite enforces username uniqueness.
+     * @throws Throwable When account persistence or bcrypt hashing fails.
      */
     public function createUser(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt) : Account
     {
@@ -57,6 +64,7 @@ final readonly class Accounts
      * @throws PasswordRejected If password violates policy.
      * @throws UsernameRejected If username violates policy.
      * @throws UsernameTaken If SQLite enforces username uniqueness.
+     * @throws Throwable When account persistence or bcrypt hashing fails.
      */
     private function create(string $username, #[SensitiveParameter] string $password, Role $role, DateTimeImmutable $createdAt) : Account
     {
@@ -82,6 +90,7 @@ final readonly class Accounts
      * @throws PasswordRejected If password violates policy.
      * @throws UsernameRejected If username violates policy.
      * @throws UsernameTaken If SQLite enforces username uniqueness.
+     * @throws Throwable When account persistence or bcrypt hashing fails.
      */
     public function createAdmin(string $username, #[SensitiveParameter] string $password, DateTimeImmutable $createdAt) : Account
     {
@@ -95,6 +104,7 @@ final readonly class Accounts
      * @param string $password Secret credential.
      *
      * @return Account|null Verified account, or null for invalid credentials.
+     * @throws Throwable When credential lookup, stored account decoding or hash upgrade fails.
      */
     public function authenticate(string $username, #[SensitiveParameter] string $password) : Account|null
     {
@@ -133,6 +143,7 @@ final readonly class Accounts
      * @param int $id Authenticated account ID.
      *
      * @return Account|null Stored account, or null if deleted.
+     * @throws Throwable When authoritative storage lookup or stored account decoding fails.
      */
     public function findById(int $id) : Account|null
     {

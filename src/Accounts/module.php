@@ -10,14 +10,14 @@ declare(strict_types=1);
  * @package InterviewTask\Accounts
  */
 
-use InterviewTask\Accounts\AccessDenied;
+use InterviewTask\Accounts\Access\AccessDenied;
 use InterviewTask\Accounts\AccountLifecycle;
-use InterviewTask\Accounts\CurrentAccount;
+use InterviewTask\Accounts\Access\CurrentAccount;
 use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Register\RegistrationRejected;
-use InterviewTask\Accounts\RequireAdmin;
-use InterviewTask\Accounts\RequireSignedIn;
-use InterviewTask\Accounts\SignedInAccount;
+use InterviewTask\Accounts\Access\RequireAdmin;
+use InterviewTask\Accounts\Access\RequireSignedIn;
+use InterviewTask\Accounts\Access\SignedInAccount;
 use InterviewTask\Accounts\UsernameTaken;
 
 return [

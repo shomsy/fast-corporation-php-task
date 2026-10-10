@@ -13,6 +13,9 @@ use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 use InvalidArgumentException;
+use JsonException;
+use Random\RandomException;
+use Throwable;
 
 /**
  * JSON Accounts transport, sharing the SSR owner's authoritative lifecycle.
@@ -38,6 +41,8 @@ final readonly class AccountApi
      * @param Request $request Untrusted JSON credentials.
      *
      * @return Response 201 or a documented 409/422 JSON failure.
+     * @throws JsonException When a response cannot be serialized.
+     * @throws Throwable When account persistence, audit or transaction handling fails.
      */
     public function register(Request $request) : Response
     {
@@ -61,6 +66,9 @@ final readonly class AccountApi
      * @param Request $request Untrusted JSON credentials.
      *
      * @return Response 200 with public identity or 401/422 JSON failure.
+     * @throws JsonException When a response cannot be serialized.
+     * @throws RandomException When session CSRF rotation fails.
+     * @throws Throwable When account, session, audit or diagnostics fail.
      */
     public function login(Request $request) : Response
     {
@@ -84,6 +92,7 @@ final readonly class AccountApi
      * Revoke server authentication, including its activity event, after route CSRF.
      *
      * @return Response 204 empty success.
+     * @throws Throwable When account lookup, audit or session revocation fails.
      */
     public function logout() : Response
     {

@@ -65,3 +65,21 @@ test('low-count Y-axis ticks are distinct integers and include zero and one', ()
   assert.ok(labels.includes('1'));
   assert.ok(labels.includes('2026-10-01'));
 });
+
+test('all four chart series have visible legend labels matching their line styles', () => {
+  const svg = drawChart(page, [
+    { date: '2026-10-01', pageAViews: 2, pageBViews: 3, buyCowClicks: 1, downloadClicks: 4 },
+    { date: '2026-10-02', pageAViews: 3, pageBViews: 1, buyCowClicks: 2, downloadClicks: 5 },
+  ]);
+  const labels = svg.children.filter((item) => item.tag === 'text').map((item) => item.textContent);
+  const names = ['Page A views', 'Page B views', 'Buy cow clicks', 'Download clicks'];
+  names.forEach((label) => assert.ok(labels.includes(label), label));
+  const legend = svg.children.filter((item) => item.tag === 'line' && item.attributes.y1 === '20');
+  const lines = svg.children.filter((item) => item.tag === 'polyline');
+  assert.equal(legend.length, 4);
+  assert.equal(lines.length, 4);
+  legend.forEach((sample, index) => {
+    assert.equal(sample.attributes.stroke, lines[index].attributes.stroke);
+    assert.equal(sample.attributes['stroke-dasharray'], lines[index].attributes['stroke-dasharray']);
+  });
+});

@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Downloads;
 
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\AccountCredentials;
-use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\RequireSignedIn;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\RequireSignedIn;
+use InterviewTask\Accounts\Access\SessionIdentity;
 use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
 use Throwable;
 use InterviewTask\ActivityTracking\ActivityLog;

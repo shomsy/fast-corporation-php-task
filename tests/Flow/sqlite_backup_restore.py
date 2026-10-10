@@ -91,7 +91,7 @@ def main():
             assert db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
             actual = db.execute("SELECT COUNT(*) FROM activity_events").fetchone()[0]
             assert actual == expected, (actual, expected)
-            assert db.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 4
+            assert db.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 5
         restore_duration = time.monotonic() - start
 
         # Bounded local SQLITE_FULL fault injection: never fill the host filesystem.
@@ -118,7 +118,7 @@ def main():
         print("SQLITE_FULL simulated rollback and snapshot integrity: PASS")
         print("WAL ONLINE BACKUP/RESTORE: PASS")
         print("UNPRIVILEGED FILE PERMISSIONS / NO OVERWRITE / INSECURE DIRECTORY: PASS")
-        print("Rows restored:", actual, "| migrations:", 4)
+        print("Rows restored:", actual, "| migrations:", 5)
         print("Local measured backup seconds:", round(backup_duration, 3))
         print("Local measured restore+integrity seconds:", round(restore_duration, 3))
         print("RPO/RTO are deployment objectives, not guaranteed by this one-run measurement.")

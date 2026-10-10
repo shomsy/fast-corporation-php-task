@@ -131,6 +131,98 @@ final class ActivityLogTest extends TestCase
     }
 
     /**
+     * SQLite's nullable CHECK result must not admit tracked events without their required target.
+     *
+     * @return void No return value.
+     */
+    public function testDatabaseRejectsNullTrackedTargetsOnInsert() : void
+    {
+        foreach (['view-page', 'button-click'] as $action) {
+            $insert = $this->pdo->prepare(query: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'alice', :action, NULL, '2026-10-08T10:15:00+00:00')");
+            self::assertNotFalse($insert);
+            try {
+                $insert->execute(params: ['action' => $action]);
+                self::fail('A tracked event without a target must be rejected.');
+            } catch (PDOException $exception) {
+                self::assertStringContainsString('Tracked activity requires a target.', $exception->getMessage());
+            }
+        }
+
+        $count = $this->pdo->query(query: 'SELECT COUNT(*) FROM activity_events');
+        self::assertNotFalse($count);
+        self::assertSame(0, $count->fetchColumn());
+    }
+
+    /**
+     * Neither changing an action nor removing an existing target can bypass the persisted taxonomy.
+     *
+     * @return void No return value.
+     */
+    public function testDatabaseRejectsNullTrackedTargetsOnUpdate() : void
+    {
+        $this->log->recordLogin(actorId: 1, actorLabel: 'alice');
+        $this->log->recordPageView(actorId: 1, actorLabel: 'alice', page: TrackedPage::PageA);
+
+        foreach ([
+                     "UPDATE activity_events SET action = 'view-page' WHERE action = 'login'",
+                     "UPDATE activity_events SET action = 'button-click' WHERE action = 'login'",
+                     "UPDATE activity_events SET target = NULL WHERE action = 'view-page'",
+                 ] as $sql) {
+            try {
+                $this->pdo->exec(statement: $sql);
+                self::fail('Updating a tracked event to a NULL target must be rejected.');
+            } catch (PDOException $exception) {
+                self::assertStringContainsString('Tracked activity requires a target.', $exception->getMessage());
+            }
+        }
+
+        $events = $this->pdo->query(query: 'SELECT action, target FROM activity_events ORDER BY id');
+        self::assertNotFalse($events);
+        self::assertSame([
+                             ['action' => 'login', 'target' => null],
+                             ['action' => 'view-page', 'target' => 'page-a'],
+                         ], $events->fetchAll(mode: PDO::FETCH_ASSOC));
+    }
+
+    /**
+     * A forward migration must retain old malformed rows rather than silently invent their missing meaning.
+     *
+     * @return void No return value.
+     */
+    public function testForwardTargetGuardPreservesHistoricalNullTargets() : void
+    {
+        $directory = sys_get_temp_dir() . '/fast-activity-before-target-guard-' . bin2hex(string: random_bytes(length: 8));
+        self::assertTrue(mkdir(directory: $directory, permissions: 0700));
+        $migrationDirectory = dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations';
+        $originalMigration  = $directory . '/001_create_activity_events.sql';
+        $pdo                = SqliteConnection::memory();
+
+        try {
+            self::assertTrue(symlink(target: $migrationDirectory . '/001_create_activity_events.sql', link: $originalMigration));
+            (new Migrator(pdo: $pdo, migrationDirectories: ['ActivityTracking' => $directory]))->migrate();
+            $pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'historical', 'view-page', NULL, '2026-10-08T10:15:00+00:00')");
+            $migrator = new Migrator(pdo: $pdo, migrationDirectories: ['ActivityTracking' => $migrationDirectory]);
+            $migrator->migrate();
+            $migrator->migrate();
+
+            $events = $pdo->query(query: 'SELECT actor_label, action, target FROM activity_events');
+            self::assertNotFalse($events);
+            self::assertSame([
+                                 ['actor_label' => 'historical', 'action' => 'view-page', 'target' => null],
+                             ], $events->fetchAll(mode: PDO::FETCH_ASSOC));
+
+            $this->expectException(PDOException::class);
+            $this->expectExceptionMessage('Tracked activity requires a target.');
+            $pdo->exec(statement: "INSERT INTO activity_events (actor_id, actor_label, action, target, occurred_at) VALUES (1, 'new', 'view-page', NULL, '2026-10-08T10:15:00+00:00')");
+        } finally {
+            if (is_link(filename: $originalMigration)) {
+                unlink(filename: $originalMigration);
+            }
+            rmdir(directory: $directory);
+        }
+    }
+
+    /**
      * Verify participates in same local transaction and rolls back through the public behavior.
      *
      * @return void No return value.

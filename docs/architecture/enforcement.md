@@ -27,7 +27,9 @@ Project governance evidence status: **PILOT**. This is not a claim of Governance
 - Proportional OOP decision: redundant Logout forwarding class removed; CowOffer's business meaning and DailyReports
   four-field array shape retained until measured change pressure justifies restructuring.
 
-- Account lifecycle failure safety: **BEHAVIOR-ENFORCED** by `HttpFlowTest` using a real SQLite account lookup failure;
-  logout still invalidates the session even when recording cannot begin.
+- Account lifecycle failure safety: **BEHAVIOR-ENFORCED** by `tests/Accounts/SessionCompensationTest.php` using real
+  SQLite lookup/audit failures and native cleanup failure injection, plus `tests/Flow/live_smoke.py` for the HTTP
+  boundary. Logout attempts revocation even when recording cannot begin; durable cleanup remains best effort under
+  storage failure (ADR-0027).
 - Password policy: **BEHAVIOR-ENFORCED** by `PasswordPolicyTest` (bcrypt byte limit and NUL-byte rejection) and live CLI
   acceptance (invalid admin passwords exit cleanly rather than producing uncaught bcrypt exceptions).

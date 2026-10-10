@@ -31,7 +31,7 @@ export function renderAccounts(screen, { page, outlet, signal, onDispose }, { cl
     username.name = 'username';
     username.autocomplete = 'username';
     username.required = true;
-    username.maxLength = 64;
+    username.maxLength = isLogin ? 4096 : 64;
 
     const passwordLabel = page.createElement('label');
     passwordLabel.textContent = 'Password';

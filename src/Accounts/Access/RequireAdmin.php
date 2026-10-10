@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\Accounts;
+namespace InterviewTask\Accounts\Access;
+
+use Throwable;
 
 /**
  * Explicit authorization boundary for administrator-only behavior.
  *
  * @api
- * @package InterviewTask\Accounts
+ * @package InterviewTask\Accounts\Access
  */
 final readonly class RequireAdmin
 {
@@ -24,6 +26,7 @@ final readonly class RequireAdmin
      *
      * @return SignedInAccount Authorized administrator identity.
      * @throws AccessDenied When the current identity lacks the required permission.
+     * @throws Throwable When authoritative identity verification fails; access is never granted on failure.
      */
     public function account() : SignedInAccount
     {

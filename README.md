@@ -72,7 +72,7 @@ least privilege and off-host backup RPO/RTO gates pass.
 | `/app/reports`          | Admin only         | Bounded daily graph and table (latest 30 active dates), with optional UTC date range   |
 
 Statistics includes registration, login, logout, page views and button clicks. Reports count Page A views, Page B views,
-Buy a cow clicks and Download clicks, grouped by **UTC date**. Chart positions reflect true UTC calendar distance; days with no tracked events break the lines rather than falsely implying continuous activity. The table remains an accessible record of the same 30-or-fewer active daily totals (no fabricated zero-event rows). Low-count Y-axis labels are deduplicated and points have keyboard-readable values; see `tests/ActivityTracking/ReportChartTest.php`.
+Buy a cow clicks and Download clicks, grouped by **UTC date**. Chart positions reflect true UTC calendar distance; days with no tracked events break the lines rather than falsely implying continuous activity. The table remains an accessible record of the same 30-or-fewer active daily totals (no fabricated zero-event rows). Low-count Y-axis labels are deduplicated and points have keyboard-readable values; see `tests/Frontend/activityTracking.test.mjs`.
 
 Statistics default navigation uses session-signed keyset cursors for stable Next/Previous traversal across new events (ADR-0007); old explicit `?page=N` URLs remain OFFSET-based and can shift under concurrent inserts. Statistics reads 50 rows plus a one-row lookahead to show **Next** only when another page exists. There is no artificial
 1,000-page/50,000-event visibility cap; deep offset pagination still incurs increasing SQLite scan/skip cost, so a
@@ -92,7 +92,7 @@ truncate longer inputs). Existing bcrypt accounts with historically overlong sec
 regenerate their ID and their CSRF token upon successful authentication, require strict session IDs, expire after 30 minutes idle or 12 hours
 absolute lifetime, and invalidate the cookie at logout. Native PHP session garbage collection is configured to preserve files for at least 12 hours, instead of the default 24 minutes; application authorization still checks the 30-minute idle and 12-hour absolute limits. In production provision a dedicated, writable, non-symlinked private directory (mode 0700) outside `public/`, configure `SESSION_STORAGE_PATH=/absolute/private/path`, and keep the web worker as its sole owner. Session files must not share a system-wide GC directory with unrelated PHP apps. File-session locking serializes requests with the same cookie: an isolated two-process measurement showed ~0.42 s acquisition separation for the same ID versus ~0.10 s for different IDs under a 0.42 s held session; this is expected native locking, not a reason to add a custom handler. Cookies are HttpOnly with SameSite=Lax; set
 `SESSION_COOKIE_SECURE=1` and serve the application over HTTPS outside local development. All state-changing HTTP forms
-require a session-backed CSRF token, and access is checked server-side. Templates escape HTML output, SQL filters use
+require a session-backed CSRF token, and access is checked server-side. SPA screens render untrusted values with DOM creation and textContent, SQL filters use
 prepared statements, and downloads use a fixed server-side path rather than input from the request.
 
 An append-only activity history stores account ID, historical username snapshot, action, optional target and UTC
@@ -117,8 +117,7 @@ boundary and is logged on the server. Only the specific SQLite username UNIQUE v
 
 Dynamic HTTP responses now include centralized browser/privacy headers for HTML,
 redirects, errors and binary downloads. CSP does not permit inline JavaScript,
-and HSTS is emitted only on proven HTTPS requests. Legacy inline CSS is a
-temporary SSR exception until the SPA cutover. Denied login, CSRF, admin and
+and HSTS is emitted only on proven HTTPS requests. The SPA loads its CSS and ES modules from the same origin. Denied login, CSRF, admin and
 unexpected runtime failures use structured, redacted security diagnostics and
 correlation IDs; product activity tracking remains independent. See
 [security diagnostics](docs/security/SECURITY-DIAGNOSTICS.md) for remaining
@@ -141,20 +140,19 @@ composer quality              # strict PSR-4, audit, PHPDoc, PHPStan, Deptrac, P
 The local performance methodology and public-scale limits are documented in [ADR-0014](docs/architecture/ADR-0014-local-capacity-baseline.md). The smoke script uses a temporary SQLite database. On a development machine where `/usr/bin/php` is a Docker wrapper, it
 starts the same PHP version with explicit database environment and mapped temporary directory.
 
-**Current canonical roadmap:** [Fast Corporation 2.0 — 48 canonical work packets, 142-source traceability, Vanilla JS SPA LLD, execution program and RP prompt](docs/roadmap/README.md). M00/M01 are verified; 33/48 canonical work packets are implemented; M02 security and M03/M04 runtime/data hardening remain in progress. Public-production readiness has not yet been demonstrated.
+**Completed remediation history:** the [48-packet ledger](docs/roadmap/EXECUTION-PROGRESS.md) records
+48/48 completed dispositions. The [roadmap](docs/roadmap/README.md), five original reviews and
+[142-source traceability](docs/roadmap/REVIEW-TRACEABILITY.md) preserve the earlier delivery and review evidence;
+they are historical inputs rather than a queue of unfinished interview requirements. New work follows the current
+request, the original [task](TASK.md), the implemented contracts and focused regressions.
 
-Original earlier worklist (archived input): **[OOP / Architecture Remediation TODO](docs/OOP-ARCHITECTURE-REMEDIATION-TODO.md)** (18 review findings).
+The [final interview audit](docs/reviews/final-interview-audit/FINAL-ACCEPTANCE.md) records the full-repository
+requirements, file dispositions, decision review and executed acceptance gates for the current review.
+Public-production readiness remains a separate deployment decision.
 
-Independent review pending reconciliation: **[ClaudeCode original text](docs/reviews/CLAUDE-CODE-REVIEW-2026-10-08.txt)** and its **[62-finding index](docs/reviews/CLAUDE-CODE-REVIEW-INDEX.md)**. These are archived claims, not yet merged into the canonical remediation TODO.
-
-Separate **[LLD design & code review](docs/reviews/LLD-CODE-REVIEW-2026-10-08.md)**: 26 independently tracked findings (8 high, 14 medium, 4 low), with roles, risks and proposed fixes. It is not yet reconciled with the OOP or ClaudeCode lists.
-
-New independent **[ClaudeCode LLD review — original 26 TODOs](docs/reviews/CLAUDE-CODE-LLD-REVIEW-2026-10-08.md)** and its **[LLD findings index](docs/reviews/CLAUDE-CODE-LLD-REVIEW-INDEX.md)** (8 high, 10 medium, 8 low). Kept verbatim, unmerged and unimplemented pending cross-review reconciliation.
-
-Additional independent **[Gemini review — original 10 findings](docs/reviews/GEMINI-REVIEW-2026-10-08.md)** and **[fact-check index](docs/reviews/GEMINI-REVIEW-INDEX.md)** (4 high, 4 medium, 2 low). Original preserved verbatim; several findings are contradicted by the current source. **Five reports, 142 source items before deduplication; none merged or implemented by archiving.**
-
-For architecture rationale, see `IMPLEMENTATION-PLAN.md`, `docs/architecture/ADR-0002-system-architecture.md` and the
-pinned Architecture Governance 1.7.1 document. The architecture tests use `nikic/php-parser` to verify statically named
+For current architecture rationale, see the [decision review](docs/reviews/final-interview-audit/ARCHITECTURAL-DECISIONS-REVIEW.md),
+`docs/architecture/boundaries.md` and the pinned Architecture Governance 1.7.1 document. `IMPLEMENTATION-PLAN.md`
+and older ADR evidence preserve the preceding implementation history; later accepted ADRs govern superseded choices. The architecture tests use `nikic/php-parser` to verify statically named
 cross-owner references (normal/grouped imports, fully-qualified names, type hints, static calls), and inspect literal
 SQL table references for owner-only data access. Runtime dynamic class names, reflection and computed SQL identifiers
 still require review; module manifests are enforced code contracts, not a PHP runtime sandbox.

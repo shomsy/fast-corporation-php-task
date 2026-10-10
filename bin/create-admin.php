@@ -11,13 +11,13 @@ declare(strict_types=1);
  */
 
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\AccountCredentials;
-use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
-use InterviewTask\Accounts\PasswordRejected;
+use InterviewTask\Accounts\Credentials\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
-use InterviewTask\Accounts\UsernameRejected;
+use InterviewTask\Accounts\Credentials\UsernameRejected;
 use InterviewTask\Infrastructure\Database\SqliteConnection;
 use InterviewTask\Infrastructure\Time\SystemClock;
 

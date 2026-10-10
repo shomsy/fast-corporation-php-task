@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace InterviewTask\Bootstrap\Http;
 
-use InterviewTask\Accounts\RequireSignedIn;
+use InterviewTask\Accounts\Access\AccessDenied;
+use InterviewTask\Accounts\Access\RequireSignedIn;
 use InterviewTask\Downloads\ArtifactUnavailable;
 use InterviewTask\Downloads\DownloadFile;
 use InterviewTask\Runtime\Http\Response;
+use PDOException;
+use Throwable;
 
 /**
  * Page B transport: accepted view events and bounded native binary downloads.
@@ -28,6 +31,9 @@ final readonly class DownloadApi
 
     /**
      * @return Response Empty 204 after an accepted Page B view event.
+     * @throws AccessDenied When no authenticated account exists.
+     * @throws PDOException When accepted activity persistence fails.
+     * @throws Throwable When authoritative identity or another operational dependency fails.
      */
     public function view() : Response
     {
@@ -41,6 +47,9 @@ final readonly class DownloadApi
      * Preserve browser-native POST downloads without buffering binary data in JavaScript.
      *
      * @return Response A fixed attachment after accepted audit write, or a safe 503.
+     * @throws AccessDenied When no authenticated account exists.
+     * @throws PDOException When accepted activity persistence fails.
+     * @throws Throwable When authoritative identity or another operational dependency fails.
      */
     public function download() : Response
     {

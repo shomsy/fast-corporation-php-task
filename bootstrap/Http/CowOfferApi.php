@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace InterviewTask\Bootstrap\Http;
 
-use InterviewTask\Accounts\RequireSignedIn;
+use InterviewTask\Accounts\Access\AccessDenied;
+use InterviewTask\Accounts\Access\RequireSignedIn;
 use InterviewTask\CowOffer\CowOffer;
 use InterviewTask\Runtime\Http\Response;
+use JsonException;
+use PDOException;
+use Throwable;
 
 /**
  * JSON transport for the existing Page A interactions and canonical audit.
@@ -30,6 +34,9 @@ final readonly class CowOfferApi
      * Record a deliberate authenticated Page A route activation, never a prefetch.
      *
      * @return Response Empty 204 after accepted view audit.
+     * @throws AccessDenied When there is no authenticated account.
+     * @throws PDOException When accepted activity persistence fails.
+     * @throws Throwable When authoritative identity or another operational dependency fails.
      */
     public function view() : Response
     {
@@ -43,6 +50,10 @@ final readonly class CowOfferApi
      * Record an accepted click and return transient thank-you UI outcome.
      *
      * @return Response JSON outcome, emitted only after successful audit write.
+     * @throws AccessDenied When there is no authenticated account.
+     * @throws PDOException When accepted activity persistence fails.
+     * @throws JsonException When the outcome response cannot be encoded.
+     * @throws Throwable When authoritative identity or another operational dependency fails.
      */
     public function buy() : Response
     {

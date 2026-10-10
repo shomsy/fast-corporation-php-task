@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace InterviewTask\Tests\Accounts;
 
-use InterviewTask\Accounts\AccessDenied;
+use InterviewTask\Accounts\Access\AccessDenied;
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\RequireAdmin;
-use InterviewTask\Accounts\RequireSignedIn;
+use InterviewTask\Accounts\Access\RequireAdmin;
+use InterviewTask\Accounts\Access\RequireSignedIn;
 use InterviewTask\Accounts\Role;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\SessionIdentity;
 
 /**
  * Regression checks for Authorization test, covering observable behavior and failure paths.

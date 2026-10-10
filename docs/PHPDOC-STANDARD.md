@@ -22,15 +22,15 @@
 /**
  * Return one bounded page of immutable activity history.
  *
- * @param ?string $date UTC YYYY-MM-DD filter, or null for all dates.
- * @param ?string $user Case-insensitive actor-label filter.
- * @param ?string $action Canonical action value.
+ * @param string|null $date UTC YYYY-MM-DD filter, or null for all dates.
+ * @param string|null $user Case-insensitive actor-label filter.
+ * @param string|null $action Canonical action value.
  * @param int $page 1-based page number.
  * @return ActivityPageResult
  * @throws InvalidArgumentException If a supplied filter or page is invalid.
  * @throws PDOException If the SQLite read fails.
  */
-public function page(?string $date = null, ?string $user = null, ?string $action = null, int $page = 1): array
+public function page(string|null $date = null, string|null $user = null, string|null $action = null, int $page = 1): array
 ```
 
 The alias `ActivityPageResult` is declared at class level with `@phpstan-type` and expands to a concrete `array{events: list<ActivityEventRow>, hasNext: bool}`.
@@ -77,7 +77,9 @@ function changePassword(#[SensitiveParameter] string $password): void
 
 rather than repeating fully qualified class names such as `\PDOException` or `\SensitiveParameter` at each use site.
 
-The **mandatory, machine-enforced** rule is `fully_qualified_strict_types: {import_symbols: true}` and `global_namespace_import: {import_classes: true}`, with `ordered_imports` and `no_unused_imports` in `.php-cs-fixer.dist.php`. These cover project PHP sources **and tooling** via `composer quality`.
+PhpStorm's original **MOI** scheme owns visual formatting and import organization. `composer quality` does not
+run PHP-CS-Fixer or enforce exact import ordering/whitespace. The former competing fixer configuration and unused
+dependency are removed; review imports and use the native IDE when formatting changed PHP files.
 
 **Exceptions:** string values and executable PHP source fixtures whose precise FQCN literal is under test; deliberate alias/name collisions; language syntax, functions and constants that are not classes; advanced PHPStan shape aliases not understood by the simple PHPDoc tag fixer. Never rename an identifier merely for the appearance of a shorter spelling, and never change runtime behavior.
 
@@ -95,9 +97,9 @@ This is a **project preference**, not a PHP-FIG requirement that fully qualified
 
 ## Machine checks
 
-- `composer docs:check` visits every named class, enum, method, explicit property, and class constant. The gate requires DocBlocks, all `@param` names, every applicable `@return`, and `@var` on explicit storage/constant declarations.
+- `composer docs:check` inspects PHP declarations under `src`, `runtime`, `infrastructure`, `bootstrap` and `tests`. The gate requires DocBlocks, all `@param` names, every applicable `@return`, and `@var` on explicit storage/constant declarations. CLI, public entrypoints and tooling contracts are also reviewed; they are not included in this structural scanner's roots.
 - `composer stan` validates the actual generic/array-shape type semantics against code.
-- `composer quality` includes the PHPDoc gate alongside PSR-4, formatting, PHPStan, Deptrac, and behavioral tests.
+- `composer quality` includes the PHPDoc gate alongside PSR-4, the two agreed MOI syntax checks, PHPStan, Deptrac and behavioral tests. Full visual MOI formatting and native IDE exception inspection remain separate checks; timed-out IDE results are inconclusive.
 - `python3 tests/Flow/live_smoke.py` ensures no runtime behavior changed.
 
 **Known limitation:** structural coverage cannot independently prove every `@throws` description or narrative intent; those are reviewed against code paths and error behavior. Inline anonymous classes have no standalone named type contract; their members are checked, while surrounding code documents the binding.

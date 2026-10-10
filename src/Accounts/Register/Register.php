@@ -6,11 +6,12 @@ namespace InterviewTask\Accounts\Register;
 
 use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\PasswordRejected;
+use InterviewTask\Accounts\Credentials\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
-use InterviewTask\Accounts\UsernameRejected;
+use InterviewTask\Accounts\Credentials\UsernameRejected;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
+use Throwable;
 
 /**
  * Normalize user-provided credentials before creating a regular account.
@@ -39,6 +40,7 @@ final readonly class Register
      * @return Account The newly registered user account.
      * @throws RegistrationRejected When registration input or password policy is rejected.
      * @throws UsernameTaken When the persisted username already exists.
+     * @throws Throwable When account persistence, hashing or the creation clock fails.
      */
     public function register(string $username, #[SensitiveParameter] string $password) : Account
     {

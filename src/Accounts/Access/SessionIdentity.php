@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\Accounts;
+namespace InterviewTask\Accounts\Access;
+
+use InterviewTask\Accounts\Account;
+use InterviewTask\Accounts\Accounts;
 
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Session\Csrf;
@@ -17,7 +20,7 @@ use Throwable;
  * Authoritative server-session identity lifecycle, with idle and absolute expiry. Store only the account ID and
  * timestamps in session state; never trust a client role.
  *
- * @package InterviewTask\Accounts
+ * @package InterviewTask\Accounts\Access
  */
 final readonly class SessionIdentity
 {

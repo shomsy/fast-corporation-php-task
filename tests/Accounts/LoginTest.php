@@ -8,7 +8,7 @@ use InterviewTask\Accounts\Login\InvalidCredentials;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Role;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\SessionIdentity;
 
 /**
  * Regression checks for Login test, covering observable behavior and failure paths.

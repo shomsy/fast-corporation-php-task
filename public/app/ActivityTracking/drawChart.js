@@ -50,6 +50,13 @@ export function drawChart(page, days) {
   svg.append(svgNode(page, 'title', { id: 'daily-chart-title' }, 'Daily activity totals (UTC)'),
     svgNode(page, 'desc', { id: 'daily-chart-desc' },
       'One line per tracked action. Missing UTC days break the lines. Exact totals follow in the table.'));
+  metrics.forEach((series, index) => {
+    const x = 65 + index * 190;
+    svg.append(svgNode(page, 'line', {
+      x1: x, y1: 20, x2: x + 22, y2: 20,
+      stroke: series.color, 'stroke-width': 3, 'stroke-dasharray': series.dash,
+    }), svgNode(page, 'text', { x: x + 30, y: 24, 'font-size': 12, fill: '#19263d' }, series.label));
+  });
   svg.append(svgNode(page, 'line', { x1: 65, y1: 45, x2: 65, y2: 230, stroke: '#64748b' }),
     svgNode(page, 'line', { x1: 65, y1: 230, x2: 815, y2: 230, stroke: '#64748b' }));
   for (const tick of chartTicks(days)) {

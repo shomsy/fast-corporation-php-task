@@ -76,8 +76,8 @@ final class HealthProbes
 
         // Validate the columns actually needed for core login and activity reporting.
         foreach ([
-                     'SELECT id, username, password_hash, role FROM accounts LIMIT 1',
-                     'SELECT id, actor_id, action, target, occurred_at FROM activity_events LIMIT 1',
+                     'SELECT id, username, password_hash, role, created_at FROM accounts LIMIT 1',
+                     'SELECT id, actor_id, actor_label, action, target, occurred_at FROM activity_events LIMIT 1',
                  ] as $sql) {
             $statement = $pdo->query(query: $sql);
 

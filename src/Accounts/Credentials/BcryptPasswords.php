@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\Accounts;
+namespace InterviewTask\Accounts\Credentials;
 
 use SensitiveParameter;
+use ValueError;
 
 /**
  * Private bcrypt realization; the owner holds password policy separately.
  *
- * @package InterviewTask\Accounts
+ * @package InterviewTask\Accounts\Credentials
  */
 final readonly class BcryptPasswords
 {
@@ -33,6 +34,7 @@ final readonly class BcryptPasswords
      * @param string $password Secret bytes.
      *
      * @return string Bcrypt credential hash.
+     * @throws ValueError When secret bytes cannot be hashed or the salt source fails; an entropy failure is chained.
      */
     public function hash(#[SensitiveParameter] string $password) : string
     {

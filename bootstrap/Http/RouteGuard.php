@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace InterviewTask\Bootstrap\Http;
 
-use InterviewTask\Accounts\CurrentAccount;
+use InterviewTask\Accounts\Access\CurrentAccount;
+use JsonException;
+use Random\RandomException;
+use RuntimeException;
+use Throwable;
 use InterviewTask\Infrastructure\Diagnostics\SecurityEvents;
 use InterviewTask\Infrastructure\Session\Csrf;
 use InterviewTask\Runtime\Http\Request;
@@ -31,6 +35,10 @@ final readonly class RouteGuard
      * @param RouteAccess $access  Explicit route access requirement.
      *
      * @return Response|null Safe rejection, or null if authorized.
+     * @throws JsonException When an API rejection cannot be serialized.
+     * @throws RandomException When session verification cannot obtain CSRF entropy.
+     * @throws RuntimeException When session or diagnostic access fails.
+     * @throws Throwable When authoritative identity verification fails.
      */
     public function __invoke(Request $request, RouteAccess $access) : Response|null
     {

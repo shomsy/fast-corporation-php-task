@@ -37,6 +37,7 @@ final class MigratorTest extends TestCase
                 'ActivityTracking:001_create_activity_events.sql',
                 'ActivityTracking:002_activity_query_indexes.sql',
                 'ActivityTracking:003_actor_recent_index.sql',
+                'ActivityTracking:004_require_tracked_targets.sql',
             ],
             $migrator->migrate(),
         );

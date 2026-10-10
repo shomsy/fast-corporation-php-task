@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Accounts;
 
 use InterviewTask\Accounts\CreateAdmin\CreateAdmin;
-use InterviewTask\Accounts\PasswordRejected;
-use InterviewTask\Accounts\UsernameRejected;
+use InterviewTask\Accounts\Credentials\PasswordRejected;
+use InterviewTask\Accounts\Credentials\UsernameRejected;
 use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\Register\RegistrationRejected;
 

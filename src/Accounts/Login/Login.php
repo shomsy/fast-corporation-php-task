@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace InterviewTask\Accounts\Login;
 
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\SessionIdentity;
-use InterviewTask\Accounts\SignedInAccount;
+use InterviewTask\Accounts\Access\SessionIdentity;
+use InterviewTask\Accounts\Access\SignedInAccount;
 use SensitiveParameter;
+use Throwable;
 
 /**
  * Authenticate credentials and establish a server-side identity.
@@ -35,6 +36,7 @@ final readonly class Login
      *
      * @return SignedInAccount The authenticated account snapshot, after session establishment.
      * @throws InvalidCredentials When the submitted credentials cannot authenticate an account.
+     * @throws Throwable When credential persistence, rehashing, clock or session establishment fails.
      */
     public function login(string $username, #[SensitiveParameter] string $password) : SignedInAccount
     {

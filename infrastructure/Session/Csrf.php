@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Infrastructure\Session;
 
 use Random\RandomException;
+use RuntimeException;
 
 /**
  * Generate and verify a session-scoped CSRF token for state-changing requests.
@@ -32,6 +33,7 @@ final readonly class Csrf
      *
      * @return string A persisted session token encoded as hexadecimal.
      * @throws RandomException If the cryptographically secure random source fails.
+     * @throws RuntimeException When native session access or token persistence fails.
      */
     public function token() : string
     {
@@ -41,7 +43,10 @@ final readonly class Csrf
             return $stored;
         }
 
-        return $this->rotate();
+        $token = $this->rotate();
+        $this->session->persist();
+
+        return $token;
     }
 
     /**
@@ -49,6 +54,7 @@ final readonly class Csrf
      *
      * @return string Newly issued unpredictable CSRF token for this session.
      * @throws RandomException When the secure random generator fails.
+     * @throws RuntimeException When native session access fails; the caller owns persistence.
      */
     public function rotate() : string
     {
@@ -64,6 +70,7 @@ final readonly class Csrf
      * @param mixed $submitted Untrusted CSRF token supplied by an HTTP client.
      *
      * @return bool True only when the candidate matches the stored session token.
+     * @throws RuntimeException When native session access fails.
      */
     public function matches(mixed $submitted) : bool
     {

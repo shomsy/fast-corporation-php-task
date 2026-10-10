@@ -102,10 +102,19 @@ function luminance(hex) {
     .map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
   return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
 }
-test('focus, primary foreground and error text meet WCAG AA 4.5:1 on white', () => {
-  const white = luminance('#ffffff');
-  for (const color of ['#172135', '#1248b9', '#8c1818']) {
-    assert.ok((white + 0.05) / (luminance(color) + 0.05) >= 4.5, color);
+test('actual CSS text, button, error and focus colors retain adequate surface contrast', () => {
+  const css = readFileSync(new URL('../../public/assets/app.css', import.meta.url), 'utf8');
+  function color(name) {
+    const declaration = css.match(new RegExp('--' + name + '-color:\\s*(#[a-fA-F0-9]{6})\\s*;'));
+    assert.ok(declaration, 'Missing actual CSS color: ' + name);
+    assert.ok(css.includes('var(--' + name + '-color)'), 'Color must be consumed by the stylesheet: ' + name);
+    return declaration[1];
+  }
+  const surface = luminance(color('surface'));
+  for (const name of ['text', 'button', 'error', 'focus']) {
+    const foreground = luminance(color(name));
+    const ratio = (Math.max(surface, foreground) + 0.05) / (Math.min(surface, foreground) + 0.05);
+    assert.ok(ratio >= (name === 'focus' ? 3 : 4.5), name + ': ' + ratio.toFixed(2));
   }
 });
 

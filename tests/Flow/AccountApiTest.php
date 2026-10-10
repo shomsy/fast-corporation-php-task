@@ -6,12 +6,12 @@ namespace InterviewTask\Tests\Flow;
 
 use InterviewTask\Accounts\AccountLifecycle;
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\AccountCredentials;
-use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
 use InterviewTask\Accounts\Login\Login;
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\SessionIdentity;
 use InterviewTask\ActivityTracking\ActivityLog;
 use InterviewTask\ActivityTracking\Persistence\RecordActivity;
 use InterviewTask\Bootstrap\Http\AccountApi;

@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace InterviewTask\Bootstrap\Http;
 
-use InterviewTask\Accounts\AccessDenied;
-use InterviewTask\Accounts\RequireAdmin;
+use InterviewTask\Accounts\Access\AccessDenied;
+use InterviewTask\Accounts\Access\RequireAdmin;
 use InterviewTask\ActivityTracking\DailyReports;
 use InterviewTask\ActivityTracking\Statistics;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Runtime\Http\Request;
 use InterviewTask\Runtime\Http\Response;
 use InvalidArgumentException;
+use JsonException;
+use PDOException;
+use Random\RandomException;
+use RuntimeException;
+use Throwable;
 
 /**
  * Admin-only JSON transport for the authoritative ActivityTracking read models.
@@ -41,6 +46,11 @@ final readonly class ActivityApi
      * @param Request $request Untrusted filter/cursor inputs.
      *
      * @return Response 200 cursor page, 403 denied, or 422 invalid filters.
+     * @throws PDOException When authoritative account or activity reads fail.
+     * @throws RuntimeException When session access, cursor-secret persistence or activity preparation fails.
+     * @throws RandomException When the new cursor secret cannot be generated.
+     * @throws JsonException When a response cannot be serialized.
+     * @throws Throwable When another configured authentication dependency fails.
      */
     public function statistics(Request $request) : Response
     {
@@ -63,6 +73,7 @@ final readonly class ActivityApi
             if (! is_string(value: $secret) || $secret === '') {
                 $secret = bin2hex(string: random_bytes(length: 32));
                 $this->session->put(key: 'activity_cursor_secret', value: $secret);
+                $this->session->persist();
             }
 
             $result = $this->statistics->cursorPage(
@@ -81,6 +92,10 @@ final readonly class ActivityApi
      * @param Request $request Untrusted inclusive UTC date bounds.
      *
      * @return Response 200 canonical daily counts, 403 denied, or 422 invalid dates.
+     * @throws PDOException When authoritative account or activity reads fail.
+     * @throws RuntimeException When session access or report preparation fails.
+     * @throws JsonException When a response cannot be serialized.
+     * @throws Throwable When another configured authentication dependency fails.
      */
     public function reports(Request $request) : Response
     {
@@ -143,6 +158,7 @@ final readonly class ActivityApi
      * @param int    $status  HTTP status.
      *
      * @return Response JSON error contract.
+     * @throws JsonException When the error response cannot be serialized.
      */
     private static function error(string $code, string $message, int $status) : Response
     {

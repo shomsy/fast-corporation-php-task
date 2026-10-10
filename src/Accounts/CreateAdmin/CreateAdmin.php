@@ -6,12 +6,13 @@ namespace InterviewTask\Accounts\CreateAdmin;
 
 use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\PasswordRejected;
+use InterviewTask\Accounts\Credentials\PasswordRejected;
 use InterviewTask\Accounts\UsernameTaken;
-use InterviewTask\Accounts\UsernameRejected;
+use InterviewTask\Accounts\Credentials\UsernameRejected;
 use InvalidArgumentException;
 use Psr\Clock\ClockInterface;
 use SensitiveParameter;
+use Throwable;
 
 /**
  * Trusted administrative account creation; not exposed as an HTTP endpoint.
@@ -42,6 +43,7 @@ final readonly class CreateAdmin
      * @throws PasswordRejected When the password violates the bcrypt input policy.
      * @throws UsernameTaken When the persisted username already exists.
      * @throws UsernameRejected When a new username is outside the ASCII identifier policy.
+     * @throws Throwable When account persistence, hashing or the creation clock fails.
      */
     public function create(string $username, #[SensitiveParameter] string $password) : Account
     {

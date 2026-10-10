@@ -56,8 +56,8 @@ final class OwnerTechnologyBoundaryTest extends TestCase
         foreach ([
                      'Accounts'         => [
                          'InterviewTask\Accounts\Persistence\SqliteAccounts',
-                         'InterviewTask\Accounts\BcryptPasswords',
-                         'InterviewTask\Accounts\AccountCredentials',
+                         'InterviewTask\Accounts\Credentials\BcryptPasswords',
+                         'InterviewTask\Accounts\Credentials\AccountCredentials',
                      ],
                      'ActivityTracking' => [
                          'InterviewTask\ActivityTracking\Persistence\RecordActivity',

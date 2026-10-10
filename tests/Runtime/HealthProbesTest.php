@@ -96,6 +96,42 @@ final class HealthProbesTest extends TestCase
     }
 
     /**
+     * Every column consumed by account decoding and activity history is a readiness prerequisite.
+     *
+     * @return void No return value.
+     */
+    public function testReadinessRejectsMissingRequiredReadColumns() : void
+    {
+        foreach (['accounts' => 'created_at', 'activity_events' => 'actor_label'] as $table => $column) {
+            $path = sys_get_temp_dir() . '/fast-health-column-' . bin2hex(string: random_bytes(length: 8)) . '.sqlite';
+            $pdo  = SqliteConnection::open(path: $path, createIfMissing: true);
+            (new Migrator(pdo: $pdo, migrationDirectories: [
+                'Accounts'         => dirname(path: __DIR__, levels: 2) . '/src/Accounts/migrations',
+                'ActivityTracking' => dirname(path: __DIR__, levels: 2) . '/src/ActivityTracking/migrations',
+            ]))->migrate();
+
+            try {
+                $this->withDbPath(path: $path, check: static function () use ($pdo, $table, $column) : void {
+                    self::assertSame(200, HealthProbes::respond(request: new Request(method: 'GET', path: '/readyz'))?->status());
+                    // Table and column identifiers are fixed test cases, never external input.
+                    $pdo->exec(statement: 'ALTER TABLE ' . $table . ' RENAME COLUMN ' . $column . ' TO unavailable_column');
+                    $response = HealthProbes::respond(request: new Request(method: 'GET', path: '/readyz'));
+                    self::assertSame(503, $response->status());
+                    self::assertSame('Not Ready', $response->body());
+                    self::assertStringNotContainsString($column, $response->body());
+                });
+            } finally {
+                unset($pdo);
+                foreach ([$path . '-wal', $path . '-shm', $path] as $file) {
+                    if (is_file(filename: $file)) {
+                        unlink(filename: $file);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Temporarily bind only the dependency path without changing saved environment or secrets.
      *
      * @param string           $path  Test-owned SQLite path.

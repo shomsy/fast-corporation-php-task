@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Flow;
 
 use InterviewTask\Accounts\Accounts;
-use InterviewTask\Accounts\AccountCredentials;
-use InterviewTask\Accounts\BcryptPasswords;
+use InterviewTask\Accounts\Credentials\AccountCredentials;
+use InterviewTask\Accounts\Credentials\BcryptPasswords;
 use InterviewTask\Accounts\Persistence\SqliteAccounts;
-use InterviewTask\Accounts\CurrentAccount;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\CurrentAccount;
+use InterviewTask\Accounts\Access\SessionIdentity;
 use InterviewTask\Infrastructure\Diagnostics\CleanupFailures;
 use Throwable;
 use InterviewTask\Bootstrap\Http\SessionApi;

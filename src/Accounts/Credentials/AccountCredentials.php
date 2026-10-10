@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace InterviewTask\Accounts;
+namespace InterviewTask\Accounts\Credentials;
 
 use SensitiveParameter;
 
 /**
  * Single Accounts owner of username rules and credential input limits.
  *
- * @package InterviewTask\Accounts
+ * @package InterviewTask\Accounts\Credentials
  */
 final readonly class AccountCredentials
 {

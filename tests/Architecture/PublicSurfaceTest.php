@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Architecture;
 
 use InterviewTask\Accounts\AccountLifecycle;
-use InterviewTask\Accounts\CurrentAccount;
-use InterviewTask\Accounts\SignedInAccount;
+use InterviewTask\Accounts\Access\CurrentAccount;
+use InterviewTask\Accounts\Access\SignedInAccount;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Use_;
@@ -176,8 +176,7 @@ final class PublicSurfaceTest extends TestCase
         foreach ([
                      'InterviewTask\Accounts\Register\Register',
                      'InterviewTask\Accounts\Login\Login',
-                     'InterviewTask\Accounts\Logout\Logout',
-                     'InterviewTask\Accounts\SessionIdentity',
+                     'InterviewTask\Accounts\Access\SessionIdentity',
                      'InterviewTask\Accounts\Accounts',
                  ] as $privateType) {
             self::assertNotContains($privateType, $exports['Accounts'], $privateType . ' is a private implementation detail');
@@ -263,19 +262,19 @@ final class PublicSurfaceTest extends TestCase
     public function testForbiddenMutationIsDetectedForAllStaticReferenceShapes() : void
     {
         $cases   = [
-            "<?php\nuse InterviewTask\\Accounts\\PasswordRejected;\n",
-            "<?php\nnamespace Consumer;\nnew \\InterviewTask\\Accounts\\PasswordRejected();\n",
-            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\{PasswordRejected as Reject, CurrentAccount};\nnew Reject();\n",
-            "<?php\nnamespace Consumer;\nclass C { public function fail(\\InterviewTask\\Accounts\\PasswordRejected \$e): void {} }\n",
-            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::forbidden();\n",
-            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\PasswordRejected::class;\n",
-            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\PasswordRejected as P;\nclass C { public function get(): P { throw new \\Exception(); } }\n",
+            "<?php\nuse InterviewTask\\Accounts\\Credentials\\PasswordRejected;\n",
+            "<?php\nnamespace Consumer;\nnew \\InterviewTask\\Accounts\\Credentials\\PasswordRejected();\n",
+            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\{Credentials\\PasswordRejected as Reject, Access\\CurrentAccount};\nnew Reject();\n",
+            "<?php\nnamespace Consumer;\nclass C { public function fail(\\InterviewTask\\Accounts\\Credentials\\PasswordRejected \$e): void {} }\n",
+            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\Credentials\\PasswordRejected::forbidden();\n",
+            "<?php\nnamespace Consumer;\n\\InterviewTask\\Accounts\\Credentials\\PasswordRejected::class;\n",
+            "<?php\nnamespace Consumer;\nuse InterviewTask\\Accounts\\Credentials\\PasswordRejected as P;\nclass C { public function get(): P { throw new \\Exception(); } }\n",
         ];
         $exports = self::exports(root: dirname(path: __DIR__, levels: 2));
         foreach ($cases as $source) {
             $refs = self::referencedOwnerTypes(source: $source);
-            self::assertContains(['Accounts', 'InterviewTask\Accounts\PasswordRejected'], $refs, $source);
-            self::assertNotContains('InterviewTask\Accounts\PasswordRejected', $exports['Accounts']);
+            self::assertContains(['Accounts', 'InterviewTask\Accounts\Credentials\PasswordRejected'], $refs, $source);
+            self::assertNotContains('InterviewTask\Accounts\Credentials\PasswordRejected', $exports['Accounts']);
         }
     }
 }

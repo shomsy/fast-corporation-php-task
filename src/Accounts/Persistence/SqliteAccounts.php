@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Accounts\Persistence;
 
 use DateTimeImmutable;
+use DateMalformedStringException;
 use InterviewTask\Accounts\Account;
 use InterviewTask\Accounts\Role;
 use InterviewTask\Accounts\UsernameTaken;
@@ -12,6 +13,7 @@ use PDO;
 use PDOException;
 use RuntimeException;
 use SensitiveParameter;
+use ValueError;
 
 /**
  * Owner-private SQLite mapping and SQL; contains no password policy or business orchestration.
@@ -75,7 +77,10 @@ final readonly class SqliteAccounts
      * @param string $username Username to look up.
      *
      * @return StoredCredentials|null Stored account and hash, or null.
-     * @throws RuntimeException If stored account fields are malformed.
+     * @throws RuntimeException If stored account fields are missing or have invalid types.
+     * @throws ValueError If the stored role is unknown.
+     * @throws DateMalformedStringException If the stored creation timestamp cannot be parsed.
+     * @throws PDOException When credential lookup fails.
      */
     public function credentialsFor(string $username) : StoredCredentials|null
     {
@@ -102,6 +107,7 @@ final readonly class SqliteAccounts
      * @param string $previousHash Previously verified hash.
      *
      * @return void No return value.
+     * @throws PDOException When the conditional credential update fails.
      */
     public function upgradeHash(int $id, #[SensitiveParameter] string $newHash, #[SensitiveParameter] string $previousHash) : void
     {
@@ -115,6 +121,10 @@ final readonly class SqliteAccounts
      * @param int $id Account ID.
      *
      * @return Account|null Stored identity, or null after deletion.
+     * @throws PDOException When account lookup fails.
+     * @throws RuntimeException If stored account fields are missing or have invalid types.
+     * @throws ValueError If the stored role is unknown.
+     * @throws DateMalformedStringException If the stored creation timestamp cannot be parsed.
      */
     public function findById(int $id) : Account|null
     {
@@ -131,7 +141,9 @@ final readonly class SqliteAccounts
      * @param array<array-key, mixed> $row Raw database record.
      *
      * @return Account Validated account snapshot.
-     * @throws RuntimeException When stored fields are missing or malformed.
+     * @throws RuntimeException When stored fields are missing or have invalid types.
+     * @throws ValueError When the stored role is unknown.
+     * @throws DateMalformedStringException When the stored creation timestamp cannot be parsed.
      */
     private function accountFromRow(array $row) : Account
     {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace InterviewTask\Tests\Accounts;
 
 use InterviewTask\Accounts\Register\Register;
-use InterviewTask\Accounts\SessionIdentity;
+use InterviewTask\Accounts\Access\SessionIdentity;
 
 /**
  * Regression checks for Logout test, covering observable behavior and failure paths.

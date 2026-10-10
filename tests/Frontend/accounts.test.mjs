@@ -63,3 +63,27 @@ test('login submits once, applies rotated token and follows app navigation', asy
   for (const dispose of s.cleanup) dispose();
   assert.equal(form.events.size, 0);
 });
+
+test('login accepts historical usernames beyond registration length without truncating credentials', async () => {
+  const historicalName = 'historical-account-'.repeat(5);
+  let submitted;
+  const login = setup('/app/login', {
+    request: async (_path, { body }) => {
+      submitted = body.username;
+      return { user: { username: historicalName, role: 'user' }, csrfToken: 'a'.repeat(64) };
+    },
+    setCsrfToken() {},
+  });
+  const loginForm = login.outlet.children[0].children.find((child) => child.tag === 'form');
+  const username = loginForm.children.find((child) => child.name === 'username');
+  assert.ok(historicalName.length > 64);
+  assert.equal(username.maxLength, 4096);
+  username.value = historicalName;
+  await loginForm.dispatch('submit');
+  assert.equal(submitted, historicalName);
+  assert.deepEqual(login.visited, ['/app/home']);
+
+  const registration = setup('/app/register', {});
+  const registerForm = registration.outlet.children[0].children.find((child) => child.tag === 'form');
+  assert.equal(registerForm.children.find((child) => child.name === 'username').maxLength, 64);
+});

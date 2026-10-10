@@ -106,8 +106,17 @@ try {
   await admin.page.goto(origin + '/reports');
   assert.equal(new URL(admin.page.url()).pathname, '/app/reports');
   await admin.page.getByRole('heading', { name: 'Daily activity reports' }).waitFor();
-  await admin.page.locator('svg[role="img"]').waitFor();
-  await admin.page.getByRole('table').waitFor();
+  const reportChart = admin.page.locator('svg[role="img"]');
+  await reportChart.waitFor();
+  const legend = await reportChart.locator('text').allTextContents();
+  assert.deepEqual(legend.filter((label) => [
+    'Page A views', 'Page B views', 'Buy cow clicks', 'Download clicks',
+  ].includes(label)), ['Page A views', 'Page B views', 'Buy cow clicks', 'Download clicks']);
+  const reportTable = admin.page.getByRole('table');
+  await reportTable.waitFor();
+  assert.deepEqual(await reportTable.locator('thead th').allTextContents(), [
+    'UTC date', 'Page A views', 'Page B views', 'Buy cow clicks', 'Download clicks',
+  ]);
   assert.equal(errors.length, 0, errors.join('\n'));
   await admin.session.close();
   console.log('PLAYWRIGHT BROWSER ACCEPTANCE: PASS; auth, audit flows, binary, roles, filtered statistics, report SVG');
