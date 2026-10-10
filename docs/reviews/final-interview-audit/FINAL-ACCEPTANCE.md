@@ -48,7 +48,7 @@ This section is completed only after actual commands finish. Scoped regressions 
 | Nginx local auth-ingress negative tests | PASS — isolated pinned ingress rate-limit, `Retry-After`, spoofed forwarded-header rejection and log redaction. Local reference only. |
 | Actual zero-write session storage failure probe | PASS — response fails safely before success, no PHP warnings, session state cleared, no session file or login event created. |
 | Repository whitespace, clean-scope review, user-owned XML/archive fingerprints, original MOI fingerprint | PASS — `git diff --check`; protected PhpStorm XML and `src.zip` remain unmodified and unstaged; original MOI configuration hash unchanged. |
-| Commit on `main`, push to configured `origin`, independently verify remote commit hash | In progress. No deployment is part of this interview task. |
+| Commit on `main`, push to configured `origin`, independently verify remote commit hash | PASS — implementation commit `e0e0d2583a3da10598da1f1c596b8d1bac491624` pushed to `origin/main`; `git ls-remote` matched the local commit. No deployment is part of this interview task. |
 
 ## Limit and interpretation ledger
 
