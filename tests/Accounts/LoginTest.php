@@ -30,7 +30,7 @@ final class LoginTest extends AccountsTestCase
         $session->start();
         $before = session_id();
 
-        $identity = new SessionIdentity(session: $session, accounts: $this->accounts);
+        $identity = new SessionIdentity(session: $session, accounts: $this->accounts, clock: $this->clock);
         $signedIn = (new Login(accounts: $this->accounts, identity: $identity))->login(username: 'alice', password: 'correct horse battery staple');
 
         self::assertNotSame($before, session_id());
@@ -55,7 +55,7 @@ final class LoginTest extends AccountsTestCase
                 ['alice', 'wrong password'],
             ] as [$username, $password]
         ) {
-            $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts);
+            $identity = new SessionIdentity(session: $this->session(), accounts: $this->accounts, clock: $this->clock);
             $login    = new Login(accounts: $this->accounts, identity: $identity);
 
             try {

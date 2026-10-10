@@ -8,6 +8,7 @@ use InterviewTask\Accounts\Register\Register;
 use InterviewTask\Accounts\SessionIdentity;
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Session\Csrf;
+use ReflectionParameter;
 
 /**
  * Regression checks for Session expiry test, covering observable behavior and failure paths.
@@ -16,6 +17,19 @@ use InterviewTask\Infrastructure\Session\Csrf;
  */
 final class SessionExpiryTest extends AccountsTestCase
 {
+    /**
+     * Require the security-critical clock at construction instead of an implicit wall-clock fallback.
+     *
+     * @return void No return value.
+     */
+    public function testSessionExpirationClockIsRequiredAtConstruction() : void
+    {
+        $clock = new ReflectionParameter(function: [SessionIdentity::class, '__construct'], param: 'clock');
+
+        self::assertFalse($clock->isOptional());
+        self::assertFalse($clock->isDefaultValueAvailable());
+    }
+
     /**
      * Verify strict mode and sign out destroy session through the public behavior.
      *

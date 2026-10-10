@@ -6,7 +6,6 @@ namespace InterviewTask\Accounts;
 
 use InterviewTask\Infrastructure\Session\PhpSession;
 use InterviewTask\Infrastructure\Session\Csrf;
-use InterviewTask\Infrastructure\Time\SystemClock;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -49,16 +48,16 @@ final readonly class SessionIdentity
     private const int    MAX_LIFETIME_SECONDS = 43200;
 
     /**
-     * Configure the session adapter, account reader, and optional test clock.
+     * Configure the session adapter, authoritative account reader, and required clock.
      *
-     * @param PhpSession          $session  Trusted server-side PHP session adapter.
-     * @param Accounts            $accounts Authoritative Accounts owner persistence API.
-     * @param ClockInterface|null $clock    Wall-clock source used for deterministic timestamps.
+     * @param PhpSession     $session  Trusted server-side PHP session adapter.
+     * @param Accounts       $accounts Authoritative Accounts owner persistence API.
+     * @param ClockInterface $clock    Mandatory time source for authentication expiration.
      */
     public function __construct(
-        private PhpSession          $session,
-        private Accounts            $accounts,
-        private ClockInterface|null $clock = null,
+        private PhpSession     $session,
+        private Accounts       $accounts,
+        private ClockInterface $clock,
     ) {}
 
     /**
@@ -88,7 +87,7 @@ final readonly class SessionIdentity
      */
     private function now() : int
     {
-        return ($this->clock ?? new SystemClock())->now()->getTimestamp();
+        return $this->clock->now()->getTimestamp();
     }
 
     /**
