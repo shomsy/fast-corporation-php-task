@@ -31,3 +31,11 @@ __pycache__/
 /node_modules/
 /playwright-report/
 /test-results/
+
+# Local design and review materials
+/docs/
+/AGENTS.md
+/IMPLEMENTATION-PLAN.md
+/tools/check_execution_ledger.py
+/tools/check-final-audit.py
+/.aiforopenide/
